@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "seed": 20261007,
+  "reference_date": "2026-10-07",
+  "row_count": 150,
+  "record_number_base": 1,
+  "errors": [
+    {
+      "rule_id": "FAC_ID_REQUIRED",
+      "record_number": 1,
+      "column": "facility_id"
+    },
+    {
+      "rule_id": "FAC_ID_REQUIRED",
+      "record_number": 2,
+      "column": "facility_id"
+    },
+    {
+      "rule_id": "FAC_ID_UNIQUE",
+      "record_number": 3,
+      "column": "facility_id"
+    },
+    {
+      "rule_id": "FAC_ID_UNIQUE",
+      "record_number": 4,
+      "column": "facility_id"
+    },
+    {
+      "rule_id": "FAC_NAME_REQUIRED",
+      "record_number": 5,
+      "column": "facility_name"
+    },
+    {
+      "rule_id": "FAC_NAME_REQUIRED",
+      "record_number": 6,
+      "column": "facility_name"
+    },
+    {
+      "rule_id": "FAC_COUNTY_ALLOWED",
+      "record_number": 7,
+      "column": "county"
+    },
+    {
+      "rule_id": "FAC_SCORE_RANGE",
+      "record_number": 8,
+      "column": "inspection_score"
+    },
+    {
+      "rule_id": "FAC_SCORE_RANGE",
+      "record_number": 9,
+      "column": "inspection_score"
+    },
+    {
+      "rule_id": "FAC_SCORE_NUMERIC",
+      "record_number": 10,
+      "column": "inspection_score"
+    },
+    {
+      "rule_id": "FAC_DATE_PARSE",
+      "record_number": 11,
+      "column": "inspection_date"
+    },
+    {
+      "rule_id": "FAC_DATE_NOT_FUTURE",
+      "record_number": 12,
+      "column": "inspection_date"
+    },
+    {
+      "rule_id": "FAC_COUNTY_ALLOWED",
+      "record_number": 13,
+      "column": "county"
+    },
+    {
+      "rule_id": "FAC_ID_FORMAT",
+      "record_number": 13,
+      "column": "facility_id"
+    },
+    {
+      "rule_id": "FAC_SCORE_REQUIRED",
+      "record_number": 14,
+      "column": "inspection_score"
+    },
+    {
+      "rule_id": "FAC_DATE_REQUIRED",
+      "record_number": 15,
+      "column": "inspection_date"
+    },
+    {
+      "rule_id": "FAC_COUNTY_REQUIRED",
+      "record_number": 16,
+      "column": "county"
+    },
+    {
+      "rule_id": "FAC_SCORE_NUMERIC",
+      "record_number": 17,
+      "column": "inspection_score"
+    },
+    {
+      "rule_id": "FAC_DATE_PARSE",
+      "record_number": 18,
+      "column": "inspection_date"
+    },
+    {
+      "rule_id": "FAC_SCORE_NUMERIC",
+      "record_number": 19,
+      "column": "inspection_score"
+    },
+    {
+      "rule_id": "FAC_ID_UNIQUE",
+      "record_number": 20,
+      "column": "facility_id"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+schema_version: 1
+name: facilities
+structural_rule_id: FAC_REQUIRED_COLUMNS
+required_columns:
+  - facility_id
+  - facility_name
+  - county
+  - facility_type
+  - status
+  - inspection_score
+  - inspection_date
+rules:
+  - id: FAC_ID_REQUIRED
+    kind: required
+    column: facility_id
+    explanation: Facility IDs must be populated.
+  - id: FAC_ID_UNIQUE
+    kind: unique
+    column: facility_id
+    explanation: Nonmissing facility IDs must be unique; all duplicate group members are affected.
+  - id: FAC_ID_FORMAT
+    kind: pattern
+    column: facility_id
+    pattern: 'FAC-[0-9]{6}'
+    explanation: Facility IDs must match FAC- followed by exactly six ASCII digits.
+  - id: FAC_NAME_REQUIRED
+    kind: required
+    column: facility_name
+    explanation: Facility names must be populated.
+  - id: FAC_COUNTY_REQUIRED
+    kind: required
+    column: county
+    explanation: Counties must be populated.
+  - id: FAC_COUNTY_ALLOWED
+    kind: allowed_values
+    column: county
+    values: [Alder, Birch, Cedar, Maple]
+    explanation: Counties must be one of the approved fictional counties.
+  - id: FAC_SCORE_REQUIRED
+    kind: required
+    column: inspection_score
+    explanation: Inspection scores must be populated.
+  - id: FAC_SCORE_NUMERIC
+    kind: numeric
+    column: inspection_score
+    explanation: Inspection scores must be finite decimal numbers.
+  - id: FAC_SCORE_RANGE
+    kind: range
+    column: inspection_score
+    prerequisite: FAC_SCORE_NUMERIC
+    minimum: 0
+    maximum: 100
+    explanation: Inspection scores must be between 0 and 100 inclusive.
+  - id: FAC_DATE_REQUIRED
+    kind: required
+    column: inspection_date
+    explanation: Inspection dates must be populated.
+  - id: FAC_DATE_PARSE
+    kind: date
+    column: inspection_date
+    formats: ['%Y-%m-%d']
+    explanation: Inspection dates must be real calendar dates in YYYY-MM-DD format.
+  - id: FAC_DATE_NOT_FUTURE
+    kind: not_future
+    column: inspection_date
+    prerequisite: FAC_DATE_PARSE
+    latest: today
+    explanation: Inspection dates must not be later than the recorded reference date.
+

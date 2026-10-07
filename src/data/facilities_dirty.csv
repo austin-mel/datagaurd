@@ -1,0 +1,151 @@
+facility_id,facility_name,county,facility_type,status,inspection_score,inspection_date
+,Fictional Facility 001,Birch,Laboratory,Active,37,2025-01-22
+   ,Fictional Facility 002,Alder,Laboratory,Active,64,2025-03-17
+FAC-000003,Fictional Facility 003,Alder,Clinic,Inactive,0,2024-12-29
+FAC-000003,Fictional Facility 004,Birch,Care Center,Active,69,2026-04-20
+FAC-000005,,Birch,Clinic,Inactive,88,2026-03-20
+FAC-000006, 	 ,Cedar,Care Center,Inactive,30,2026-10-05
+FAC-000007,Fictional Facility 007,Unknown County,Laboratory,Active,27,2025-03-27
+FAC-000008,Fictional Facility 008,Alder,Clinic,Active,101,2026-09-20
+FAC-000009,Fictional Facility 009,Alder,Care Center,Active,-1,2026-06-12
+FAC-000010,Fictional Facility 010,Cedar,Clinic,Inactive,not-a-number,2026-08-14
+FAC-000011,Fictional Facility 011,Alder,Care Center,Inactive,24,2026-02-30
+FAC-000012,Fictional Facility 012,Maple,Care Center,Inactive,16,2026-10-08
+BAD-000013,Fictional Facility 013,Unknown County,Care Center,Active,11,2025-05-10
+FAC-000014,Fictional Facility 014,Cedar,Clinic,Inactive,,2025-10-17
+FAC-000015,Fictional Facility 015,Maple,Care Center,Active,100,
+FAC-000016,Fictional Facility 016,  ,Laboratory,Active,59,2025-06-09
+FAC-000017,Fictional Facility 017,Birch,Laboratory,Inactive,NaN,2026-07-23
+FAC-000018,Fictional Facility 018,Maple,Clinic,Active,83,10/07/2026
+FAC-000019,Fictional Facility 019,Cedar,Care Center,Active,Infinity,2026-08-20
+FAC-000003,Fictional Facility 020,Alder,Clinic,Inactive,47,2026-10-02
+FAC-000021,Fictional Facility 021,Cedar,Laboratory,Active,18,2026-06-09
+FAC-000022,Fictional Facility 022,Alder,Care Center,Active,98,2024-12-14
+FAC-000023,Fictional Facility 023,Birch,Care Center,Inactive,53,2025-08-30
+FAC-000024,Fictional Facility 024,Cedar,Care Center,Active,37,2026-04-15
+FAC-000025,Fictional Facility 025,Maple,Care Center,Active,4,2026-04-18
+FAC-000026,Fictional Facility 026,Cedar,Clinic,Active,15,2025-08-26
+FAC-000027,Fictional Facility 027,Birch,Laboratory,Inactive,50,2025-01-13
+FAC-000028,Fictional Facility 028,Birch,Care Center,Active,79,2026-08-11
+FAC-000029,Fictional Facility 029,Alder,Laboratory,Active,33,2025-02-07
+FAC-000030,Fictional Facility 030,Maple,Laboratory,Active,81,2024-11-04
+FAC-000031,Fictional Facility 031,Birch,Care Center,Inactive,89,2025-08-11
+FAC-000032,Fictional Facility 032,Birch,Care Center,Inactive,4,2025-06-23
+FAC-000033,Fictional Facility 033,Alder,Care Center,Active,26,2026-03-01
+FAC-000034,Fictional Facility 034,Cedar,Care Center,Inactive,54,2026-01-11
+FAC-000035,Fictional Facility 035,Cedar,Care Center,Inactive,49,2025-09-29
+FAC-000036,Fictional Facility 036,Birch,Laboratory,Inactive,8,2026-05-13
+FAC-000037,Fictional Facility 037,Cedar,Care Center,Active,21,2025-03-27
+FAC-000038,Fictional Facility 038,Maple,Clinic,Inactive,10,2025-03-13
+FAC-000039,Fictional Facility 039,Birch,Clinic,Inactive,38,2025-12-15
+FAC-000040,Fictional Facility 040,Birch,Care Center,Active,61,2026-04-22
+FAC-000041,Fictional Facility 041,Alder,Laboratory,Active,86,2025-12-04
+FAC-000042,Fictional Facility 042,Birch,Clinic,Inactive,34,2024-12-15
+FAC-000043,Fictional Facility 043,Birch,Laboratory,Active,98,2024-11-11
+FAC-000044,Fictional Facility 044,Maple,Laboratory,Inactive,62,2025-03-26
+FAC-000045,Fictional Facility 045,Birch,Clinic,Active,7,2026-02-01
+FAC-000046,Fictional Facility 046,Maple,Clinic,Inactive,82,2025-03-25
+FAC-000047,Fictional Facility 047,Birch,Laboratory,Active,12,2026-03-02
+FAC-000048,Fictional Facility 048,Cedar,Care Center,Inactive,35,2026-03-25
+FAC-000049,Fictional Facility 049,Alder,Laboratory,Inactive,31,2026-01-03
+FAC-000050,Fictional Facility 050,Alder,Clinic,Active,59,2026-03-20
+FAC-000051,Fictional Facility 051,Cedar,Care Center,Active,32,2025-03-23
+FAC-000052,Fictional Facility 052,Maple,Clinic,Inactive,62,2024-10-11
+FAC-000053,Fictional Facility 053,Birch,Care Center,Inactive,9,2025-02-07
+FAC-000054,Fictional Facility 054,Maple,Care Center,Inactive,87,2025-07-21
+FAC-000055,Fictional Facility 055,Birch,Laboratory,Inactive,65,2024-11-04
+FAC-000056,Fictional Facility 056,Maple,Care Center,Active,60,2024-10-30
+FAC-000057,Fictional Facility 057,Maple,Care Center,Inactive,61,2025-12-22
+FAC-000058,Fictional Facility 058,Maple,Care Center,Active,96,2026-08-05
+FAC-000059,Fictional Facility 059,Birch,Laboratory,Inactive,87,2025-03-22
+FAC-000060,Fictional Facility 060,Maple,Clinic,Active,61,2025-08-10
+FAC-000061,Fictional Facility 061,Cedar,Laboratory,Active,15,2025-05-10
+FAC-000062,Fictional Facility 062,Maple,Care Center,Active,32,2024-11-25
+FAC-000063,Fictional Facility 063,Birch,Care Center,Active,76,2025-04-20
+FAC-000064,Fictional Facility 064,Cedar,Care Center,Active,15,2025-10-23
+FAC-000065,Fictional Facility 065,Maple,Laboratory,Active,60,2025-02-06
+FAC-000066,Fictional Facility 066,Birch,Care Center,Active,51,2025-09-01
+FAC-000067,Fictional Facility 067,Alder,Laboratory,Active,53,2025-08-17
+FAC-000068,Fictional Facility 068,Birch,Clinic,Inactive,15,2025-03-02
+FAC-000069,Fictional Facility 069,Cedar,Laboratory,Active,92,2025-09-10
+FAC-000070,Fictional Facility 070,Cedar,Clinic,Inactive,0,2025-12-21
+FAC-000071,Fictional Facility 071,Cedar,Care Center,Inactive,15,2026-08-01
+FAC-000072,Fictional Facility 072,Birch,Laboratory,Inactive,99,2026-03-11
+FAC-000073,Fictional Facility 073,Cedar,Care Center,Active,78,2026-09-15
+FAC-000074,Fictional Facility 074,Alder,Laboratory,Active,47,2025-04-21
+FAC-000075,Fictional Facility 075,Maple,Laboratory,Active,93,2025-09-03
+FAC-000076,Fictional Facility 076,Alder,Laboratory,Active,1,2025-08-22
+FAC-000077,Fictional Facility 077,Alder,Care Center,Active,55,2025-08-25
+FAC-000078,Fictional Facility 078,Birch,Clinic,Inactive,49,2024-12-23
+FAC-000079,Fictional Facility 079,Birch,Laboratory,Active,2,2025-06-15
+FAC-000080,Fictional Facility 080,Cedar,Care Center,Inactive,4,2025-04-11
+FAC-000081,Fictional Facility 081,Alder,Care Center,Active,2,2025-08-28
+FAC-000082,Fictional Facility 082,Maple,Laboratory,Inactive,66,2026-07-19
+FAC-000083,Fictional Facility 083,Maple,Care Center,Active,64,2026-04-03
+FAC-000084,Fictional Facility 084,Maple,Clinic,Active,34,2026-05-11
+FAC-000085,Fictional Facility 085,Alder,Clinic,Inactive,92,2026-07-11
+FAC-000086,Fictional Facility 086,Cedar,Care Center,Inactive,30,2025-02-02
+FAC-000087,Fictional Facility 087,Birch,Clinic,Active,55,2025-02-24
+FAC-000088,Fictional Facility 088,Maple,Laboratory,Active,12,2024-11-11
+FAC-000089,Fictional Facility 089,Birch,Laboratory,Active,8,2025-07-28
+FAC-000090,Fictional Facility 090,Cedar,Laboratory,Inactive,32,2026-08-25
+FAC-000091,Fictional Facility 091,Alder,Care Center,Inactive,62,2026-02-14
+FAC-000092,Fictional Facility 092,Birch,Care Center,Active,5,2025-10-31
+FAC-000093,Fictional Facility 093,Birch,Clinic,Inactive,8,2025-07-24
+FAC-000094,Fictional Facility 094,Alder,Laboratory,Inactive,67,2025-07-24
+FAC-000095,Fictional Facility 095,Alder,Clinic,Active,11,2025-03-29
+FAC-000096,Fictional Facility 096,Cedar,Care Center,Active,83,2025-08-31
+FAC-000097,Fictional Facility 097,Maple,Laboratory,Active,96,2024-10-30
+FAC-000098,Fictional Facility 098,Cedar,Care Center,Active,77,2025-12-22
+FAC-000099,Fictional Facility 099,Birch,Care Center,Active,90,2024-10-26
+FAC-000100,Fictional Facility 100,Alder,Care Center,Active,37,2025-05-11
+FAC-000101,Fictional Facility 101,Cedar,Care Center,Active,14,2024-12-02
+FAC-000102,Fictional Facility 102,Alder,Clinic,Active,67,2026-10-02
+FAC-000103,Fictional Facility 103,Birch,Laboratory,Active,26,2025-03-11
+FAC-000104,Fictional Facility 104,Alder,Clinic,Active,38,2026-06-07
+FAC-000105,Fictional Facility 105,Birch,Care Center,Inactive,48,2026-06-15
+FAC-000106,Fictional Facility 106,Alder,Laboratory,Inactive,31,2026-02-18
+FAC-000107,Fictional Facility 107,Birch,Care Center,Inactive,5,2025-09-22
+FAC-000108,Fictional Facility 108,Cedar,Clinic,Active,40,2025-07-01
+FAC-000109,Fictional Facility 109,Birch,Care Center,Active,36,2025-05-08
+FAC-000110,Fictional Facility 110,Maple,Laboratory,Active,47,2025-10-04
+FAC-000111,Fictional Facility 111,Maple,Laboratory,Inactive,26,2025-10-09
+FAC-000112,Fictional Facility 112,Cedar,Laboratory,Active,67,2025-12-14
+FAC-000113,Fictional Facility 113,Birch,Care Center,Inactive,68,2026-07-08
+FAC-000114,Fictional Facility 114,Maple,Clinic,Inactive,9,2025-09-29
+FAC-000115,Fictional Facility 115,Alder,Care Center,Active,54,2026-02-01
+FAC-000116,Fictional Facility 116,Birch,Clinic,Active,63,2025-06-23
+FAC-000117,Fictional Facility 117,Birch,Clinic,Active,74,2026-09-20
+FAC-000118,Fictional Facility 118,Maple,Care Center,Inactive,87,2025-11-11
+FAC-000119,Fictional Facility 119,Maple,Care Center,Inactive,27,2026-05-16
+FAC-000120,Fictional Facility 120,Cedar,Laboratory,Active,33,2025-11-08
+FAC-000121,Fictional Facility 121,Cedar,Laboratory,Inactive,90,2026-09-15
+FAC-000122,Fictional Facility 122,Maple,Clinic,Active,97,2026-01-15
+FAC-000123,Fictional Facility 123,Maple,Clinic,Active,52,2025-09-12
+FAC-000124,Fictional Facility 124,Maple,Clinic,Inactive,24,2026-05-30
+FAC-000125,Fictional Facility 125,Cedar,Care Center,Active,51,2025-11-11
+FAC-000126,Fictional Facility 126,Birch,Care Center,Active,75,2026-04-08
+FAC-000127,Fictional Facility 127,Alder,Laboratory,Active,51,2026-07-16
+FAC-000128,Fictional Facility 128,Alder,Laboratory,Active,25,2025-02-05
+FAC-000129,Fictional Facility 129,Alder,Laboratory,Active,85,2025-06-19
+FAC-000130,Fictional Facility 130,Birch,Laboratory,Inactive,12,2024-11-03
+FAC-000131,Fictional Facility 131,Maple,Care Center,Inactive,98,2025-02-25
+FAC-000132,Fictional Facility 132,Cedar,Laboratory,Inactive,19,2025-08-01
+FAC-000133,Fictional Facility 133,Maple,Laboratory,Active,19,2026-06-11
+FAC-000134,Fictional Facility 134,Maple,Laboratory,Inactive,86,2025-07-24
+FAC-000135,Fictional Facility 135,Alder,Laboratory,Active,47,2025-02-14
+FAC-000136,Fictional Facility 136,Cedar,Care Center,Inactive,9,2026-05-10
+FAC-000137,Fictional Facility 137,Maple,Clinic,Active,54,2025-07-04
+FAC-000138,Fictional Facility 138,Birch,Clinic,Inactive,25,2025-01-22
+FAC-000139,Fictional Facility 139,Maple,Laboratory,Inactive,27,2026-01-27
+FAC-000140,Fictional Facility 140,Birch,Care Center,Active,89,2025-04-22
+FAC-000141,Fictional Facility 141,Birch,Care Center,Active,6,2024-12-07
+FAC-000142,Fictional Facility 142,Cedar,Laboratory,Inactive,40,2024-12-26
+FAC-000143,Fictional Facility 143,Alder,Laboratory,Inactive,57,2026-03-10
+FAC-000144,Fictional Facility 144,Alder,Clinic,Inactive,79,2024-10-08
+FAC-000145,Fictional Facility 145,Cedar,Laboratory,Active,23,2024-10-17
+FAC-000146,Fictional Facility 146,Maple,Laboratory,Active,100,2025-03-13
+FAC-000147,Fictional Facility 147,Alder,Clinic,Inactive,57,2025-10-27
+FAC-000148,Fictional Facility 148,Alder,Clinic,Inactive,21,2026-08-08
+FAC-000149,Fictional Facility 149,Birch,Care Center,Inactive,53,2025-07-23
+FAC-000150,Fictional Facility 150,Maple,Clinic,Inactive,74,2024-10-13
