@@ -28,7 +28,7 @@ def test_fixture_upload(client: TestClient, name: str) -> None:
     assert metadata["row_count"] == 150
     assert metadata["column_count"] == 7
     assert metadata["headers"][0] == "facility_id"
-    assert response.json()["persisted"] is False
+    assert response.json()["persisted"] is True
 
 
 def test_text_bom_and_logical_record_numbers(settings: Settings) -> None:

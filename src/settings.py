@@ -9,7 +9,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_prefix="DATAGUARD_", env_file=".env", extra="ignore"
+        env_prefix="DATAGUARD_", env_file=PROJECT_ROOT / "environment" / "back-end.env", extra="ignore"
     )
 
     max_upload_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
@@ -19,4 +19,5 @@ class Settings(BaseSettings):
     actor: str = Field(default="local_operator", min_length=1)
     reference_date: date | None = None
     rules_path: Path = PROJECT_ROOT / "config" / "facilities.yaml"
+    storage_dir: Path = PROJECT_ROOT / "storage"
 

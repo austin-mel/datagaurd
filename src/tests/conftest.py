@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 from datetime import date
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -9,8 +10,8 @@ from src.settings import Settings
 
 
 @pytest.fixture
-def settings() -> Settings:
-    return Settings(_env_file=None, reference_date=date(2026, 10, 7))
+def settings(tmp_path: Path) -> Settings:
+    return Settings(_env_file=None, reference_date=date(2026, 10, 7), storage_dir=tmp_path / "storage")
 
 
 @pytest.fixture

@@ -14,10 +14,11 @@ from src.rules import (
 from src.schemas import CheckResponse, Finding, RecordSample, RuleResult
 from src.services.csv_parser import ParsedCsv, is_missing
 from src.services.profiling import profile_dataset
+from src.services.metrics import quality_metrics
 from src.services.value_parsing import parse_date, parse_number
 from src.settings import Settings
 
-IMPLEMENTATION_VERSION = "facilities-validation/1.0.0"
+IMPLEMENTATION_VERSION = "facilities-validation/1.1.0"
 
 
 def check_dataset(dataset: ParsedCsv, rules: RuleSet, settings: Settings) -> CheckResponse:
@@ -118,6 +119,7 @@ def check_dataset(dataset: ParsedCsv, rules: RuleSet, settings: Settings) -> Che
     configuration_bytes = json.dumps(rules.model_dump(mode="json"), sort_keys=True, separators=(",", ":")).encode()
     return CheckResponse(
         metadata=dataset.metadata, profile=profile_dataset(dataset, rules, settings.top_category_count),
+        metrics=quality_metrics(dataset, rules, findings),
         validation_status="failed" if any(f.severity == "error" for f in findings) else "passed",
         findings=findings, rule_results=outcomes, reference_date=reference_date,
         checked_at=datetime.now(timezone.utc), actor=settings.actor, implementation_version=IMPLEMENTATION_VERSION,
