@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+@config '../../tailwind.config.ts';
+
+@layer base {
+  :root {
+    @apply bg-ivory font-sans text-ink antialiased;
+    color-scheme: light;
+    font-synthesis: none;
+  }
+
+  body {
+    @apply m-0 text-sm leading-normal;
+  }
+
+  a:focus-visible {
+    @apply outline-3 outline-offset-4 outline-cobalt;
+  }
+}
