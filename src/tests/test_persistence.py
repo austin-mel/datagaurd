@@ -10,7 +10,7 @@ from src.main import create_app
 from src.rules import load_rules
 from src.scripts.generate_fixtures import generate
 from src.services.catalog import Catalog
-from src.services.csv_parser import parse_csv
+from src.services.tabular import parse_dataset
 from src.settings import Settings
 
 
@@ -220,7 +220,7 @@ def test_concurrent_versions_use_unique_numbers_and_parent_chain(settings: Setti
     catalog = Catalog(settings, load_rules(settings.rules_path))
     catalog.initialize()
     content = generate()[0]
-    parsed = parse_csv(content, "x.csv", settings)
+    parsed = parse_dataset(content, "x.csv", settings)
     first = catalog.upload(content, parsed)
     try:
         with ThreadPoolExecutor(max_workers=3) as workers:

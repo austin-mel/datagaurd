@@ -14,7 +14,7 @@ from src.rules import load_rules
 from src.schemas import ReviewRequest
 from src.scripts.generate_fixtures import generate
 from src.services.catalog import Catalog
-from src.services.csv_parser import ParsedCsv, parse_csv
+from src.services.tabular import ParsedDataset, parse_dataset
 from src.services.metrics import quality_metrics
 from src.services.validation import check_dataset
 from src.settings import Settings
@@ -29,7 +29,7 @@ def test_metrics_match_hand_calculated_values(settings: Settings) -> None:
         ",,Alder,Clinic,Active,10,2026-10-07\n"
         "FAC-000004,D,Alder,Clinic,Active,20,2026-10-07\n"
     ).encode()
-    result = check_dataset(parse_csv(content, "x.csv", settings), load_rules(settings.rules_path), settings)
+    result = check_dataset(parse_dataset(content, "x.csv", settings), load_rules(settings.rules_path), settings)
     metrics = result.metrics
     assert (metrics.completeness.numerator, metrics.completeness.denominator) == (18, 20)
     assert metrics.completeness.percentage == 90
@@ -42,10 +42,10 @@ def test_metrics_match_hand_calculated_values(settings: Settings) -> None:
 def test_clean_dirty_fixture_metrics(settings: Settings) -> None:
     rules = load_rules(settings.rules_path)
     clean, dirty, _ = generate()
-    clean_metrics = check_dataset(parse_csv(clean, "clean.csv", settings), rules, settings).metrics
+    clean_metrics = check_dataset(parse_dataset(clean, "clean.csv", settings), rules, settings).metrics
     assert clean_metrics.completeness.percentage == clean_metrics.valid_row_rate.percentage == 100
     assert clean_metrics.duplicate_id_rate.percentage == 0
-    dirty_metrics = check_dataset(parse_csv(dirty, "dirty.csv", settings), rules, settings).metrics
+    dirty_metrics = check_dataset(parse_dataset(dirty, "dirty.csv", settings), rules, settings).metrics
     assert (dirty_metrics.completeness.numerator, dirty_metrics.completeness.denominator) == (743, 750)
     assert (dirty_metrics.valid_row_rate.numerator, dirty_metrics.valid_row_rate.denominator) == (130, 150)
     assert (dirty_metrics.duplicate_id_rate.numerator, dirty_metrics.duplicate_id_rate.denominator) == (3, 148)
@@ -53,10 +53,10 @@ def test_clean_dirty_fixture_metrics(settings: Settings) -> None:
 
 def test_unavailable_structure_and_zero_denominators(settings: Settings) -> None:
     rules = load_rules(settings.rules_path)
-    missing = check_dataset(parse_csv(b"facility_id\nFAC-000001\n", "x.csv", settings), rules, settings)
+    missing = check_dataset(parse_dataset(b"facility_id\nFAC-000001\n", "x.csv", settings), rules, settings)
     assert missing.validation_status == "failed"
     assert all(metric["status"] == "not_available" and metric["percentage"] is None for metric in missing.metrics.model_dump().values())
-    empty_values = parse_csv(
+    empty_values = parse_dataset(
         b"facility_id,facility_name,county,facility_type,status,inspection_score,inspection_date\n,,,,,,\n",
         "x.csv", settings,
     )
@@ -64,7 +64,7 @@ def test_unavailable_structure_and_zero_denominators(settings: Settings) -> None
     assert metrics.completeness.percentage == metrics.valid_row_rate.percentage == 0
     assert metrics.duplicate_id_rate.status == "not_available"
     assert metrics.duplicate_id_rate.denominator == 0
-    empty_dataset = ParsedCsv(metadata=empty_values.metadata.model_copy(update={"row_count": 0}), records=())
+    empty_dataset = ParsedDataset(metadata=empty_values.metadata.model_copy(update={"row_count": 0}), records=())
     metrics = quality_metrics(empty_dataset, rules, [])
     assert all(metric["denominator"] == 0 and metric["status"] == "not_available" for metric in metrics.model_dump().values())
 
@@ -146,7 +146,7 @@ def test_concurrent_reviews_do_not_lose_history(settings: Settings) -> None:
     catalog.initialize()
     try:
         content = generate()[1]
-        saved = catalog.upload(content, parse_csv(content, "x.csv", settings))
+        saved = catalog.upload(content, parse_dataset(content, "x.csv", settings))
         finding_id = catalog.findings(saved.check_run.id, 20, 0).items[0].id
         with ThreadPoolExecutor(max_workers=3) as workers:
             reviews = list(workers.map(lambda _: catalog.add_review(finding_id, ReviewRequest(decision="needs_correction")), range(3)))
@@ -162,7 +162,7 @@ def test_old_and_failed_runs_have_unavailable_metrics(settings: Settings) -> Non
     catalog.initialize()
     try:
         content = generate()[0]
-        saved = catalog.upload(content, parse_csv(content, "x.csv", settings))
+        saved = catalog.upload(content, parse_dataset(content, "x.csv", settings))
         with catalog.database.write() as session:
             run = session.scalar(select(CheckRun).where(CheckRun.id == saved.check_run.id))
             assert run and run.result_json

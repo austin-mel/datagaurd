@@ -4,11 +4,11 @@ import pandas as pd
 
 from src.rules import DateRule, RuleSet
 from src.schemas import CategoryCount, ColumnProfile, DatasetProfile
-from src.services.csv_parser import ParsedCsv, is_missing
+from src.services.tabular import ParsedDataset, is_missing
 from src.services.value_parsing import parse_date, parse_number
 
 
-def profile_dataset(dataset: ParsedCsv, rules: RuleSet, top_count: int = 5) -> DatasetProfile:
+def profile_dataset(dataset: ParsedDataset, rules: RuleSet, top_count: int = 5) -> DatasetProfile:
     profiles: list[ColumnProfile] = []
     date_formats = {rule.column: rule.formats for rule in rules.rules if isinstance(rule, DateRule)}
     for column in dataset.metadata.headers:

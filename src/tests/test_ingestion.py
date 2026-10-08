@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.errors import InputError
-from src.services.csv_parser import parse_csv
+from src.services.tabular import parse_dataset
 from src.settings import PROJECT_ROOT, Settings
 from src.scripts.generate_fixtures import generate
 
@@ -32,10 +32,10 @@ def test_fixture_upload(client: TestClient, name: str) -> None:
 
 
 def test_text_bom_and_logical_record_numbers(settings: Settings) -> None:
-    parsed = parse_csv(b'\xef\xbb\xbfid,name\r\n001,"line one\nline two"\r\n002,"a,b"\r\n', "demo.csv", settings)
+    parsed = parse_dataset(b'\xef\xbb\xbfid,name\r\n001,"line one\nline two"\r\n002,"a,b"\r\n', "demo.csv", settings)
     assert parsed.records == (("001", "line one\nline two"), ("002", "a,b"))
     assert parsed.metadata.row_count == 2
-    assert parse_csv(b'id\n"a""b"\n', "x.csv", settings).records == (('a"b',),)
+    assert parse_dataset(b'id\n"a""b"\n', "x.csv", settings).records == (('a"b',),)
 
 
 @pytest.mark.parametrize(("content", "code"), [
@@ -49,20 +49,20 @@ def test_text_bom_and_logical_record_numbers(settings: Settings) -> None:
 ])
 def test_bad_csv(content: bytes, code: str, settings: Settings) -> None:
     with pytest.raises(InputError) as caught:
-        parse_csv(content, "bad.csv", settings)
+        parse_dataset(content, "bad.csv", settings)
     assert caught.value.code == code
 
 
 def test_byte_and_row_boundaries(settings: Settings) -> None:
     data = b"a\n1\n2\n"
     exact = settings.model_copy(update={"max_upload_bytes": len(data), "max_rows": 2})
-    assert parse_csv(data, "x.csv", exact).metadata.row_count == 2
+    assert parse_dataset(data, "x.csv", exact).metadata.row_count == 2
     for changed, code in [({"max_upload_bytes": len(data) - 1}, "upload_too_large"), ({"max_rows": 1}, "too_many_rows")]:
         with pytest.raises(InputError) as caught:
-            parse_csv(data, "x.csv", exact.model_copy(update=changed))
+            parse_dataset(data, "x.csv", exact.model_copy(update=changed))
         assert caught.value.code == code
         assert caught.value.status_code == 413
-    assert parse_csv(b"a\n" + b"x" * 140_000, "x.csv", settings).metadata.row_count == 1
+    assert parse_dataset(b"a\n" + b"x" * 140_000, "x.csv", settings).metadata.row_count == 1
 
 
 @pytest.mark.parametrize(("name", "media"), [("x.txt", "text/csv"), ("x.csv", "application/json")])

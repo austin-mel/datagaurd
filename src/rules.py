@@ -99,15 +99,29 @@ Rule = Annotated[
 ]
 
 
+class StatisticalSettings(ConfigModel):
+    statistical_min_samples: int = Field(default=20, ge=1)
+    iqr_multiplier: float = Field(default=1.5, ge=0)
+    missingness_increase_percentage_points: float = Field(default=5, ge=0, le=100)
+    row_count_change_percentage: float = Field(default=20, ge=0)
+    category_share_change_percentage_points: float = Field(default=10, ge=0, le=100)
+
+
 class RuleSet(ConfigModel):
     schema_version: Literal[1]
     name: str = Field(min_length=1)
     structural_rule_id: str = Field(pattern=r"^[A-Z][A-Z0-9_]+$")
     required_columns: list[str] = Field(min_length=1)
     rules: list[Rule] = Field(min_length=1)
+    identifier_column: str | None = None
+    statistics: StatisticalSettings | None = None
 
     @model_validator(mode="after")
     def coherent_rules(self) -> Self:
+        if not self.name.strip():
+            raise ValueError("name must be nonblank")
+        if self.identifier_column is not None and self.identifier_column not in self.required_columns:
+            raise ValueError("identifier_column must be declared in required_columns")
         if len(set(self.required_columns)) != len(self.required_columns) or any(
             not column.strip() for column in self.required_columns
         ):

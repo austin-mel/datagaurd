@@ -16,7 +16,7 @@ from src.schemas import (
     AffectedRecord, AuditView, CheckResponse, DatasetMetadata, DatasetView, Finding,
     Page, QualityMetrics, ReviewRequest, ReviewView, RunView, StoredFinding, UploadResponse, VersionView,
 )
-from src.services.csv_parser import ParsedCsv, parse_csv
+from src.services.tabular import ParsedDataset, parse_dataset
 from src.services.storage import FileStorage
 from src.services.validation import IMPLEMENTATION_VERSION, check_dataset
 from src.settings import Settings
@@ -78,7 +78,7 @@ class Catalog:
                                actor=self.settings.actor, created_at=now()))
 
     def save_version(self, session: Session, dataset_id: str, content: bytes,
-                     parsed: ParsedCsv, parent: DatasetVersion | None) -> DatasetVersion:
+                     parsed: ParsedDataset, parent: DatasetVersion | None) -> DatasetVersion:
         version = DatasetVersion(
             id=str(uuid4()), dataset_id=dataset_id, number=parent.number + 1 if parent else 1,
             parent_id=parent.id if parent else None, file_id=f"{uuid4().hex}.csv",
@@ -90,7 +90,7 @@ class Catalog:
         session.flush()
         return version
 
-    def upload(self, content: bytes, parsed: ParsedCsv, dataset_id: str | None = None) -> UploadResponse:
+    def upload(self, content: bytes, parsed: ParsedDataset, dataset_id: str | None = None) -> UploadResponse:
         try:
             with self.database.write() as session:
                 if dataset_id is None:
@@ -119,9 +119,9 @@ class Catalog:
                              503, {"dataset_id": dataset.id, "version_id": version.id}) from exc
         return UploadResponse(metadata=parsed.metadata, dataset=dataset_response, version=version_response, check_run=run)
 
-    def parsed_version(self, version: DatasetVersion, settings: Settings | None = None) -> ParsedCsv:
+    def parsed_version(self, version: DatasetVersion, settings: Settings | None = None) -> ParsedDataset:
         content = self.files.read(version.file_id, version.content_sha256)
-        return parse_csv(content, version.original_filename, settings or self.settings)
+        return parse_dataset(content, version.original_filename, settings or self.settings)
 
     def start_check(self, session: Session, version: DatasetVersion) -> CheckRun:
         reference_date = self.settings.reference_date or date.today()

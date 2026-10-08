@@ -1,13 +1,13 @@
 from fastapi.testclient import TestClient
 
 from src.rules import load_rules
-from src.services.csv_parser import parse_csv
+from src.services.tabular import parse_dataset
 from src.services.profiling import profile_dataset
 from src.settings import Settings
 
 
 def test_profile_counts_and_nonfinite_values(settings: Settings) -> None:
-    dataset = parse_csv(b'id,value,empty\n001,1,\n002,2.5, \n001,NaN,\n003, ,\n004,1,\n', "x.csv", settings)
+    dataset = parse_dataset(b'id,value,empty\n001,1,\n002,2.5, \n001,NaN,\n003, ,\n004,1,\n', "x.csv", settings)
     result = profile_dataset(dataset, load_rules(settings.rules_path), top_count=2)
     identifier, numeric, empty = result.columns
     assert identifier.distinct_count == 4

@@ -14,7 +14,7 @@ from src.schemas import (
     RejectionRequest, RemediationComparison, RemediationPreview, RemediationRequest, RemediationView,
 )
 from src.services.catalog import Catalog, now, page_of, require, version_view
-from src.services.csv_parser import ParsedCsv, parse_csv
+from src.services.tabular import ParsedDataset, parse_dataset
 
 logger = logging.getLogger("dataguard")
 TRANSITIONS = {
@@ -63,7 +63,7 @@ class Remediations:
     def __init__(self, catalog: Catalog) -> None:
         self.catalog = catalog
 
-    def _source(self, session: Session, request: RemediationRequest) -> tuple[DatasetVersion, ParsedCsv]:
+    def _source(self, session: Session, request: RemediationRequest) -> tuple[DatasetVersion, ParsedDataset]:
         version = require(session, DatasetVersion, request.source_version_id)
         latest = session.scalar(select(DatasetVersion.id).where(DatasetVersion.dataset_id == version.dataset_id)
                                 .order_by(DatasetVersion.number.desc()).limit(1))
@@ -160,7 +160,7 @@ class Remediations:
             self._transition(session, row, "rejected")
         return remediation_view(row)
 
-    def _replace(self, parsed: ParsedCsv, request: RemediationRequest) -> tuple[bytes, ParsedCsv]:
+    def _replace(self, parsed: ParsedDataset, request: RemediationRequest) -> tuple[bytes, ParsedDataset]:
         selected = {record.record_number for record in request.records}
         column = parsed.metadata.headers.index(request.column)
         buffer = io.StringIO(newline="")
@@ -174,7 +174,7 @@ class Remediations:
             if buffer.tell() > self.catalog.settings.max_upload_bytes:
                 raise InputError("upload_too_large", "The corrected CSV exceeds the configured size limit.", 413)
         content = buffer.getvalue().encode("utf-8")
-        return content, parse_csv(content, parsed.metadata.original_filename, self.catalog.settings)
+        return content, parse_dataset(content, parsed.metadata.original_filename, self.catalog.settings)
 
     def _record_failure(self, remediation_id: str, error: Exception) -> bool:
         with self.catalog.database.write() as session:

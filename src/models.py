@@ -12,6 +12,21 @@ class Dataset(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     name: Mapped[str] = mapped_column(Text)
     created_at: Mapped[str] = mapped_column(String)
+    rule_set_id: Mapped[str | None] = mapped_column(ForeignKey("rule_sets.id"), index=True)
+
+
+class RuleSetRecord(Base):
+    __tablename__ = "rule_sets"
+    __table_args__ = (UniqueConstraint("name", "revision"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    name: Mapped[str] = mapped_column(Text)
+    revision: Mapped[int] = mapped_column(Integer)
+    parent_id: Mapped[str | None] = mapped_column(ForeignKey("rule_sets.id"))
+    configuration_json: Mapped[str] = mapped_column(Text)
+    configuration_sha256: Mapped[str] = mapped_column(String(64))
+    actor: Mapped[str] = mapped_column(String)
+    created_at: Mapped[str] = mapped_column(String)
 
 
 class DatasetVersion(Base):
@@ -45,6 +60,7 @@ class CheckRun(Base):
     actor: Mapped[str] = mapped_column(String)
     created_at: Mapped[str] = mapped_column(String)
     completed_at: Mapped[str | None] = mapped_column(String)
+    rule_set_id: Mapped[str | None] = mapped_column(ForeignKey("rule_sets.id"), index=True)
 
 
 class FindingRecord(Base):

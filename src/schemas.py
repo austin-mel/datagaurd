@@ -24,11 +24,16 @@ class ErrorResponse(ApiModel):
     error: ErrorDetail
 
 
+DataFormat = Literal["csv", "tsv", "xlsx", "parquet"]
+
+
 class DatasetMetadata(ApiModel):
     original_filename: str = Field(examples=["facilities_clean.csv"])
     content_sha256: str
     size_bytes: int
-    encoding: str = "utf-8"
+    encoding: str | None = "utf-8"
+    format: DataFormat = "csv"
+    sheet_name: str | None = None
     row_count: int
     column_count: int
     headers: list[str]
@@ -38,6 +43,7 @@ class DatasetMetadata(ApiModel):
 class CategoryCount(ApiModel):
     value: str
     count: int
+    percentage: float | None = None
 
 
 class ColumnProfile(ApiModel):
@@ -50,6 +56,16 @@ class ColumnProfile(ApiModel):
     numeric_min: float | None
     numeric_max: float | None
     top_categories: list[CategoryCount]
+    missing_percentage: float | None = None
+    numeric_mean: float | None = None
+    numeric_median: float | None = None
+    numeric_stddev: float | None = None
+    numeric_q1: float | None = None
+    numeric_q3: float | None = None
+    date_count: int = 0
+    date_min: date | None = None
+    date_max: date | None = None
+    category_frequencies: list[CategoryCount] = Field(default_factory=list)
 
 
 class DatasetProfile(ApiModel):
@@ -71,7 +87,8 @@ class RecordSample(ApiModel):
 class Finding(ApiModel):
     rule_id: str
     column: str | None
-    category: Literal["validation"] = "validation"
+    category: Literal["validation", "schema", "statistical"] = "validation"
+    baseline_id: str | None = None
     severity: Literal["error", "warning"]
     explanation: str
     observed_result: dict[str, JsonValue]
@@ -104,6 +121,17 @@ class QualityMetrics(ApiModel):
     duplicate_id_rate: Metric = Field(default_factory=Metric)
 
 
+class AnalysisResult(ApiModel):
+    check_id: str
+    column: str | None
+    category: Literal["schema", "statistical"]
+    status: Literal["passed", "review_required", "not_evaluated"]
+    reason: str | None = None
+    observed_result: dict[str, JsonValue]
+    threshold: dict[str, JsonValue]
+    baseline_id: str | None = None
+
+
 class CheckResponse(ProfileResponse):
     processing_status: Literal["completed"] = "completed"
     validation_status: Literal["passed", "failed"]
@@ -118,6 +146,7 @@ class CheckResponse(ProfileResponse):
     settings_snapshot: dict[str, JsonValue]
     baseline_id: str | None = None
     metrics: QualityMetrics = Field(default_factory=QualityMetrics)
+    analysis_results: list[AnalysisResult] = Field(default_factory=list)
 
 
 Item = TypeVar("Item")
@@ -134,6 +163,23 @@ class DatasetView(ApiModel):
     id: str
     name: str
     created_at: datetime
+    rule_set_id: str
+
+
+class RuleSetView(ApiModel):
+    id: str
+    name: str
+    revision: int
+    parent_id: str | None
+    configuration: RuleSet
+    configuration_sha256: str
+    actor: str
+    created_at: datetime
+    is_default: bool
+
+
+class RuleAssignment(ApiModel):
+    rule_set_id: str
 
 
 class VersionView(ApiModel):
@@ -166,6 +212,7 @@ class RunView(ApiModel):
     completed_at: datetime | None
     error_code: str | None
     result: CheckResponse | None
+    rule_set_id: str | None = None
 
 
 class UploadResponse(ApiModel):

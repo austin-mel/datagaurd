@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from src.rules import RuleSet, load_rules
 from src.scripts.generate_fixtures import generate
-from src.services.csv_parser import parse_csv
+from src.services.tabular import parse_dataset
 from src.services.validation import check_dataset
 from src.settings import PROJECT_ROOT, Settings
 
@@ -18,7 +18,7 @@ def rules(settings: Settings) -> RuleSet:
 
 def test_full_manifest_exact_match(settings: Settings, rules: RuleSet) -> None:
     clean, dirty, manifest_bytes = generate()
-    result = check_dataset(parse_csv(dirty, "dirty.csv", settings), rules, settings)
+    result = check_dataset(parse_dataset(dirty, "dirty.csv", settings), rules, settings)
     manifest = json.loads(manifest_bytes)
     expected = {(entry["rule_id"], entry["record_number"]) for entry in manifest["errors"]}
     actual = {(finding.rule_id, number) for finding in result.findings for number in finding.affected_record_numbers}
@@ -27,7 +27,7 @@ def test_full_manifest_exact_match(settings: Settings, rules: RuleSet) -> None:
     assert len(result.findings) == 12
     assert result.validation_status == "failed"
     assert result.reference_date.isoformat() == manifest["reference_date"]
-    clean_result = check_dataset(parse_csv(clean, "clean.csv", settings), rules, settings)
+    clean_result = check_dataset(parse_dataset(clean, "clean.csv", settings), rules, settings)
     assert clean_result.validation_status == "passed"
     assert not clean_result.findings
     assert all(outcome.status == "passed" for outcome in clean_result.rule_results)
@@ -35,7 +35,7 @@ def test_full_manifest_exact_match(settings: Settings, rules: RuleSet) -> None:
 
 def test_full_membership_and_prerequisites(settings: Settings, rules: RuleSet) -> None:
     settings = settings.model_copy(update={"finding_sample_size": 1})
-    result = check_dataset(parse_csv(generate()[1], "dirty.csv", settings), rules, settings)
+    result = check_dataset(parse_dataset(generate()[1], "dirty.csv", settings), rules, settings)
     duplicate = next(f for f in result.findings if f.rule_id == "FAC_ID_UNIQUE")
     assert duplicate.affected_record_numbers == [3, 4, 20]
     assert duplicate.affected_count == 3
@@ -49,7 +49,7 @@ def test_full_membership_and_prerequisites(settings: Settings, rules: RuleSet) -
 
 
 def test_structure_failure_and_skips(settings: Settings, rules: RuleSet) -> None:
-    result = check_dataset(parse_csv(b"facility_name\nExample\n", "x.csv", settings), rules, settings)
+    result = check_dataset(parse_dataset(b"facility_name\nExample\n", "x.csv", settings), rules, settings)
     assert result.validation_status == "failed"
     assert len(result.findings) == 1
     finding = result.findings[0]
@@ -73,7 +73,7 @@ def test_individual_rules(kind: str, options: dict[str, object], values: list[st
         "rules": [{"id": "RULE", "kind": kind, "column": "x", "explanation": "Fixed explanation.", **options}],
     })
     content = ('x\n' + '\n'.join('"' + value + '"' for value in values)).encode()
-    result = check_dataset(parse_csv(content, "x.csv", settings), config, settings)
+    result = check_dataset(parse_dataset(content, "x.csv", settings), config, settings)
     assert result.findings[0].affected_record_numbers == expected
 
 
@@ -84,15 +84,15 @@ def test_numeric_and_date_boundaries(settings: Settings, rules: RuleSet) -> None
         "FAC-000002,B,Birch,Clinic,Active,100,2026-10-08\n"
         "FAC-000003,C,Cedar,Clinic,Active,100.01,2024-02-29\n"
     ).encode()
-    result = check_dataset(parse_csv(content, "x.csv", settings), rules, settings)
+    result = check_dataset(parse_dataset(content, "x.csv", settings), rules, settings)
     assert {(f.rule_id, tuple(f.affected_record_numbers)) for f in result.findings} == {
         ("FAC_DATE_NOT_FUTURE", (2,)), ("FAC_SCORE_RANGE", (3,))}
     later = settings.model_copy(update={"reference_date": date(2026, 10, 8)})
-    assert len(check_dataset(parse_csv(content, "x.csv", later), rules, later).findings) == 1
+    assert len(check_dataset(parse_dataset(content, "x.csv", later), rules, later).findings) == 1
 
 
 def test_today_resolution_and_config_snapshot(settings: Settings, rules: RuleSet) -> None:
-    result = check_dataset(parse_csv(generate()[0], "x.csv", settings), rules,
+    result = check_dataset(parse_dataset(generate()[0], "x.csv", settings), rules,
                            settings.model_copy(update={"reference_date": None}))
     assert result.reference_date == date.today()
     assert result.baseline_id is None

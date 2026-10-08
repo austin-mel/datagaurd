@@ -5,7 +5,7 @@ from pydantic import ValidationError
 
 from src.main import create_app
 from src.rules import ConfigurationError, RuleSet, load_rules
-from src.services.csv_parser import parse_csv
+from src.services.tabular import parse_dataset
 from src.services.validation import check_dataset
 from src.settings import Settings
 
@@ -27,7 +27,7 @@ def test_python_to_yaml_regression(tmp_path: Path, settings: Settings) -> None:
         "  - {id: RANGE, kind: range, column: score, explanation: Must be in range., prerequisite: NUMERIC, minimum: 0, maximum: 100}\n",
         encoding="utf-8",
     )
-    dataset = parse_csv(b"score\n100\n101\ninvalid\n", "x.csv", settings)
+    dataset = parse_dataset(b"score\n100\n101\ninvalid\n", "x.csv", settings)
     python_result = check_dataset(dataset, RuleSet.model_validate(definition), settings)
     yaml_result = check_dataset(dataset, load_rules(config_path), settings)
     assert python_result.model_dump(exclude={"checked_at"}) == yaml_result.model_dump(exclude={"checked_at"})

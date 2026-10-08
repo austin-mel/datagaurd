@@ -2,7 +2,7 @@ from collections import Counter
 
 from src.rules import RequiredRule, RuleSet
 from src.schemas import Finding, Metric, QualityMetrics
-from src.services.csv_parser import ParsedCsv, is_missing
+from src.services.tabular import ParsedDataset, is_missing
 
 
 def percentage(numerator: int, denominator: int) -> Metric:
@@ -12,7 +12,7 @@ def percentage(numerator: int, denominator: int) -> Metric:
                   percentage=100 * numerator / denominator, reason=None)
 
 
-def quality_metrics(dataset: ParsedCsv, rules: RuleSet, findings: list[Finding]) -> QualityMetrics:
+def quality_metrics(dataset: ParsedDataset, rules: RuleSet, findings: list[Finding]) -> QualityMetrics:
     if any(column not in dataset.metadata.headers for column in rules.required_columns):
         unavailable = Metric(reason="Required dataset structure is unavailable.")
         return QualityMetrics(completeness=unavailable, valid_row_rate=unavailable, duplicate_id_rate=unavailable)

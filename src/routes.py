@@ -4,17 +4,17 @@ from fastapi import APIRouter, File, UploadFile
 
 from src.rules import RuleSet
 from src.schemas import CheckResponse, ErrorResponse, ProfileResponse, UploadResponse
-from src.services.csv_parser import ParsedCsv, parse_csv, validate_file_type
+from src.services.tabular import ParsedDataset, parse_dataset, validate_file_type
 from src.services.profiling import profile_dataset
 from src.services.validation import check_dataset
 from src.services.catalog import Catalog
 from src.settings import Settings
 
 
-def read_upload(file: UploadFile, settings: Settings) -> tuple[bytes, ParsedCsv]:
+def read_upload(file: UploadFile, settings: Settings) -> tuple[bytes, ParsedDataset]:
     validate_file_type(file.filename, file.content_type)
     content = file.file.read(settings.max_upload_bytes + 1)
-    return content, parse_csv(content, file.filename, settings, file.content_type)
+    return content, parse_dataset(content, file.filename, settings, file.content_type)
 
 
 def dataset_router(settings: Settings, rules: RuleSet, catalog: Catalog) -> APIRouter:

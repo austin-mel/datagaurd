@@ -12,7 +12,7 @@ from src.rules import (
     RequiredRule, RuleSet, UniqueRule,
 )
 from src.schemas import CheckResponse, Finding, RecordSample, RuleResult
-from src.services.csv_parser import ParsedCsv, is_missing
+from src.services.tabular import ParsedDataset, is_missing
 from src.services.profiling import profile_dataset
 from src.services.metrics import quality_metrics
 from src.services.value_parsing import parse_date, parse_number
@@ -21,7 +21,7 @@ from src.settings import Settings
 IMPLEMENTATION_VERSION = "facilities-validation/1.1.0"
 
 
-def check_dataset(dataset: ParsedCsv, rules: RuleSet, settings: Settings) -> CheckResponse:
+def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings) -> CheckResponse:
     reference_date = settings.reference_date or date.today()
     findings: list[Finding] = []
     outcomes: list[RuleResult] = []
