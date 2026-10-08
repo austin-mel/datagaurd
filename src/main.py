@@ -9,6 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from src.errors import InputError
 from src.routes import dataset_router
 from src.persistence_routes import persistence_router
+from src.remediation_routes import remediation_router
 from src.rules import load_rules
 from src.schemas import ErrorDetail, ErrorResponse, HealthResponse
 from src.settings import Settings
@@ -30,17 +31,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     application = FastAPI(
         title="DataGuard",
-        version="0.2.0",
+        version="0.3.0",
         lifespan=lifespan,
         description="Local CSV data-quality demo. Demo actor: local_operator.",
         openapi_tags=[{"name": "Health", "description": "Process health."},
                       {"name": "Datasets", "description": "CSV upload and analysis."},
                       {"name": "History", "description": "Saved versions, findings and audit history."},
-                      {"name": "Review", "description": "Append-only human decisions; evidence and metrics stay unchanged."}],
+                      {"name": "Review", "description": "Append-only human decisions; evidence and metrics stay unchanged."},
+                      {"name": "Corrections", "description": "Preview, approve, execute and compare exact replacements."}],
     )
     application.state.catalog = catalog
     application.include_router(dataset_router(settings, rules, catalog))
     application.include_router(persistence_router(catalog))
+    application.include_router(remediation_router(catalog))
 
     @application.exception_handler(SQLAlchemyError)
     async def database_error_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:

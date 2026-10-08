@@ -77,6 +77,19 @@ class Catalog:
         session.add(AuditEvent(dataset_id=dataset_id, action=action, entity_id=entity_id,
                                actor=self.settings.actor, created_at=now()))
 
+    def save_version(self, session: Session, dataset_id: str, content: bytes,
+                     parsed: ParsedCsv, parent: DatasetVersion | None) -> DatasetVersion:
+        version = DatasetVersion(
+            id=str(uuid4()), dataset_id=dataset_id, number=parent.number + 1 if parent else 1,
+            parent_id=parent.id if parent else None, file_id=f"{uuid4().hex}.csv",
+            content_sha256=parsed.metadata.content_sha256, original_filename=parsed.metadata.original_filename,
+            metadata_json=parsed.metadata.model_dump_json(), created_at=now(),
+        )
+        self.files.publish(version.file_id, content)
+        session.add(version)
+        session.flush()
+        return version
+
     def upload(self, content: bytes, parsed: ParsedCsv, dataset_id: str | None = None) -> UploadResponse:
         try:
             with self.database.write() as session:
@@ -89,14 +102,7 @@ class Catalog:
                     dataset = require(session, Dataset, dataset_id)
                 previous = session.scalar(select(DatasetVersion).where(
                     DatasetVersion.dataset_id == dataset.id).order_by(DatasetVersion.number.desc()).limit(1))
-                version = DatasetVersion(
-                    id=str(uuid4()), dataset_id=dataset.id, number=previous.number + 1 if previous else 1,
-                    parent_id=previous.id if previous else None, file_id=f"{uuid4().hex}.csv",
-                    content_sha256=parsed.metadata.content_sha256, original_filename=parsed.metadata.original_filename,
-                    metadata_json=parsed.metadata.model_dump_json(), created_at=now(),
-                )
-                self.files.publish(version.file_id, content)
-                session.add(version)
+                version = self.save_version(session, dataset.id, content, parsed, previous)
                 self.audit(session, dataset.id, "version_uploaded", version.id)
             dataset_response = DatasetView.model_validate(dataset, from_attributes=True)
             version_response = version_view(version)
@@ -113,43 +119,62 @@ class Catalog:
                              503, {"dataset_id": dataset.id, "version_id": version.id}) from exc
         return UploadResponse(metadata=parsed.metadata, dataset=dataset_response, version=version_response, check_run=run)
 
-    def parsed_version(self, version: DatasetVersion) -> ParsedCsv:
+    def parsed_version(self, version: DatasetVersion, settings: Settings | None = None) -> ParsedCsv:
         content = self.files.read(version.file_id, version.content_sha256)
-        return parse_csv(content, version.original_filename, self.settings)
+        return parse_csv(content, version.original_filename, settings or self.settings)
+
+    def start_check(self, session: Session, version: DatasetVersion) -> CheckRun:
+        reference_date = self.settings.reference_date or date.today()
+        run_settings = self.settings.model_copy(update={"reference_date": reference_date})
+        run = CheckRun(
+            id=str(uuid4()), version_id=version.id, processing_status="running",
+            configuration_json=self.rules.model_dump_json(), reference_date=reference_date.isoformat(),
+            settings_json=run_settings.model_dump_json(exclude={"rules_path", "storage_dir", "reference_date", "actor"}),
+            implementation_version=IMPLEMENTATION_VERSION, actor=self.settings.actor,
+            created_at=now(), baseline_id=None,
+        )
+        session.add(run)
+        session.flush()
+        self.audit(session, version.dataset_id, "check_started", run.id)
+        return run
 
     def check(self, version_id: str) -> RunView:
-        reference_date = self.settings.reference_date or date.today()
-        rules = self.rules.model_copy(deep=True)
-        run_settings = self.settings.model_copy(update={"reference_date": reference_date})
         with self.database.write() as session:
             version = require(session, DatasetVersion, version_id)
-            run = CheckRun(
-                id=str(uuid4()), version_id=version.id, processing_status="running",
-                configuration_json=rules.model_dump_json(), reference_date=reference_date.isoformat(),
-                settings_json=run_settings.model_dump_json(exclude={"rules_path", "storage_dir", "reference_date", "actor"}),
-                implementation_version=IMPLEMENTATION_VERSION, actor=self.settings.actor,
-                created_at=now(), baseline_id=None,
-            )
-            session.add(run)
-            self.audit(session, version.dataset_id, "check_started", run.id)
+            run = self.start_check(session, version)
+        return self.process_check(run.id)
+
+    def process_check(self, run_id: str) -> RunView:
+        with self.database.read() as session:
+            run = require(session, CheckRun, run_id)
+            if run.processing_status != "running":
+                return self._run_view(session, run)
+            version = require(session, DatasetVersion, run.version_id)
         try:
-            result = check_dataset(self.parsed_version(version), rules, run_settings)
+            if run.implementation_version != IMPLEMENTATION_VERSION:
+                raise InputError("implementation_changed", "Create a new check using the current implementation.", 409)
+            rules = RuleSet.model_validate_json(run.configuration_json)
+            run_settings = self.settings.model_copy(update={
+                **json.loads(run.settings_json), "reference_date": date.fromisoformat(run.reference_date), "actor": run.actor,
+            })
+            result = check_dataset(self.parsed_version(version, run_settings), rules, run_settings)
             with self.database.write() as session:
                 stored = require(session, CheckRun, run.id)
-                stored.result_json = result.model_dump_json(exclude={"findings"})
-                stored.processing_status = "completed"
-                stored.completed_at = now()
-                for position, finding in enumerate(result.findings):
-                    session.add(FindingRecord(id=str(uuid4()), check_run_id=run.id, position=position,
-                                              payload_json=finding.model_dump_json()))
-                self.audit(session, version.dataset_id, "check_completed", run.id)
+                if stored.processing_status == "running":
+                    stored.result_json = result.model_dump_json(exclude={"findings"})
+                    stored.processing_status = "completed"
+                    stored.completed_at = now()
+                    for position, finding in enumerate(result.findings):
+                        session.add(FindingRecord(id=str(uuid4()), check_run_id=run.id, position=position,
+                                                  payload_json=finding.model_dump_json()))
+                    self.audit(session, version.dataset_id, "check_completed", run.id)
         except Exception as exc:
             code = exc.code if isinstance(exc, InputError) else "processing_failed"
             logger.warning("Check processing failed (%s)", type(exc).__name__)
             with self.database.write() as session:
                 stored = require(session, CheckRun, run.id)
                 # A commit whose acknowledgement failed may already be durable.
-                if stored.processing_status != "completed":
+                if stored.processing_status == "running":
                     stored.processing_status = "failed"
                     stored.error_code = code
                     stored.completed_at = now()

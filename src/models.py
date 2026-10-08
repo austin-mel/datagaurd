@@ -83,3 +83,32 @@ class ReviewDecision(Base):
     actor: Mapped[str] = mapped_column(String)
     created_at: Mapped[str] = mapped_column(String)
 
+
+class Remediation(Base):
+    __tablename__ = "remediations"
+    __table_args__ = (
+        CheckConstraint("status IN ('proposed', 'approved', 'rejected', 'executing', 'executed', 'failed')",
+                        name="valid_remediation_status"),
+        CheckConstraint("status != 'executed' OR (result_version_id IS NOT NULL AND check_run_id IS NOT NULL)",
+                        name="executed_remediation_result"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    dataset_id: Mapped[str] = mapped_column(ForeignKey("datasets.id"), index=True)
+    source_version_id: Mapped[str] = mapped_column(ForeignKey("dataset_versions.id"))
+    source_sha256: Mapped[str] = mapped_column(String(64))
+    payload_json: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String)
+    actor: Mapped[str] = mapped_column(String)
+    created_at: Mapped[str] = mapped_column(String)
+    preview_token: Mapped[str | None] = mapped_column(String(32))
+    previewed_at: Mapped[str | None] = mapped_column(String)
+    decision_actor: Mapped[str | None] = mapped_column(String)
+    decided_at: Mapped[str | None] = mapped_column(String)
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
+    source_check_run_id: Mapped[str | None] = mapped_column(ForeignKey("check_runs.id"))
+    result_version_id: Mapped[str | None] = mapped_column(ForeignKey("dataset_versions.id"), unique=True)
+    check_run_id: Mapped[str | None] = mapped_column(ForeignKey("check_runs.id"))
+    executed_at: Mapped[str | None] = mapped_column(String)
+    error_code: Mapped[str | None] = mapped_column(String)
+

@@ -218,4 +218,119 @@ class ReviewView(ApiModel):
     created_at: datetime
 
 
+class ReplacementRecord(ApiModel):
+    record_number: int = Field(ge=1, examples=[8])
+    expected_value: str = Field(examples=["101"])
+
+
+class RemediationRequest(ApiModel):
+    action: Literal["replace_value"] = "replace_value"
+    source_version_id: str
+    source_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    column: str = Field(min_length=1, examples=["inspection_score"])
+    records: list[ReplacementRecord] = Field(min_length=1)
+    replacement: str = Field(examples=["100"])
+    reason: str = Field(min_length=1, max_length=2000, examples=["Corrected from the fictional source record."])
+
+    @field_validator("reason")
+    @classmethod
+    def nonblank_reason(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("A nonblank reason is required.")
+        return value.strip()
+
+    @field_validator("replacement")
+    @classmethod
+    def no_null_character(cls, value: str) -> str:
+        if "\x00" in value:
+            raise ValueError("Replacement values cannot contain a null character.")
+        return value
+
+    @model_validator(mode="after")
+    def unique_records(self) -> Self:
+        if len({record.record_number for record in self.records}) != len(self.records):
+            raise ValueError("Select each record only once.")
+        return self
+
+
+RemediationStatus = Literal["proposed", "approved", "rejected", "executing", "executed", "failed"]
+
+
+class RemediationView(ApiModel):
+    id: str
+    dataset_id: str
+    source_version_id: str
+    source_sha256: str
+    action: Literal["replace_value"] = "replace_value"
+    column: str
+    replacement: str
+    reason: str
+    selected_count: int
+    changed_count: int
+    status: RemediationStatus
+    actor: str
+    created_at: datetime
+    previewed_at: datetime | None
+    decision_actor: str | None
+    decided_at: datetime | None
+    rejection_reason: str | None
+    source_check_run_id: str | None
+    result_version_id: str | None
+    check_run_id: str | None
+    executed_at: datetime | None
+    error_code: str | None
+
+
+class RecordChange(ApiModel):
+    record_number: int
+    old_value: str
+    new_value: str
+    changed: bool
+
+
+class RemediationPreview(ApiModel):
+    remediation: RemediationView
+    preview_token: str
+    samples: list[RecordChange]
+
+
+class ApprovalRequest(ApiModel):
+    preview_token: str = Field(min_length=32, max_length=32, description="Token returned by the latest preview.")
+
+
+class RejectionRequest(ApiModel):
+    reason: str = Field(min_length=1, max_length=2000)
+
+    @field_validator("reason")
+    @classmethod
+    def nonblank_reason(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("A nonblank reason is required.")
+        return value.strip()
+
+
+class ExecutionResponse(ApiModel):
+    remediation: RemediationView
+    version: VersionView
+    check_run: RunView
+
+
+class MetricChanges(ApiModel):
+    completeness: float | None = None
+    valid_row_rate: float | None = None
+    duplicate_id_rate: float | None = None
+
+
+class RemediationComparison(ApiModel):
+    remediation: RemediationView
+    before_version: VersionView
+    after_version: VersionView
+    before_check_run: RunView | None
+    after_check_run: RunView
+    checks_comparable: bool
+    comparison_reason: str | None
+    metric_change_percentage_points: MetricChanges
+    changes: Page[RecordChange]
+
+
 

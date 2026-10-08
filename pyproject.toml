@@ -1,0 +1,11 @@
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]
+pythonpath = ["."]
+addopts = "-q --basetemp=.pytest_tmp"
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+strict = true
+files = ["src"]
+
