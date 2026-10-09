@@ -42,6 +42,10 @@
     @apply border-cobalt bg-cobalt text-porcelain hover:bg-cobalt/90;
   }
 
+  .ui-button-success {
+    @apply border-green-text bg-green-text text-porcelain hover:bg-green-text/90;
+  }
+
   .ui-control {
     @apply w-full min-w-0 rounded-[5px] border border-line bg-porcelain p-2 text-[11px] text-ink;
   }

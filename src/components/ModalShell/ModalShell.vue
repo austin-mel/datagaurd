@@ -6,6 +6,7 @@ defineProps<{
   title: string
   eyebrow?: string
   description?: string
+  size?: 'compact' | 'wide'
 }>()
 
 const isOpen = defineModel<boolean>({ required: true })
@@ -61,6 +62,7 @@ onBeforeUnmount(() => {
       :id="id"
       ref="dialog"
       class="app-modal m-auto rounded-[15px] border border-line bg-porcelain p-0 text-ink shadow-2xl shadow-ink/25 backdrop:bg-ink/55"
+      :class="{ 'app-modal-compact': size === 'compact' }"
       :aria-labelledby="titleId"
       :aria-describedby="description ? descriptionId : undefined"
       @cancel.prevent="close"
@@ -99,6 +101,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .app-modal { width: min(1040px, calc(100vw - 40px)); max-height: calc(100dvh - 64px); }
+.app-modal-compact { max-width: 640px; }
 .app-modal[open] { display: flex; flex-direction: column; }
 .modal-header { padding: 23px 25px 20px; }
 .modal-body { padding: 21px 25px 24px; }

@@ -1,11 +1,20 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { RouterLink } from 'vue-router'
-import { facilities } from '@/data'
+import { useRouter } from 'vue-router'
+import type { Dataset } from '@/data'
 
-const props = withDefaults(defineProps<{ search?: string }>(), { search: '' })
-const emit = defineEmits<{ editQualityRules: [] }>()
-const isVisible = computed(() => `${facilities.name} ${facilities.source}`.toLowerCase().includes(props.search.trim().toLowerCase()))
+const props = withDefaults(defineProps<{ datasets: readonly Dataset[]; search?: string }>(), { search: '' })
+const emit = defineEmits<{ editQualityRules: [datasetId: string] }>()
+const router = useRouter()
+const rowCountFormatter = new Intl.NumberFormat('en-US')
+const filteredDatasets = computed(() => {
+  const query = props.search.trim().toLowerCase()
+  return props.datasets.filter(dataset => `${dataset.name} ${dataset.source} ${dataset.filename ?? ''}`.toLowerCase().includes(query))
+})
+
+function openOverview(datasetId: string) {
+  void router.push({ name: 'overview', query: { dataset: datasetId } })
+}
 </script>
 
 <template>
@@ -30,21 +39,24 @@ const isVisible = computed(() => `${facilities.name} ${facilities.source}`.toLow
           </tr>
         </thead>
         <tbody class="text-xs">
-          <tr v-if="isVisible" class="bg-table-selected">
+          <tr v-for="dataset in filteredDatasets" :key="dataset.id" class="border-b border-line last:border-0 hover:bg-table-selected">
             <th scope="row">
               <div class="flex items-center gap-[11px]">
                 <span
                   class="grid h-[38px] w-[34px] shrink-0 place-items-center rounded-[7px] border border-line bg-ivory text-muted"
                 >
                   <svg class="icon size-[18px]" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <path d="M14 2v6h6M8 13h8M8 17h5" />
+                    <template v-if="dataset.sourceIcon === 'file'">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <path d="M14 2v6h6M8 13h8M8 17h5" />
+                    </template>
+                    <path v-else d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 20 10a4 4 0 0 1-1 8H7z" />
                   </svg>
                 </span>
                 <div>
-                  <strong class="block font-[550]">{{ facilities.name }}</strong>
+                  <strong class="block font-[550]">{{ dataset.name }}</strong>
                   <span class="mt-[3px] block text-[10px] font-normal text-muted">
-                    {{ facilities.source }} · {{ facilities.rowCount }} rows
+                    {{ dataset.source }} · {{ rowCountFormatter.format(dataset.rowCount) }} rows
                   </span>
                 </div>
               </div>
@@ -53,27 +65,30 @@ const isVisible = computed(() => `${facilities.name} ${facilities.source}`.toLow
               <span
                 class="inline-flex rounded-[5px] bg-cobalt-soft px-[7px] py-1 text-[10px] font-semibold text-cobalt"
               >
-                {{ facilities.version }}
+                {{ dataset.version }}
               </span>
             </td>
-            <td class="tabular-nums">{{ facilities.quality }}</td>
+            <td class="tabular-nums">{{ dataset.quality }}</td>
             <td class="whitespace-nowrap text-muted">
-              <time datetime="2026-10-07T09:12:00-07:00">Oct 7 · 09:12</time>
+              <time :datetime="dataset.lastValidatedAt">{{ dataset.lastValidatedLabel }}</time>
             </td>
             <td>
-              <div class="flex items-center gap-3 whitespace-nowrap">
-                <RouterLink
-                  :to="{ name: 'overview' }"
-                  class="font-[550] text-cobalt hover:underline"
+              <div class="flex items-center gap-6 whitespace-nowrap">
+                <button
+                  type="button"
+                  class="ui-button px-[9px] py-[7px] text-[10px] text-cobalt"
+                  :aria-label="`Open overview for ${dataset.name}`"
+                  @click="openOverview(dataset.id)"
                 >
                   Open overview
-                </RouterLink>
+                </button>
                 <button
                   type="button"
                   class="ui-button px-[9px] py-[7px] text-[10px]"
                   aria-haspopup="dialog"
                   aria-controls="quality-rules-dialog"
-                  @click="emit('editQualityRules')"
+                  :aria-label="`Edit quality rules for ${dataset.name}`"
+                  @click="emit('editQualityRules', dataset.id)"
                 >
                   <svg class="icon size-[13px]" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M10 6h11M10 12h11M10 18h11M3 5l1 1 2-2M3 11l1 1 2-2M3 17l1 1 2-2" />
@@ -83,7 +98,7 @@ const isVisible = computed(() => `${facilities.name} ${facilities.source}`.toLow
               </div>
             </td>
           </tr>
-          <tr v-else>
+          <tr v-if="filteredDatasets.length === 0">
             <td colspan="5" class="text-center text-muted">No datasets match your search.</td>
           </tr>
         </tbody>
@@ -92,7 +107,7 @@ const isVisible = computed(() => `${facilities.name} ${facilities.source}`.toLow
     <footer
       class="flex flex-wrap items-center justify-between gap-[9px] border-t border-line px-[22px] py-[11px] text-[10px] text-muted max-[540px]:px-4"
     >
-      <span role="status">{{ isVisible ? '1 dataset' : '0 datasets' }}</span>
+      <span role="status">{{ filteredDatasets.length }} {{ filteredDatasets.length === 1 ? 'dataset' : 'datasets' }}</span>
       <span>Quality scores are out of 100.</span>
     </footer>
   </section>

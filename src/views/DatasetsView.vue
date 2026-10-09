@@ -1,19 +1,26 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { DatasetTable, PageHeader, QualityRulesModal } from '@/components'
-import { createFacilityRules, type QualityRule } from '@/data'
+import { computed, ref } from 'vue'
+import { ConnectDatasetModal, DatasetTable, PageHeader, QualityRulesModal } from '@/components'
+import { cloneRuleset, createSeededDatasets, type DatasetRuleset } from '@/data'
 
 const search = ref('')
 const isRulesOpen = ref(false)
-const rules = ref(createFacilityRules())
+const isConnectOpen = ref(false)
+const datasets = ref(createSeededDatasets())
+const selectedDatasetId = ref<string | null>(null)
+const selectedDataset = computed(() => datasets.value.find(dataset => dataset.id === selectedDatasetId.value))
 const saveMessage = ref('')
 
-function saveRules(updatedRules: QualityRule[]) {
-  rules.value = updatedRules
-  saveMessage.value = 'Quality rules saved for this page session.'
+function saveRules(ruleset: DatasetRuleset) {
+  const dataset = selectedDataset.value
+  if (!dataset) return
+  dataset.ruleset = cloneRuleset(ruleset)
+  saveMessage.value = `Quality rules for ${dataset.name} saved for this page session.`
 }
 
-function openRules() {
+function openRules(datasetId: string) {
+  if (!datasets.value.some(dataset => dataset.id === datasetId)) return
+  selectedDatasetId.value = datasetId
   saveMessage.value = ''
   isRulesOpen.value = true
 }
@@ -26,7 +33,7 @@ function openRules() {
     class="mb-[26px] max-[540px]:mb-[23px]"
   >
     <template #actions>
-      <button type="button" class="ui-button ui-button-primary">
+      <button type="button" class="ui-button ui-button-primary" aria-haspopup="dialog" aria-controls="connect-dataset-dialog" @click="isConnectOpen = true">
         <svg class="ui-icon size-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
         Connect a new data source
       </button>
@@ -41,7 +48,8 @@ function openRules() {
     </label>
   </div>
 
-  <DatasetTable :search="search" @edit-quality-rules="openRules" />
+  <DatasetTable :datasets="datasets" :search="search" @edit-quality-rules="openRules" />
   <p role="status" class="mt-3 text-xs text-green-text">{{ saveMessage }}</p>
-  <QualityRulesModal v-model="isRulesOpen" :rules="rules" @save="saveRules" />
+  <QualityRulesModal v-if="selectedDataset" v-model="isRulesOpen" :dataset="selectedDataset" @save="saveRules" />
+  <ConnectDatasetModal v-model="isConnectOpen" />
 </template>

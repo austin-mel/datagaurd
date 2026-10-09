@@ -21,7 +21,7 @@ const router = createRouter({
 })
 
 router.afterEach((to) => {
-  document.title = `${to.meta.title ?? 'Workspace'} | Dataguard`
+  document.title = `Dataguard | ${to.meta.title ?? 'Workspace'}`
 })
 
 export default router
