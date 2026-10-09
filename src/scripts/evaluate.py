@@ -7,7 +7,7 @@ from src.schemas import Finding
 from src.scripts.generate_fixtures import REFERENCE_DATE, generate
 from src.services.tabular import parse_dataset
 from src.services.validation import check_dataset
-from src.settings import Settings
+from src.settings import PROJECT_ROOT, Settings
 
 Detection = tuple[str, int | None]
 
@@ -33,7 +33,8 @@ def scores(expected: set[Detection], actual: set[Detection]) -> dict[str, int | 
 
 
 def evaluate(rows: int = 5000) -> dict[str, object]:
-    settings = Settings(_env_file=None, reference_date=REFERENCE_DATE, max_rows=max(rows, 50_000))
+    settings = Settings(_env_file=None, reference_date=REFERENCE_DATE, max_rows=max(rows, 50_000),
+                        rules_path=PROJECT_ROOT / "config" / "facilities.yaml")
     rules = load_rules(settings.rules_path)
     clean, dirty, manifest = generate(rows)
     expected: set[Detection] = {(entry["rule_id"], entry["record_number"]) for entry in json.loads(manifest)["errors"]}

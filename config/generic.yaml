@@ -1,0 +1,6 @@
+schema_version: 1
+name: generic
+structural_rule_id: GENERIC_COLUMNS
+required_columns: []
+rules: []
+identifier_policy: auto

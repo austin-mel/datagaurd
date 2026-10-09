@@ -15,21 +15,23 @@ from src.schemas import CheckResponse, Finding, RecordSample, RuleResult
 from src.services.tabular import ParsedDataset, is_missing
 from src.services.profiling import profile_dataset
 from src.services.metrics import quality_metrics
+from src.services.identifiers import identifier_column, resolved_rules
 from src.services.statistics import analyze
 from src.services.value_parsing import parse_date, parse_number
 from src.settings import Settings
 
-IMPLEMENTATION_VERSION = "tabular-validation/1.3.0"
+IMPLEMENTATION_VERSION = "tabular-validation/1.4.0"
 
 
 def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
                   baseline: ParsedDataset | None = None, baseline_id: str | None = None) -> CheckResponse:
     if rules.statistics:
         settings = settings.model_copy(update=rules.statistics.model_dump())
+    effective, identifier_reason = resolved_rules(rules, dataset.metadata.headers)
     reference_date = settings.reference_date or date.today()
     findings: list[Finding] = []
     outcomes: list[RuleResult] = []
-    missing_columns = [column for column in rules.required_columns if column not in dataset.metadata.headers]
+    missing_columns = [column for column in effective.required_columns if column not in dataset.metadata.headers]
     outcomes.append(RuleResult(
         rule_id=rules.structural_rule_id, column=None,
         status="failed" if missing_columns else "passed",
@@ -40,13 +42,17 @@ def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
             rule_id=rules.structural_rule_id, column=None, severity="error",
             explanation="All required columns must be present.",
             observed_result={"missing_columns": list(missing_columns)},
-            threshold={"required_columns": list(rules.required_columns)},
+            threshold={"required_columns": list(effective.required_columns)},
             affected_count=0, record_samples=[], affected_record_numbers=[],
         ))
 
     numeric_values: dict[str, dict[int, float]] = {}
     date_values: dict[str, dict[int, date]] = {}
-    for rule in rules.rules:
+    if rules.identifier_policy == "auto" and identifier_reason:
+        outcomes.extend(RuleResult(rule_id=identity, column=None, status="skipped", evaluated_count=0,
+                                   skipped_count=len(dataset.records), reason=identifier_reason)
+                        for identity in ("GENERIC_ID_REQUIRED", "GENERIC_ID_UNIQUE"))
+    for rule in effective.rules:
         if rule.column not in dataset.metadata.headers:
             outcomes.append(RuleResult(
                 rule_id=rule.id, column=rule.column, status="skipped", evaluated_count=0,
@@ -122,11 +128,12 @@ def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
 
     configuration_bytes = json.dumps(rules.model_dump(mode="json"), sort_keys=True, separators=(",", ":")).encode()
     profile = profile_dataset(dataset, rules, settings.top_category_count)
-    statistical_findings, analysis_results = analyze(dataset, profile, rules, settings, baseline, baseline_id)
+    statistical_findings, analysis_results = analyze(dataset, profile, effective, settings, baseline, baseline_id)
     findings.extend(statistical_findings)
     return CheckResponse(
         metadata=dataset.metadata, profile=profile, baseline_id=baseline_id, analysis_results=analysis_results,
         metrics=quality_metrics(dataset, rules, findings),
+        resolved_identifier_column=identifier_column(effective, dataset.metadata.headers)[0],
         validation_status="failed" if any(f.category == "validation" and f.severity == "error" for f in findings) else "passed",
         findings=findings, rule_results=outcomes, reference_date=reference_date,
         checked_at=datetime.now(timezone.utc), actor=settings.actor, implementation_version=IMPLEMENTATION_VERSION,

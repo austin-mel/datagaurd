@@ -28,7 +28,7 @@ DataFormat = Literal["csv", "tsv", "xlsx", "parquet"]
 
 
 class DatasetMetadata(ApiModel):
-    original_filename: str = Field(examples=["facilities_clean.csv"])
+    original_filename: str = Field(examples=["dataset.csv"])
     content_sha256: str
     size_bytes: int
     encoding: str | None = "utf-8"
@@ -133,6 +133,7 @@ class AnalysisResult(ApiModel):
 
 
 class CheckResponse(ProfileResponse):
+    resolved_identifier_column: str | None = None
     processing_status: Literal["completed"] = "completed"
     validation_status: Literal["passed", "failed"]
     findings: list[Finding]

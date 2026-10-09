@@ -1,6 +1,7 @@
 from collections import Counter
 
-from src.rules import RequiredRule, RuleSet, UniqueRule
+from src.rules import RequiredRule, RuleSet
+from src.services.identifiers import identifier_column, resolved_rules
 from src.schemas import Finding, Metric, QualityMetrics
 from src.services.tabular import ParsedDataset, is_missing
 
@@ -13,6 +14,7 @@ def percentage(numerator: int, denominator: int) -> Metric:
 
 
 def quality_metrics(dataset: ParsedDataset, rules: RuleSet, findings: list[Finding]) -> QualityMetrics:
+    rules, _ = resolved_rules(rules, dataset.metadata.headers)
     if any(column not in dataset.metadata.headers for column in rules.required_columns):
         unavailable = Metric(reason="Required dataset structure is unavailable.")
         return QualityMetrics(completeness=unavailable, valid_row_rate=unavailable, duplicate_id_rate=unavailable)
@@ -21,9 +23,8 @@ def quality_metrics(dataset: ParsedDataset, rules: RuleSet, findings: list[Findi
     rows = len(dataset.records)
     invalid = {number for finding in findings if finding.category == "validation" and finding.severity == "error"
                for number in finding.affected_record_numbers}
-    unique_columns = {rule.column for rule in rules.rules if isinstance(rule, UniqueRule)}
-    identifier = rules.identifier_column or (next(iter(unique_columns)) if len(unique_columns) == 1 else None)
-    duplicate = Metric(reason="No unambiguous identifier column is configured or present.")
+    identifier, reason = identifier_column(rules, dataset.metadata.headers)
+    duplicate = Metric(reason=reason or "The identifier column is unavailable.")
     if identifier and identifier in dataset.metadata.headers:
         identifiers = [value for value in dataset.column(identifier) if not is_missing(value)]
         counts = Counter(identifiers)

@@ -111,15 +111,22 @@ class RuleSet(ConfigModel):
     schema_version: Literal[1]
     name: str = Field(min_length=1)
     structural_rule_id: str = Field(pattern=r"^[A-Z][A-Z0-9_]+$")
-    required_columns: list[str] = Field(min_length=1)
-    rules: list[Rule] = Field(min_length=1)
+    required_columns: list[str]
+    rules: list[Rule]
     identifier_column: str | None = None
+    identifier_policy: Literal["configured", "auto"] = "configured"
     statistics: StatisticalSettings | None = None
 
     @model_validator(mode="after")
     def coherent_rules(self) -> Self:
         if not self.name.strip():
             raise ValueError("name must be nonblank")
+        if self.identifier_policy == "configured" and (not self.required_columns or not self.rules):
+            raise ValueError("configured rule sets require columns and rules")
+        if self.identifier_policy == "auto" and {self.structural_rule_id, *(rule.id for rule in self.rules)} & {
+            "GENERIC_ID_REQUIRED", "GENERIC_ID_UNIQUE"
+        }:
+            raise ValueError("GENERIC_ID_REQUIRED and GENERIC_ID_UNIQUE are reserved for automatic identifier checks")
         if self.identifier_column is not None and self.identifier_column not in self.required_columns:
             raise ValueError("identifier_column must be declared in required_columns")
         if len(set(self.required_columns)) != len(self.required_columns) or any(

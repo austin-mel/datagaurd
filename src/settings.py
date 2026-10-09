@@ -26,6 +26,6 @@ class Settings(BaseSettings):
     top_category_count: int = Field(default=5, ge=1, le=100)
     actor: str = Field(default="local_operator", min_length=1)
     reference_date: date | None = None
-    rules_path: Path = PROJECT_ROOT / "config" / "facilities.yaml"
+    rules_path: Path = PROJECT_ROOT / "config" / "generic.yaml"
     storage_dir: Path = PROJECT_ROOT / "storage"
 
