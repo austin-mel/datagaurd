@@ -99,7 +99,7 @@ def test_today_resolution_and_config_snapshot(settings: Settings, rules: RuleSet
     assert result.configuration == rules
     assert result.configuration is not rules
     assert len(result.configuration_sha256) == 64
-    assert result.implementation_version == "facilities-validation/1.1.0"
+    assert result.implementation_version == "tabular-validation/1.3.0"
 
 
 @pytest.mark.parametrize("endpoint", ["upload", "profile", "check"])

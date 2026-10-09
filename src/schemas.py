@@ -179,7 +179,7 @@ class RuleSetView(ApiModel):
 
 
 class RuleAssignment(ApiModel):
-    rule_set_id: str
+    rule_set_id: str = Field(min_length=1)
 
 
 class VersionView(ApiModel):

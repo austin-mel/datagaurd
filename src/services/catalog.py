@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 from collections.abc import Callable
@@ -10,11 +11,11 @@ from sqlalchemy.orm import Session
 
 from src.database import Database
 from src.errors import InputError
-from src.models import AuditEvent, Base, CheckRun, Dataset, DatasetVersion, FindingRecord, ReviewDecision
-from src.rules import RuleSet
+from src.models import AuditEvent, Base, CheckRun, Dataset, DatasetVersion, FindingRecord, ReviewDecision, RuleSetRecord
+from src.rules import RuleSet, StatisticalSettings
 from src.schemas import (
     AffectedRecord, AuditView, CheckResponse, DatasetMetadata, DatasetView, Finding,
-    Page, QualityMetrics, ReviewRequest, ReviewView, RunView, StoredFinding, UploadResponse, VersionView,
+    Page, QualityMetrics, ReviewRequest, ReviewView, RuleSetView, RunView, StoredFinding, UploadResponse, VersionView,
 )
 from src.services.tabular import ParsedDataset, parse_dataset
 from src.services.storage import FileStorage
@@ -63,10 +64,74 @@ class Catalog:
         self.rules = rules
         self.database = Database(settings.storage_dir)
         self.files = FileStorage(settings.storage_dir)
+        self.default_rule_set_id = ""
 
     def initialize(self) -> None:
         self.database.initialize()
+        with self.database.write() as session:
+            self.default_rule_set_id = self._register_rules(session, self.rules, reuse=True).id
+            for dataset in session.scalars(select(Dataset).where(Dataset.rule_set_id.is_(None))):
+                previous = session.scalar(select(CheckRun).join(DatasetVersion, CheckRun.version_id == DatasetVersion.id).where(
+                    DatasetVersion.dataset_id == dataset.id).order_by(CheckRun.created_at.desc(), CheckRun.id.desc()).limit(1))
+                if previous:
+                    rules = RuleSet.model_validate_json(previous.configuration_json)
+                    settings = self.settings.model_copy(update=json.loads(previous.settings_json))
+                    dataset.rule_set_id = self._register_rules(session, rules, reuse=True, settings=settings).id
+                else:
+                    dataset.rule_set_id = self.default_rule_set_id
+                self.audit(session, dataset.id, "rule_set_assigned", dataset.rule_set_id)
         self.reconcile()
+
+    def _register_rules(self, session: Session, rules: RuleSet, *, reuse: bool = False,
+                        settings: Settings | None = None) -> RuleSetRecord:
+        defaults = settings or self.settings
+        statistics = rules.statistics or StatisticalSettings.model_validate(
+            {name: getattr(defaults, name) for name in StatisticalSettings.model_fields})
+        rules = rules.model_copy(update={"name": rules.name.strip(), "statistics": statistics}, deep=True)
+        document = json.dumps(rules.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+        digest = hashlib.sha256(document.encode()).hexdigest()
+        if reuse:
+            existing = session.scalar(select(RuleSetRecord).where(RuleSetRecord.configuration_sha256 == digest)
+                                      .order_by(RuleSetRecord.revision).limit(1))
+            if existing:
+                return existing
+        parent = session.scalar(select(RuleSetRecord).where(RuleSetRecord.name == rules.name)
+                                .order_by(RuleSetRecord.revision.desc()).limit(1))
+        row = RuleSetRecord(id=str(uuid4()), name=rules.name, revision=parent.revision + 1 if parent else 1,
+                            parent_id=parent.id if parent else None, configuration_json=document,
+                            configuration_sha256=digest, actor=self.settings.actor, created_at=now())
+        session.add(row)
+        session.flush()
+        return row
+
+    def _rule_view(self, row: RuleSetRecord) -> RuleSetView:
+        return RuleSetView(id=row.id, name=row.name, revision=row.revision, parent_id=row.parent_id,
+                           configuration=RuleSet.model_validate_json(row.configuration_json),
+                           configuration_sha256=row.configuration_sha256, actor=row.actor,
+                           created_at=datetime.fromisoformat(row.created_at), is_default=row.id == self.default_rule_set_id)
+
+    def create_rule_set(self, rules: RuleSet) -> RuleSetView:
+        with self.database.write() as session:
+            row = self._register_rules(session, rules)
+        return self._rule_view(row)
+
+    def rule_sets(self, limit: int, offset: int) -> Page[RuleSetView]:
+        with self.database.read() as session:
+            return page_of(session, select(RuleSetRecord).order_by(RuleSetRecord.name, RuleSetRecord.revision),
+                           self._rule_view, limit, offset)
+
+    def rule_set(self, rule_set_id: str | None = None) -> RuleSetView:
+        with self.database.read() as session:
+            return self._rule_view(require(session, RuleSetRecord, rule_set_id or self.default_rule_set_id))
+
+    def assign_rules(self, dataset_id: str, rule_set_id: str) -> DatasetView:
+        with self.database.write() as session:
+            dataset = require(session, Dataset, dataset_id)
+            require(session, RuleSetRecord, rule_set_id)
+            if dataset.rule_set_id != rule_set_id:
+                dataset.rule_set_id = rule_set_id
+                self.audit(session, dataset.id, "rule_set_assigned", rule_set_id)
+        return DatasetView.model_validate(dataset, from_attributes=True)
 
     def reconcile(self) -> None:
         # Publication and reconciliation share SQLite's write lock, including across processes.
@@ -81,7 +146,7 @@ class Catalog:
                      parsed: ParsedDataset, parent: DatasetVersion | None) -> DatasetVersion:
         version = DatasetVersion(
             id=str(uuid4()), dataset_id=dataset_id, number=parent.number + 1 if parent else 1,
-            parent_id=parent.id if parent else None, file_id=f"{uuid4().hex}.csv",
+            parent_id=parent.id if parent else None, file_id=f"{uuid4().hex}.{parsed.metadata.format}",
             content_sha256=parsed.metadata.content_sha256, original_filename=parsed.metadata.original_filename,
             metadata_json=parsed.metadata.model_dump_json(), created_at=now(),
         )
@@ -90,11 +155,14 @@ class Catalog:
         session.flush()
         return version
 
-    def upload(self, content: bytes, parsed: ParsedDataset, dataset_id: str | None = None) -> UploadResponse:
+    def upload(self, content: bytes, parsed: ParsedDataset, dataset_id: str | None = None,
+               rule_set_id: str | None = None) -> UploadResponse:
         try:
             with self.database.write() as session:
                 if dataset_id is None:
-                    dataset = Dataset(id=str(uuid4()), name=parsed.metadata.original_filename, created_at=now())
+                    assignment = require(session, RuleSetRecord, rule_set_id or self.default_rule_set_id)
+                    dataset = Dataset(id=str(uuid4()), name=parsed.metadata.original_filename, created_at=now(),
+                                      rule_set_id=assignment.id)
                     session.add(dataset)
                     session.flush()
                     self.audit(session, dataset.id, "dataset_created", dataset.id)
@@ -121,17 +189,22 @@ class Catalog:
 
     def parsed_version(self, version: DatasetVersion, settings: Settings | None = None) -> ParsedDataset:
         content = self.files.read(version.file_id, version.content_sha256)
-        return parse_dataset(content, version.original_filename, settings or self.settings)
+        metadata = DatasetMetadata.model_validate_json(version.metadata_json)
+        return parse_dataset(content, version.original_filename, settings or self.settings, sheet_name=metadata.sheet_name)
 
     def start_check(self, session: Session, version: DatasetVersion) -> CheckRun:
+        dataset = require(session, Dataset, version.dataset_id)
+        assignment = require(session, RuleSetRecord, dataset.rule_set_id or self.default_rule_set_id)
+        rules = RuleSet.model_validate_json(assignment.configuration_json)
         reference_date = self.settings.reference_date or date.today()
-        run_settings = self.settings.model_copy(update={"reference_date": reference_date})
+        run_settings = self.settings.model_copy(update={"reference_date": reference_date,
+                                                        **(rules.statistics.model_dump() if rules.statistics else {})})
         run = CheckRun(
             id=str(uuid4()), version_id=version.id, processing_status="running",
-            configuration_json=self.rules.model_dump_json(), reference_date=reference_date.isoformat(),
+            configuration_json=assignment.configuration_json, rule_set_id=assignment.id, reference_date=reference_date.isoformat(),
             settings_json=run_settings.model_dump_json(exclude={"rules_path", "storage_dir", "reference_date", "actor"}),
             implementation_version=IMPLEMENTATION_VERSION, actor=self.settings.actor,
-            created_at=now(), baseline_id=None,
+            created_at=now(), baseline_id=version.parent_id,
         )
         session.add(run)
         session.flush()
@@ -150,6 +223,7 @@ class Catalog:
             if run.processing_status != "running":
                 return self._run_view(session, run)
             version = require(session, DatasetVersion, run.version_id)
+            baseline = require(session, DatasetVersion, run.baseline_id) if run.baseline_id else None
         try:
             if run.implementation_version != IMPLEMENTATION_VERSION:
                 raise InputError("implementation_changed", "Create a new check using the current implementation.", 409)
@@ -157,7 +231,8 @@ class Catalog:
             run_settings = self.settings.model_copy(update={
                 **json.loads(run.settings_json), "reference_date": date.fromisoformat(run.reference_date), "actor": run.actor,
             })
-            result = check_dataset(self.parsed_version(version, run_settings), rules, run_settings)
+            result = check_dataset(self.parsed_version(version, run_settings), rules, run_settings,
+                                   self.parsed_version(baseline, run_settings) if baseline else None, run.baseline_id)
             with self.database.write() as session:
                 stored = require(session, CheckRun, run.id)
                 if stored.processing_status == "running":
@@ -196,7 +271,7 @@ class Catalog:
             settings_snapshot=json.loads(row.settings_json), baseline_id=row.baseline_id, actor=row.actor,
             created_at=datetime.fromisoformat(row.created_at),
             completed_at=datetime.fromisoformat(row.completed_at) if row.completed_at else None,
-            error_code=row.error_code, result=result,
+            error_code=row.error_code, result=result, rule_set_id=row.rule_set_id,
         )
 
     def datasets(self, limit: int, offset: int) -> Page[DatasetView]:

@@ -165,8 +165,8 @@ def _supported_arrow_type(kind: Any) -> bool:
 
 
 def _parquet_rows(content: bytes, settings: Settings) -> Iterable[list[str]]:
-    with pq.ParquetFile(io.BytesIO(content), thrift_string_size_limit=settings.max_decoded_bytes,
-                        thrift_container_size_limit=settings.max_cells) as file:
+    with pq.ParquetFile(io.BytesIO(content), thrift_string_size_limit=max(1024 * 1024, settings.max_decoded_bytes),
+                        thrift_container_size_limit=max(1024, settings.max_cells)) as file:
         _bounds(file.metadata.num_rows, len(file.schema_arrow), settings)
         if any(not _supported_arrow_type(field.type) for field in file.schema_arrow):
             raise InputError("unsupported_column_type", "Parquet requires flat scalar columns; nested and binary columns are unsupported.")

@@ -15,13 +15,17 @@ from src.schemas import CheckResponse, Finding, RecordSample, RuleResult
 from src.services.tabular import ParsedDataset, is_missing
 from src.services.profiling import profile_dataset
 from src.services.metrics import quality_metrics
+from src.services.statistics import analyze
 from src.services.value_parsing import parse_date, parse_number
 from src.settings import Settings
 
-IMPLEMENTATION_VERSION = "facilities-validation/1.1.0"
+IMPLEMENTATION_VERSION = "tabular-validation/1.3.0"
 
 
-def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings) -> CheckResponse:
+def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
+                  baseline: ParsedDataset | None = None, baseline_id: str | None = None) -> CheckResponse:
+    if rules.statistics:
+        settings = settings.model_copy(update=rules.statistics.model_dump())
     reference_date = settings.reference_date or date.today()
     findings: list[Finding] = []
     outcomes: list[RuleResult] = []
@@ -117,15 +121,16 @@ def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings) ->
             ))
 
     configuration_bytes = json.dumps(rules.model_dump(mode="json"), sort_keys=True, separators=(",", ":")).encode()
+    profile = profile_dataset(dataset, rules, settings.top_category_count)
+    statistical_findings, analysis_results = analyze(dataset, profile, rules, settings, baseline, baseline_id)
+    findings.extend(statistical_findings)
     return CheckResponse(
-        metadata=dataset.metadata, profile=profile_dataset(dataset, rules, settings.top_category_count),
+        metadata=dataset.metadata, profile=profile, baseline_id=baseline_id, analysis_results=analysis_results,
         metrics=quality_metrics(dataset, rules, findings),
-        validation_status="failed" if any(f.severity == "error" for f in findings) else "passed",
+        validation_status="failed" if any(f.category == "validation" and f.severity == "error" for f in findings) else "passed",
         findings=findings, rule_results=outcomes, reference_date=reference_date,
         checked_at=datetime.now(timezone.utc), actor=settings.actor, implementation_version=IMPLEMENTATION_VERSION,
         configuration=rules.model_copy(deep=True), configuration_sha256=hashlib.sha256(configuration_bytes).hexdigest(),
-        settings_snapshot={"max_upload_bytes": settings.max_upload_bytes, "max_rows": settings.max_rows,
-                           "finding_sample_size": settings.finding_sample_size,
-                           "top_category_count": settings.top_category_count},
+        settings_snapshot=settings.model_dump(mode="json", exclude={"rules_path", "storage_dir", "reference_date", "actor"}),
     )
 

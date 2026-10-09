@@ -1,6 +1,6 @@
 from collections import Counter
 
-from src.rules import RequiredRule, RuleSet
+from src.rules import RequiredRule, RuleSet, UniqueRule
 from src.schemas import Finding, Metric, QualityMetrics
 from src.services.tabular import ParsedDataset, is_missing
 
@@ -21,9 +21,11 @@ def quality_metrics(dataset: ParsedDataset, rules: RuleSet, findings: list[Findi
     rows = len(dataset.records)
     invalid = {number for finding in findings if finding.category == "validation" and finding.severity == "error"
                for number in finding.affected_record_numbers}
-    duplicate = Metric(reason="The facility_id column is unavailable.")
-    if "facility_id" in dataset.metadata.headers:
-        identifiers = [value for value in dataset.column("facility_id") if not is_missing(value)]
+    unique_columns = {rule.column for rule in rules.rules if isinstance(rule, UniqueRule)}
+    identifier = rules.identifier_column or (next(iter(unique_columns)) if len(unique_columns) == 1 else None)
+    duplicate = Metric(reason="No unambiguous identifier column is configured or present.")
+    if identifier and identifier in dataset.metadata.headers:
+        identifiers = [value for value in dataset.column(identifier) if not is_missing(value)]
         counts = Counter(identifiers)
         duplicate = percentage(sum(count for count in counts.values() if count > 1), len(identifiers))
     return QualityMetrics(

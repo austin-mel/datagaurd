@@ -1,5 +1,3 @@
-import csv
-import io
 import logging
 from datetime import datetime
 from uuid import uuid4
@@ -14,7 +12,7 @@ from src.schemas import (
     RejectionRequest, RemediationComparison, RemediationPreview, RemediationRequest, RemediationView,
 )
 from src.services.catalog import Catalog, now, page_of, require, version_view
-from src.services.tabular import ParsedDataset, parse_dataset
+from src.services.tabular import ParsedDataset, replace_values
 
 logger = logging.getLogger("dataguard")
 TRANSITIONS = {
@@ -163,18 +161,8 @@ class Remediations:
     def _replace(self, parsed: ParsedDataset, request: RemediationRequest) -> tuple[bytes, ParsedDataset]:
         selected = {record.record_number for record in request.records}
         column = parsed.metadata.headers.index(request.column)
-        buffer = io.StringIO(newline="")
-        writer = csv.writer(buffer, lineterminator="\r\n")
-        writer.writerow(parsed.metadata.headers)
-        for number, values in enumerate(parsed.records, start=1):
-            row = list(values)
-            if number in selected:
-                row[column] = request.replacement
-            writer.writerow(row)
-            if buffer.tell() > self.catalog.settings.max_upload_bytes:
-                raise InputError("upload_too_large", "The corrected CSV exceeds the configured size limit.", 413)
-        content = buffer.getvalue().encode("utf-8")
-        return content, parse_dataset(content, parsed.metadata.original_filename, self.catalog.settings)
+        source = self.catalog.version_content(request.source_version_id)[0]
+        return replace_values(source, parsed, column, selected, request.replacement, self.catalog.settings)
 
     def _record_failure(self, remediation_id: str, error: Exception) -> bool:
         with self.catalog.database.write() as session:

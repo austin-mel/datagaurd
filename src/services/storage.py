@@ -5,7 +5,7 @@ from pathlib import Path
 
 from src.errors import InputError
 
-FILE_ID = re.compile(r"[0-9a-f]{32}\.csv")
+FILE_ID = re.compile(r"[0-9a-f]{32}\.(?:csv|tsv|xlsx|parquet)")
 
 
 class FileStorage:

@@ -1,5 +1,6 @@
 schema_version: 1
 name: facilities
+identifier_column: facility_id
 structural_rule_id: FAC_REQUIRED_COLUMNS
 required_columns:
   - facility_id

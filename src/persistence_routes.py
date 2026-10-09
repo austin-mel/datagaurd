@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, File, Query, Response, UploadFile
+from fastapi import APIRouter, Query, Response
 
-from src.routes import read_upload
+from src.routes import DataFile, Sheet, read_upload
+from src.services.tabular import MEDIA_TYPES
 from src.schemas import (
     AffectedRecord, AuditView, DatasetView, ErrorResponse, Page, RunView,
     QualityMetrics, ReviewRequest, ReviewView, StoredFinding, UploadResponse, VersionView,
@@ -17,8 +18,8 @@ def persistence_router(catalog: Catalog) -> APIRouter:
     router = APIRouter(tags=["History"], responses={
         404: {"model": ErrorResponse, "description": "Resource not found."},
         413: {"model": ErrorResponse, "description": "Upload limit exceeded."},
-        415: {"model": ErrorResponse, "description": "Unsupported CSV file or encoding."},
-        422: {"model": ErrorResponse, "description": "Invalid request or CSV."},
+        415: {"model": ErrorResponse, "description": "Unsupported file type or encoding."},
+        422: {"model": ErrorResponse, "description": "Invalid request or dataset."},
         503: {"model": ErrorResponse, "description": "Storage or database unavailable."},
     })
 
@@ -37,22 +38,24 @@ def persistence_router(catalog: Catalog) -> APIRouter:
     @router.post("/datasets/{dataset_id}/versions", response_model=UploadResponse,
                  summary="Upload another version", description="Example: upload the clean fixture after the dirty fixture. "
                  "The new version links to the latest committed version; both original files remain unchanged.")
-    def upload_version(dataset_id: str, file: Annotated[UploadFile, File(description="A UTF-8 CSV file.")]) -> UploadResponse:
-        content, parsed = read_upload(file, catalog.settings)
+    def upload_version(dataset_id: str, file: DataFile, sheet_name: Sheet = None) -> UploadResponse:
+        content, parsed = read_upload(file, catalog.settings, sheet_name)
         return catalog.upload(content, parsed, dataset_id)
 
     @router.get("/versions/{version_id}", response_model=VersionView, summary="Get version metadata")
     def version(version_id: str) -> VersionView:
         return catalog.version(version_id)
 
-    @router.get("/versions/{version_id}/file", response_class=Response, summary="Download the unchanged source CSV",
-                responses={200: {"content": {"text/csv": {"schema": {"type": "string", "format": "binary"}}}}})
+    @router.get("/versions/{version_id}/file", response_class=Response, summary="Download the unchanged source file",
+                responses={200: {"content": {media: {"schema": {"type": "string", "format": "binary"}}
+                                             for media in MEDIA_TYPES.values()}}})
     def source_file(version_id: str) -> Response:
         content, file_id = catalog.version_content(version_id)
-        return Response(content=content, media_type="text/csv", headers={"Content-Disposition": f'attachment; filename="{file_id}"'})
+        return Response(content=content, media_type=MEDIA_TYPES[file_id.rsplit(".", 1)[1]],
+                        headers={"Content-Disposition": f'attachment; filename="{file_id}"'})
 
     @router.post("/versions/{version_id}/check", response_model=RunView, summary="Check or recheck a saved version",
-                 description="Creates a new run using current rules and settings. Failed runs remain in history; "
+                 description="Creates a new run using the dataset's assigned rule revision. Failed runs remain in history; "
                  "retrying never reuploads or edits the version. Inspect processing_status separately from validation_status.")
     def check(version_id: str) -> RunView:
         return catalog.check(version_id)

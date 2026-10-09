@@ -15,8 +15,8 @@ def remediation_router(catalog: Catalog) -> APIRouter:
         404: {"model": ErrorResponse, "description": "Resource not found."},
         409: {"model": ErrorResponse, "description": "Invalid transition, missing preview, stale source or old-value mismatch."},
         413: {"model": ErrorResponse, "description": "The proposal or corrected file exceeds configured limits."},
-        415: {"model": ErrorResponse, "description": "The stored source is not a supported CSV."},
-        422: {"model": ErrorResponse, "description": "Invalid proposal, record selection or corrected CSV."},
+        415: {"model": ErrorResponse, "description": "The stored source has an unsupported file type."},
+        422: {"model": ErrorResponse, "description": "Invalid proposal, record selection or corrected file."},
         503: {"model": ErrorResponse, "description": "Storage, database or analysis unavailable; retrieve proposal status before retrying."},
     })
 
@@ -44,7 +44,7 @@ def remediation_router(catalog: Catalog) -> APIRouter:
         return service.records(remediation_id, limit, offset)
 
     @router.post("/remediations/{remediation_id}/preview", response_model=RemediationPreview,
-                 summary="Preview the change without modifying CSV data",
+                 summary="Preview the change without modifying source data",
                  description="Returns selected and changed counts, bounded samples, and an approval token. Use the records "
                  "endpoint to inspect the full selection. Generating another preview replaces the previous token.")
     def preview(remediation_id: str) -> RemediationPreview:
