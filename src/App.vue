@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { DataguardIcon, DataguardLogo } from '@/assets'
 
 const route = useRoute()
 </script>
@@ -9,16 +10,11 @@ const route = useRoute()
     <aside class="sidebar bg-ink text-porcelain" aria-label="Workspace navigation">
       <RouterLink
         :to="{ name: 'overview' }"
-        class="brand flex items-center gap-2.5 px-[9px] text-porcelain"
+        class="brand flex items-center px-[9px]"
         aria-label="Dataguard overview"
       >
-        <span class="grid h-[37px] w-[33px] shrink-0 place-items-center rounded-[10px] bg-cobalt">
-          <svg class="icon size-6" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6z" />
-            <path d="m8 12 3 3 5-6" />
-          </svg>
-        </span>
-        <span class="brand-name text-[23px] font-[650] tracking-[-0.9px]">Dataguard</span>
+        <img :src="DataguardLogo" class="brand-logo" width="155" height="37" alt="Dataguard" />
+        <img :src="DataguardIcon" class="brand-icon" width="33" height="37" alt="Dataguard" />
       </RouterLink>
 
       <nav aria-label="Main">
@@ -77,6 +73,9 @@ const route = useRoute()
   grid-template-columns: 224px minmax(0, 1fr);
 }
 
+.brand-logo { width: 155px; height: auto; }
+.brand-icon { display: none; }
+
 .sidebar {
   position: sticky;
   top: 0;
@@ -118,8 +117,8 @@ const route = useRoute()
 @media (max-width: 1250px) {
   .app-shell { grid-template-columns: 192px minmax(0, 1fr); }
   .sidebar { padding-inline: 13px; }
-  .brand { gap: 8px; padding-inline: 3px; }
-  .brand-name { font-size: 21px; }
+  .brand { padding-inline: 3px; }
+  .brand-logo { width: 145px; }
   .topbar, .page-content { padding-inline: 25px; }
 }
 
@@ -127,14 +126,16 @@ const route = useRoute()
   .app-shell { grid-template-columns: 77px minmax(0, 1fr); }
   .sidebar { align-items: center; padding-inline: 11px; }
   .brand { padding: 0; }
-  .brand-name, .nav-label, .nav-link span { display: none; }
+  .brand-logo, .nav-label, .nav-link span { display: none; }
+  .brand-icon { display: block; }
   .nav-link { padding: 14px 16px; }
 }
 
 @media (max-width: 540px) {
   .app-shell { display: block; }
   .sidebar { position: static; height: auto; align-items: stretch; gap: 18px; padding: 17px 18px 12px; }
-  .brand-name { display: block; font-size: 22px; }
+  .brand-logo { display: block; width: 150px; }
+  .brand-icon { display: none; }
   .navigation { flex-direction: row; gap: 5px; }
   .nav-link { flex: 1; justify-content: center; gap: 7px; padding: 10px 8px; font-size: 11px; }
   .nav-link span { display: block; }

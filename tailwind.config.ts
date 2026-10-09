@@ -20,6 +20,8 @@ export default {
         line: '#E4DDD2',
         'nav-muted': '#B7AEA3',
         'nav-text': '#D8D1C7',
+        'table-header': '#F5F0E8',
+        'table-selected': '#F0F3FE',
       },
       fontFamily: {
         sans: ['Inter', 'Segoe UI', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],

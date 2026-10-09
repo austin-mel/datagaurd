@@ -12,7 +12,37 @@
     @apply m-0 text-sm leading-normal;
   }
 
-  a:focus-visible {
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
     @apply outline-3 outline-offset-4 outline-cobalt;
+  }
+
+  body:has(dialog.app-modal[open]) {
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  .ui-icon {
+    width: 19px;
+    height: 19px;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .ui-button {
+    @apply inline-flex cursor-pointer items-center justify-center gap-[7px] rounded-[7px] border border-line bg-porcelain px-[13px] py-2.5 text-xs font-[550] whitespace-nowrap text-ink;
+    @apply hover:bg-ivory disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .ui-button-primary {
+    @apply border-cobalt bg-cobalt text-porcelain hover:bg-cobalt/90;
+  }
+
+  .ui-control {
+    @apply w-full min-w-0 rounded-[5px] border border-line bg-porcelain p-2 text-[11px] text-ink;
   }
 }

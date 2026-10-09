@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="33" height="37" viewBox="0 0 33 37" fill="none">
+  <title>Dataguard</title>
+  <rect width="33" height="37" rx="10" fill="#355DE5"/>
+  <g transform="translate(4.5 6.5)" stroke="#FFFCF7" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6z"/>
+    <path d="m8 12 3 3 5-6"/>
+  </g>
+</svg>
