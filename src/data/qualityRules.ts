@@ -11,6 +11,8 @@ export const ruleTypes = [
 
 export type RuleType = (typeof ruleTypes)[number]['value']
 
+export const dateConditions = ['On or before today', 'On or after today', 'Before today', 'After today', 'Valid date'] as const
+
 export interface QualityRule {
   id: string
   enabled: boolean

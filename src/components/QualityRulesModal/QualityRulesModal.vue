@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
 import { ModalShell } from '../ModalShell'
-import { ruleTypes, ruleCondition, type Dataset, type DatasetRuleset, type QualityRule } from '@/data'
+import { ruleTypes, dateConditions, ruleCondition, type Dataset, type DatasetRuleset, type QualityRule } from '@/data'
+import { assertValidRuleset, RulesetValidationError } from '@/services'
 
-const props = defineProps<{ dataset: Dataset }>()
+const props = defineProps<{ dataset: Dataset; saving?: boolean; saveError?: string }>()
 const isOpen = defineModel<boolean>({ required: true })
 const emit = defineEmits<{ save: [ruleset: DatasetRuleset] }>()
 const formId = useId()
@@ -32,7 +33,7 @@ async function createCustomRuleset() {
 
 function addRule() {
   const column = props.dataset.columns[0]
-  if (!isCustom.value || !column) return
+  if (!isCustom.value || props.saving || !column) return
   draft.value.push({
     id: crypto.randomUUID(), enabled: true, column, type: 'required',
     condition: ruleCondition('required'), minimum: 0, maximum: 100,
@@ -41,7 +42,7 @@ function addRule() {
 }
 
 async function removeRule(id: string) {
-  if (!isCustom.value) return
+  if (!isCustom.value || props.saving) return
   draft.value = draft.value.filter(rule => rule.id !== id)
   error.value = ''
   await nextTick()
@@ -49,7 +50,7 @@ async function removeRule(id: string) {
 }
 
 function resetCondition(rule: QualityRule) {
-  if (!isCustom.value) return
+  if (!isCustom.value || props.saving) return
   rule.condition = ruleCondition(rule.type)
   rule.minimum = 0
   rule.maximum = 100
@@ -57,26 +58,15 @@ function resetCondition(rule: QualityRule) {
 }
 
 function saveRules() {
-  if (!isCustom.value) return
+  if (!isCustom.value || props.saving) return
   error.value = ''
-  for (const rule of draft.value.filter(rule => rule.enabled)) {
-    if (rule.type === 'range' && (rule.minimum === '' || rule.maximum === '' || rule.minimum > rule.maximum)) {
-      error.value = `${rule.column}: the minimum must be less than or equal to the maximum.`
-      return
-    }
-    if (['allowed', 'date', 'regex'].includes(rule.type) && !rule.condition.trim()) {
-      error.value = `${rule.column}: enter a condition.`
-      return
-    }
-    if (rule.type === 'regex') {
-      try { new RegExp(rule.condition) } catch {
-        error.value = `${rule.column}: enter a valid regular expression.`
-        return
-      }
-    }
+  try {
+    assertValidRuleset({ kind: 'custom', rules: draft.value }, props.dataset.columns)
+  } catch (cause) {
+    error.value = cause instanceof RulesetValidationError ? cause.message : 'Unable to validate these rules.'
+    return
   }
   emit('save', { kind: 'custom', rules: draft.value.map(rule => ({ ...rule })) })
-  isOpen.value = false
 }
 </script>
 
@@ -86,6 +76,7 @@ function saveRules() {
     v-model="isOpen"
     :title="`Quality rules · ${dataset.name}`"
     eyebrow="DATASET VALIDATION"
+    :dismissible="!saving"
   >
     <template #icon>
       <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h11M10 12h11M10 18h11M3 5l1 1 2-2M3 11l1 1 2-2M3 17l1 1 2-2" /></svg>
@@ -102,7 +93,7 @@ function saveRules() {
     </div>
 
     <form :id="formId" :aria-describedby="error ? errorId : undefined" @submit.prevent="saveRules">
-      <fieldset :disabled="!isCustom" class="min-w-0">
+      <fieldset :disabled="!isCustom || saving" class="min-w-0">
         <legend class="sr-only">{{ isCustom ? 'Custom ruleset' : 'Default rules (read only)' }}</legend>
       <div class="overflow-x-auto" role="region" :aria-label="`${dataset.name} rule editor, horizontally scrollable`" tabindex="0">
         <table class="rule-editor w-full min-w-[780px] border-collapse text-left text-[11px]">
@@ -143,6 +134,9 @@ function saveRules() {
                 </div>
                 <input v-else-if="rule.type === 'min'" v-model="rule.minimum" type="number" step="any" class="ui-control" :required="rule.enabled" :aria-label="`Minimum for rule ${index + 1}`" />
                 <input v-else-if="rule.type === 'max'" v-model="rule.maximum" type="number" step="any" class="ui-control" :required="rule.enabled" :aria-label="`Maximum for rule ${index + 1}`" />
+                <select v-else-if="rule.type === 'date'" v-model="rule.condition" class="ui-control" :aria-label="`Date condition for rule ${index + 1}`">
+                  <option v-for="condition in dateConditions" :key="condition" :value="condition">{{ condition }}</option>
+                </select>
                 <input
                   v-else
                   v-model="rule.condition"
@@ -169,26 +163,27 @@ function saveRules() {
         </button>
       </div>
       <div v-else class="flex flex-wrap items-center justify-between gap-[15px] pt-[17px]">
-        <button ref="addButton" type="button" class="ui-button px-2.5 py-[7px] text-[11px]" :disabled="dataset.columns.length === 0" @click="addRule">
+        <button ref="addButton" type="button" class="ui-button px-2.5 py-[7px] text-[11px]" :disabled="saving || dataset.columns.length === 0" @click="addRule">
           <svg class="ui-icon size-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
           Add rule
         </button>
         <p class="text-[11px] text-muted">Required and unique checks are evaluated separately.</p>
       </div>
       <p v-if="error" :id="errorId" class="mt-4 rounded-[7px] bg-coral-soft p-3 text-xs text-coral-text" role="alert">{{ error }}</p>
+      <p v-if="saveError" class="mt-4 rounded-[7px] bg-coral-soft p-3 text-xs text-coral-text" role="alert">{{ saveError }}</p>
     </form>
 
     <p class="mt-5 flex items-start gap-2 rounded-[7px] bg-cobalt-soft px-3.5 py-3 text-[11px] leading-[1.7]">
       <svg class="ui-icon mt-0.5 size-[15px] text-cobalt" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7h.01" /></svg>
-      <span v-if="isCustom">These rules apply only to <strong>{{ dataset.name }}</strong>. Other datasets keep their own rules.</span>
+      <span v-if="isCustom">Saving applies these rules to <strong>{{ dataset.name }}</strong> and refreshes its validation issues and quality scores.</span>
       <span v-else>Create a custom ruleset to change these default checks for <strong>{{ dataset.name }}</strong>.</span>
     </p>
 
     <template #footer="{ close }">
       <p class="text-[10px] text-muted">Changes are kept for this page session.</p>
       <div class="ml-auto flex gap-[9px]">
-        <button type="button" class="ui-button" @click="close">Cancel</button>
-        <button type="submit" :form="formId" class="ui-button ui-button-primary" :disabled="!isCustom">Save rules</button>
+        <button type="button" class="ui-button" :disabled="saving" @click="close">Cancel</button>
+        <button type="submit" :form="formId" class="ui-button ui-button-primary" :disabled="!isCustom || saving">{{ saving ? 'Saving…' : 'Save rules' }}</button>
       </div>
     </template>
   </ModalShell>

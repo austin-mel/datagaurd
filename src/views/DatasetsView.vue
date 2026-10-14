@@ -1,29 +1,26 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { ConnectDatasetModal, DatasetTable, PageHeader, QualityRulesModal } from '@/components'
-import { cloneRuleset, createSeededDatasets, type DatasetRuleset } from '@/data'
+import { useRulesetEditor } from '@/composables'
+import { useDatasetStore } from '@/stores'
 
 const search = ref('')
-const isRulesOpen = ref(false)
 const isConnectOpen = ref(false)
-const datasets = ref(createSeededDatasets())
+const datasetStore = useDatasetStore()
+const { datasets, status, error } = storeToRefs(datasetStore)
+const { load } = datasetStore
 const selectedDatasetId = ref<string | null>(null)
 const selectedDataset = computed(() => datasets.value.find(dataset => dataset.id === selectedDatasetId.value))
-const saveMessage = ref('')
-
-function saveRules(ruleset: DatasetRuleset) {
-  const dataset = selectedDataset.value
-  if (!dataset) return
-  dataset.ruleset = cloneRuleset(ruleset)
-  saveMessage.value = `Quality rules for ${dataset.name} saved for this page session.`
-}
+const { isOpen: isRulesOpen, isSaving, error: saveError, message: saveMessage, open: openEditor, save: saveRules } = useRulesetEditor(selectedDataset)
 
 function openRules(datasetId: string) {
   if (!datasets.value.some(dataset => dataset.id === datasetId)) return
   selectedDatasetId.value = datasetId
-  saveMessage.value = ''
-  isRulesOpen.value = true
+  openEditor()
 }
+
+void load()
 </script>
 
 <template>
@@ -48,8 +45,13 @@ function openRules(datasetId: string) {
     </label>
   </div>
 
-  <DatasetTable :datasets="datasets" :search="search" @edit-quality-rules="openRules" />
+  <p v-if="status === 'idle' || status === 'loading'" class="text-sm text-muted" role="status">Loading datasets…</p>
+  <div v-else-if="status === 'error'" class="ui-panel p-5" role="alert">
+    <p class="mb-3 text-sm text-coral-text">{{ error }}</p>
+    <button type="button" class="ui-button" @click="load">Try again</button>
+  </div>
+  <DatasetTable v-else :datasets="datasets" :search="search" @edit-quality-rules="openRules" />
   <p role="status" class="mt-3 text-xs text-green-text">{{ saveMessage }}</p>
-  <QualityRulesModal v-if="selectedDataset" v-model="isRulesOpen" :dataset="selectedDataset" @save="saveRules" />
+  <QualityRulesModal v-if="selectedDataset" v-model="isRulesOpen" :dataset="selectedDataset" :saving="isSaving" :save-error="saveError" @save="saveRules" />
   <ConnectDatasetModal v-model="isConnectOpen" />
 </template>

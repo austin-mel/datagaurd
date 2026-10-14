@@ -1,0 +1,36 @@
+<script setup lang="ts">
+import type { Dataset } from '@/types'
+import { formatNumber, formatScore } from '@/utils'
+defineProps<{ dataset: Dataset }>()
+</script>
+
+<template>
+  <section class="ui-panel mb-[23px] rounded-xl" :aria-label="`${dataset.name} quality scores`">
+    <div class="quality-grid grid grid-cols-4 max-[760px]:grid-cols-2 max-[380px]:grid-cols-1">
+      <div class="quality-cell border-cobalt bg-cobalt text-porcelain">
+        <p class="text-xs">Overall quality</p>
+        <p class="mt-[7px] text-[31px] leading-[1.3] font-semibold tracking-[-0.9px] tabular-nums">{{ formatScore(dataset.quality) }}<span v-if="dataset.quality !== null" class="ml-0.5 text-[15px] font-normal tracking-normal">/ 100</span></p>
+        <p class="mt-[5px] text-[10px]">{{ dataset.name }} · {{ dataset.version }}</p>
+      </div>
+      <div v-for="dimension in dataset.qualityDimensions" :key="dimension.id" class="quality-cell border-line">
+        <p class="text-xs text-muted">{{ dimension.label }}</p>
+        <p class="mt-[7px] text-[31px] leading-[1.3] font-semibold tracking-[-0.9px] tabular-nums">{{ formatScore(dimension.score) }}<span v-if="dimension.score !== null" class="ml-0.5 text-[15px] font-normal tracking-normal">%</span></p>
+        <p class="mt-[5px] text-[10px] text-muted"><template v-if="dimension.passed !== null && dimension.total !== null">{{ formatNumber(dimension.passed) }} / {{ formatNumber(dimension.total) }} </template> {{ dimension.description }}</p>
+      </div>
+    </div>
+    <p class="border-t border-line px-[18px] py-2.5 text-[10px] leading-[1.7] text-muted">{{ dataset.qualityNote }}</p>
+  </section>
+</template>
+
+<style scoped>
+.quality-cell { min-width: 0; border-right-width: 1px; padding: 18px 21px; }
+.quality-cell:last-child { border-right-width: 0; }
+@media (max-width: 760px) {
+  .quality-cell:nth-child(2) { border-right-width: 0; }
+  .quality-cell:nth-child(-n+2) { border-bottom-width: 1px; }
+}
+@media (max-width: 380px) {
+  .quality-cell { border-right-width: 0; }
+  .quality-cell:not(:last-child) { border-bottom-width: 1px; }
+}
+</style>

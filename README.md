@@ -1,6 +1,14 @@
 # datagaurd.front-end
 
-This template should help get you started developing with Vue 3 in Vite.
+Dataguard's Vue 3 workspace for dataset profiling and quality rules.
+
+## Dataset data flow
+
+Dataset metadata, column profiles, and rules originate in `src/data/datasets.ts`. Fictional source rows in `src/data/datasetRows.ts` supply the local validator, which derives issues and quality scores from enabled rules. The asynchronous `DatasetRepository` interface in `src/services/datasetRepository.ts` supplies the shared Pinia dataset store. To connect a backend, replace the exported repository with an API implementation returning the types in `src/types`; the views and report components consume the same store and need no seed-specific changes.
+
+The recent-datasets Pinia store persists only the three most recently opened dataset IDs and timestamps in `localStorage`, under `dataguard.recentDatasets.v1`. Overview defaults to the latest available dataset in that history, or the first dataset when there is no history. An explicit dataset selection becomes the latest entry. Names, metadata, and report contents are always resolved from the dataset store.
+
+Rule changes currently live in the seeded repository for the running app session. Saving revalidates that dataset and updates its issues, affected-row counts, quality scores, status, and validation timestamp together. Both pages use those shared results. Initial reports use the seed's validation date; subsequent saves use the current date in Pacific time. Required checks count missing values, while other checks skip them. Unique checks count every row sharing a duplicate non-empty value. Every dataset retains an assigned default or custom ruleset. If that ruleset has no enabled checks, its assignment remains visible while scores are unavailable and the report is marked not evaluated.
 
 ## Recommended IDE Setup
 

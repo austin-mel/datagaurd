@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import type { Dataset } from '@/data'
+import type { Dataset } from '@/types'
+import { formatScore, formatValidatedAt } from '@/utils'
+import { DatasetSourceIcon } from '../DatasetSourceIcon'
 
 const props = withDefaults(defineProps<{ datasets: readonly Dataset[]; search?: string }>(), { search: '' })
 const emit = defineEmits<{ editQualityRules: [datasetId: string] }>()
@@ -45,13 +47,7 @@ function openOverview(datasetId: string) {
                 <span
                   class="grid h-[38px] w-[34px] shrink-0 place-items-center rounded-[7px] border border-line bg-ivory text-muted"
                 >
-                  <svg class="icon size-[18px]" viewBox="0 0 24 24" aria-hidden="true">
-                    <template v-if="dataset.sourceIcon === 'file'">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <path d="M14 2v6h6M8 13h8M8 17h5" />
-                    </template>
-                    <path v-else d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 20 10a4 4 0 0 1-1 8H7z" />
-                  </svg>
+                  <DatasetSourceIcon :source="dataset.sourceIcon" class="size-[18px]" />
                 </span>
                 <div>
                   <strong class="block font-[550]">{{ dataset.name }}</strong>
@@ -68,9 +64,9 @@ function openOverview(datasetId: string) {
                 {{ dataset.version }}
               </span>
             </td>
-            <td class="tabular-nums">{{ dataset.quality }}</td>
+            <td class="tabular-nums">{{ formatScore(dataset.quality) }}</td>
             <td class="whitespace-nowrap text-muted">
-              <time :datetime="dataset.lastValidatedAt">{{ dataset.lastValidatedLabel }}</time>
+              <time :datetime="dataset.lastValidatedAt">{{ formatValidatedAt(dataset.lastValidatedAt, false) }}</time>
             </td>
             <td>
               <div class="flex items-center gap-6 whitespace-nowrap">

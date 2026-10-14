@@ -1,34 +1,39 @@
-import { cloneRuleset, createDefaultRules, ruleCondition, type DatasetRuleset } from './qualityRules'
+import { createDefaultRules, ruleCondition } from './qualityRules'
+import type { Dataset } from '@/types'
+import { seededRowCounts } from './datasetRows'
 
-export interface Dataset {
-  id: string
-  name: string
-  source: string
-  sourceIcon: 'file' | 'cloud'
-  filename?: string
-  rowCount: number
-  version: string
-  quality: number
-  lastValidatedAt: string
-  lastValidatedLabel: string
-  columns: readonly string[]
-  ruleset: DatasetRuleset
-}
+type DatasetSeed = Omit<Dataset, 'validation' | 'quality' | 'qualityDimensions' | 'qualityNote' | 'status'>
 
 // Fictional catalog records from the visual reference. Session state is cloned below.
-export const seededDatasets: readonly Dataset[] = [
+export const seededDatasets: readonly DatasetSeed[] = [
   {
     id: 'facilities',
     name: 'County facilities',
     source: 'CSV upload',
     sourceIcon: 'file',
     filename: 'facilities.csv',
-    rowCount: 20,
+    uploadedAt: '2026-10-07T09:12:00-07:00',
+    uploadedBy: 'Alex Lee',
+    downloadFilename: 'county_facilities_v3.csv',
+    validationSetName: 'Facilities checks',
+    history: [
+      { id: 'facilities-v3-uploaded', occurredAt: '2026-10-07T09:12:00-07:00', title: 'Version v3 uploaded', description: 'Alex Lee · 20 rows, 6 columns' },
+      { id: 'facilities-v3-validated', occurredAt: '2026-10-07T09:12:02-07:00', title: 'Profile, validation, and scoring completed', description: 'System · 5 issues · Overall quality 89.1 / 100' },
+      { id: 'facilities-v3-suggestion', occurredAt: '2026-10-07T09:12:03-07:00', title: 'County correction suggested', description: 'System · 2 rows · Awaiting your decision' },
+    ],
+    rowCount: seededRowCounts.facilities,
     version: 'v3',
-    quality: 89.1,
+    isCurrentVersion: true,
     lastValidatedAt: '2026-10-07T09:12:00-07:00',
-    lastValidatedLabel: 'Oct 7 · 09:12',
     columns: ['facility_id', 'facility_name', 'county', 'facility_type', 'inspection_score', 'inspection_date'],
+    columnProfiles: [
+      { name: 'facility_id', type: 'text', missingCount: 2, uniqueCount: 17, summary: { kind: 'top-values', values: [{ value: 'FAC-004', count: 2 }] } },
+      { name: 'facility_name', type: 'text', missingCount: 0, uniqueCount: 20, summary: { kind: 'top-values', values: [{ value: 'Bayview Clinic', count: 1 }] } },
+      { name: 'county', type: 'text', missingCount: 0, uniqueCount: 4, summary: { kind: 'top-values', values: [{ value: 'Sacramento', count: 8 }, { value: 'Alameda', count: 6 }] } },
+      { name: 'facility_type', type: 'text', missingCount: 0, uniqueCount: 3, summary: { kind: 'top-values', values: [{ value: 'Clinic', count: 10 }, { value: 'School', count: 6 }] } },
+      { name: 'inspection_score', type: 'integer', missingCount: 0, uniqueCount: 18, summary: { kind: 'number-range', minimum: -8, maximum: 108, minimumInvalid: true, maximumInvalid: true } },
+      { name: 'inspection_date', type: 'date', missingCount: 0, uniqueCount: 16, summary: { kind: 'date-range', minimum: '2026-09-01', maximum: '2026-10-12' } },
+    ],
     ruleset: {
       kind: 'custom',
       rules: [
@@ -44,20 +49,25 @@ export const seededDatasets: readonly Dataset[] = [
     name: 'Customer master',
     source: 'Salesforce API',
     sourceIcon: 'cloud',
-    rowCount: 248512,
+    downloadFilename: 'customer_master_v12.csv',
+    history: [
+      { id: 'customers-v12-validated', occurredAt: '2026-10-07T08:54:00-07:00', title: 'Profile, validation, and scoring completed', description: 'System · 2 issues · Overall quality 97.8 / 100' },
+    ],
+    rowCount: seededRowCounts.customers,
     version: 'v12',
-    quality: 97.8,
+    isCurrentVersion: true,
     lastValidatedAt: '2026-10-07T08:54:00-07:00',
-    lastValidatedLabel: 'Oct 7 · 08:54',
     columns: ['customer_id', 'customer_name', 'email', 'country'],
+    columnProfiles: [
+      { name: 'customer_id', type: 'text', missingCount: 1243, uniqueCount: 242447, summary: { kind: 'top-values', values: [{ value: 'CUS-001204', count: 3 }] } },
+      { name: 'customer_name', type: 'text', missingCount: 0, uniqueCount: 244900, summary: { kind: 'top-values', values: [{ value: 'Alex Lee', count: 12 }] } },
+      { name: 'email', type: 'text', missingCount: 2100, uniqueCount: 244810, summary: { kind: 'top-values', values: [{ value: 'contact@example.com', count: 8 }] } },
+      { name: 'country', type: 'text', missingCount: 45, uniqueCount: 28, summary: { kind: 'top-values', values: [{ value: 'United States', count: 176432 }, { value: 'Canada', count: 31320 }] } },
+    ],
     ruleset: { kind: 'default', rules: createDefaultRules('customer_id') },
   },
 ]
 
-export function createSeededDatasets(): Dataset[] {
-  return seededDatasets.map(dataset => ({
-    ...dataset,
-    columns: [...dataset.columns],
-    ruleset: cloneRuleset(dataset.ruleset),
-  }))
+export function createSeededDatasets(): DatasetSeed[] {
+  return seededDatasets.map(dataset => structuredClone(dataset))
 }

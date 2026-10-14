@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { onBeforeUnmount, useId, useTemplateRef, watch } from 'vue'
 
-defineProps<{
+const props = withDefaults(defineProps<{
   id?: string
   title: string
   eyebrow?: string
   description?: string
   size?: 'compact' | 'wide'
-}>()
+  dismissible?: boolean
+}>(), { dismissible: true })
 
 const isOpen = defineModel<boolean>({ required: true })
 const dialog = useTemplateRef<HTMLDialogElement>('dialog')
@@ -17,7 +18,7 @@ let returnFocus: HTMLElement | null = null
 let pointerStartedOutside = false
 
 function close() {
-  isOpen.value = false
+  if (props.dismissible) isOpen.value = false
 }
 
 function handleClose() {
@@ -85,6 +86,7 @@ onBeforeUnmount(() => {
           type="button"
           class="grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-md border border-line bg-porcelain hover:bg-ivory"
           :aria-label="`Close ${title}`"
+          :disabled="!dismissible"
           autofocus
           @click="close"
         >
