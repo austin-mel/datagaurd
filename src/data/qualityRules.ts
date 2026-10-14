@@ -21,7 +21,7 @@ export const seededRuleCatalog: RuleEditorCatalog = {
 export function ruleCondition(type: RuleType): string {
   switch (type) {
     case 'required': return 'Not empty'
-    case 'unique': return 'One occurrence per non-empty ID'
+    case 'unique': return 'One occurrence per non-empty value'
     case 'date': return 'On or before today'
     default: return ''
   }

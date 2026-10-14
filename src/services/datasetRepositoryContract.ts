@@ -5,6 +5,8 @@ export interface DatasetRepository {
   getWorkspace(): Promise<DatasetWorkspace>
   download(datasetId: string, version: string): Promise<{ filename: string; blob: Blob }>
   updateRuleset(datasetId: string, ruleset: DatasetRuleset): Promise<Dataset>
+  revalidate(datasetId: string, version: string): Promise<Dataset>
+  getDataset(datasetId: string): Promise<Dataset>
 }
 
 export class BackendUnavailableError extends Error {}

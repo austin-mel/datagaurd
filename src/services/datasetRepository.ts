@@ -46,6 +46,12 @@ export function createDatasetRepository(primary?: DatasetRepository, fallback = 
     async updateRuleset(datasetId, ruleset) {
       return (await selectedRepository()).updateRuleset(datasetId, ruleset)
     },
+    async revalidate(datasetId, version) {
+      return (await selectedRepository()).revalidate(datasetId, version)
+    },
+    async getDataset(datasetId) {
+      return (await selectedRepository()).getDataset(datasetId)
+    },
   }
   return repository
 }

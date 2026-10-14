@@ -2,7 +2,7 @@ import { createDefaultRules, ruleCondition } from './qualityRules'
 import type { Dataset } from '@/types'
 import { seededRowCounts } from './datasetRows'
 
-type DatasetSeed = Omit<Dataset, 'validation' | 'quality' | 'qualityDimensions' | 'qualityNote' | 'status'>
+type DatasetSeed = Omit<Dataset, 'validation' | 'quality' | 'qualityDimensions' | 'qualityNote' | 'status' | 'processingStatus' | 'rulesChangedSinceRun'>
 
 // Fictional catalog records from the visual reference. Session state is cloned below.
 export const seededDatasets: readonly DatasetSeed[] = [
@@ -26,12 +26,12 @@ export const seededDatasets: readonly DatasetSeed[] = [
     lastValidatedAt: '2026-10-07T09:12:00-07:00',
     columns: ['facility_id', 'facility_name', 'county', 'facility_type', 'inspection_score', 'inspection_date'],
     columnProfiles: [
-      { name: 'facility_id', type: 'text', missingCount: 2, uniqueCount: 17, summary: { kind: 'top-values', values: [{ value: 'FAC-004', count: 2 }] } },
-      { name: 'facility_name', type: 'text', missingCount: 0, uniqueCount: 20, summary: { kind: 'top-values', values: [{ value: 'Bayview Clinic', count: 1 }] } },
-      { name: 'county', type: 'text', missingCount: 0, uniqueCount: 4, summary: { kind: 'top-values', values: [{ value: 'Sacramento', count: 8 }, { value: 'Alameda', count: 6 }] } },
-      { name: 'facility_type', type: 'text', missingCount: 0, uniqueCount: 3, summary: { kind: 'top-values', values: [{ value: 'Clinic', count: 10 }, { value: 'School', count: 6 }] } },
-      { name: 'inspection_score', type: 'integer', missingCount: 0, uniqueCount: 18, summary: { kind: 'number-range', minimum: -8, maximum: 108, minimumInvalid: true, maximumInvalid: true } },
-      { name: 'inspection_date', type: 'date', missingCount: 0, uniqueCount: 16, summary: { kind: 'date-range', minimum: '2026-09-01', maximum: '2026-10-12' } },
+      { name: 'facility_id', observedTypes: ['text'], missingCount: 2, uniqueCount: 17, summary: { kind: 'top-values', values: [{ value: 'FAC-004', count: 2 }] } },
+      { name: 'facility_name', observedTypes: ['text'], missingCount: 0, uniqueCount: 20, summary: { kind: 'top-values', values: [{ value: 'Bayview Clinic', count: 1 }] } },
+      { name: 'county', observedTypes: ['text'], missingCount: 0, uniqueCount: 4, summary: { kind: 'top-values', values: [{ value: 'Sacramento', count: 8 }, { value: 'Alameda', count: 6 }] } },
+      { name: 'facility_type', observedTypes: ['text'], missingCount: 0, uniqueCount: 3, summary: { kind: 'top-values', values: [{ value: 'Clinic', count: 10 }, { value: 'School', count: 6 }] } },
+      { name: 'inspection_score', observedTypes: ['integer'], missingCount: 0, uniqueCount: 18, summary: { kind: 'number-range', minimum: -8, maximum: 108, minimumInvalid: true, maximumInvalid: true } },
+      { name: 'inspection_date', observedTypes: ['date'], missingCount: 0, uniqueCount: 16, summary: { kind: 'date-range', minimum: '2026-09-01', maximum: '2026-10-12' } },
     ],
     ruleset: {
       id: 'facilities-checks',
@@ -49,8 +49,9 @@ export const seededDatasets: readonly DatasetSeed[] = [
   {
     id: 'customers',
     name: 'Customer master',
-    source: 'Salesforce API',
-    sourceIcon: 'cloud',
+    source: 'CSV upload',
+    sourceIcon: 'file',
+    filename: 'customers.csv',
     downloadFilename: 'customer_master_v12.csv',
     history: [
       { id: 'customers-v12-validated', occurredAt: '2026-10-07T08:54:00-07:00', title: 'Profile, validation, and scoring completed', description: 'System · 2 issues · Overall quality 97.8 / 100' },
@@ -61,10 +62,10 @@ export const seededDatasets: readonly DatasetSeed[] = [
     lastValidatedAt: '2026-10-07T08:54:00-07:00',
     columns: ['customer_id', 'customer_name', 'email', 'country'],
     columnProfiles: [
-      { name: 'customer_id', type: 'text', missingCount: 1243, uniqueCount: 242447, summary: { kind: 'top-values', values: [{ value: 'CUS-001204', count: 3 }] } },
-      { name: 'customer_name', type: 'text', missingCount: 0, uniqueCount: 244900, summary: { kind: 'top-values', values: [{ value: 'Alex Lee', count: 12 }] } },
-      { name: 'email', type: 'text', missingCount: 2100, uniqueCount: 244810, summary: { kind: 'top-values', values: [{ value: 'contact@example.com', count: 8 }] } },
-      { name: 'country', type: 'text', missingCount: 45, uniqueCount: 28, summary: { kind: 'top-values', values: [{ value: 'United States', count: 176432 }, { value: 'Canada', count: 31320 }] } },
+      { name: 'customer_id', observedTypes: ['text'], missingCount: 1243, uniqueCount: 242447, summary: { kind: 'top-values', values: [{ value: 'CUS-001204', count: 3 }] } },
+      { name: 'customer_name', observedTypes: ['text'], missingCount: 0, uniqueCount: 244900, summary: { kind: 'top-values', values: [{ value: 'Alex Lee', count: 12 }] } },
+      { name: 'email', observedTypes: ['text'], missingCount: 2100, uniqueCount: 244810, summary: { kind: 'top-values', values: [{ value: 'contact@example.com', count: 8 }] } },
+      { name: 'country', observedTypes: ['text'], missingCount: 45, uniqueCount: 28, summary: { kind: 'top-values', values: [{ value: 'United States', count: 176432 }, { value: 'Canada', count: 31320 }] } },
     ],
     ruleset: {
       id: 'customer-id-checks', name: 'Customer ID checks',
@@ -77,3 +78,4 @@ export const seededDatasets: readonly DatasetSeed[] = [
 export function createSeededDatasets(): DatasetSeed[] {
   return seededDatasets.map(dataset => structuredClone(dataset))
 }
+
