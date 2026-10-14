@@ -8,6 +8,8 @@ const statuses = {
   healthy: { label: 'Healthy', classes: 'bg-emerald-soft text-green-text' },
   blocked: { label: 'Blocked', classes: 'bg-ink text-porcelain' },
   unvalidated: { label: 'Not evaluated', classes: 'bg-ivory text-muted' },
+  running: { label: 'Running', classes: 'bg-cobalt-soft text-cobalt' },
+  failed: { label: 'Validation failed', classes: 'bg-coral-soft text-coral-text' },
 }
 </script>
 
@@ -24,7 +26,7 @@ const statuses = {
         <span class="wrap-anywhere">{{ dataset.filename ?? dataset.source }}</span><span aria-hidden="true">/</span>
         <span>{{ formatNumber(dataset.rowCount) }} rows</span><span aria-hidden="true">/</span>
         <span>{{ formatNumber(dataset.columns.length) }} columns</span><span aria-hidden="true">/</span>
-        <span>Validated <time :datetime="dataset.lastValidatedAt">{{ formatValidatedAt(dataset.lastValidatedAt) }}</time></span>
+        <span>Validated <time v-if="dataset.lastValidatedAt" :datetime="dataset.lastValidatedAt">{{ formatValidatedAt(dataset.lastValidatedAt) }}</time><span v-else>Not available</span></span>
       </p>
     </div>
     <div class="flex flex-wrap items-center gap-[9px] max-[540px]:w-full">

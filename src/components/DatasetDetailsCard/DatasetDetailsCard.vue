@@ -29,7 +29,7 @@ const enabledRuleCount = computed(() => props.dataset.ruleset.rules.filter(rule 
       </div>
       <div class="min-w-0">
         <dt class="mb-1 text-[10px] text-muted">Uploaded by</dt>
-        <dd class="wrap-anywhere">{{ dataset.uploadedBy ?? 'Not applicable' }}</dd>
+        <dd class="wrap-anywhere">{{ dataset.uploadedBy ?? 'Not available' }}</dd>
       </div>
       <div class="min-w-0">
         <dt class="mb-1 text-[10px] text-muted">Validation set</dt>

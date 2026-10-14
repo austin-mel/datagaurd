@@ -19,7 +19,7 @@ export type ProfileSummary =
 
 export interface ColumnProfile {
   name: string
-  type: 'text' | 'integer' | 'number' | 'date' | 'boolean'
+  observedTypes: readonly ('text' | 'integer' | 'number' | 'date' | 'boolean')[]
   missingCount: number
   uniqueCount: number
   summary: ProfileSummary
@@ -44,7 +44,7 @@ export interface Dataset {
   id: string
   name: string
   source: string
-  sourceIcon: 'file' | 'cloud'
+  sourceIcon: 'file'
   filename?: string
   uploadedAt?: string
   uploadedBy?: string
@@ -53,16 +53,21 @@ export interface Dataset {
   rowCount: number
   version: string
   isCurrentVersion: boolean
-  status: 'needs-review' | 'healthy' | 'blocked' | 'unvalidated'
+  status: 'needs-review' | 'healthy' | 'blocked' | 'unvalidated' | 'running' | 'failed'
+  processingStatus: 'not_started' | 'running' | 'completed' | 'failed'
+  processingError?: string
+  rulesChangedSinceRun: boolean
+  versionId?: string
+  latestRunId?: string
   quality: number | null
   qualityDimensions: readonly QualityDimension[]
   qualityNote: string
-  lastValidatedAt: string
+  lastValidatedAt: string | null
   columns: readonly string[]
-  columnProfiles: readonly ColumnProfile[]
+  columnProfiles: readonly ColumnProfile[] | null
   validation: {
     checksRun: number
     issues: readonly ValidationIssue[]
-  }
+  } | null
   ruleset: DatasetRuleset
 }

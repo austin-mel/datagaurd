@@ -1,4 +1,5 @@
-export type RuleType = 'required' | 'unique' | 'regex' | 'range' | 'min' | 'max' | 'allowed' | 'date'
+import type { RuleSet } from './backend'
+export type RuleType = 'required' | 'unique' | 'regex' | 'range' | 'min' | 'max' | 'allowed' | 'date' | 'numeric'
 
 export const supportedDateConditions = ['On or before today', 'On or after today', 'Before today', 'After today', 'Valid date'] as const
 export type DateCondition = (typeof supportedDateConditions)[number]
@@ -11,6 +12,9 @@ export interface QualityRule {
   condition: string
   minimum: number | ''
   maximum: number | ''
+  severity?: 'error' | 'warning'
+  dateFormats?: readonly ('%Y-%m-%d' | '%m/%d/%Y' | '%d/%m/%Y')[]
+  backendRule?: RuleSet['rules'][number]
 }
 
 export interface DatasetRuleset {
@@ -19,6 +23,7 @@ export interface DatasetRuleset {
   description: string
   kind: 'default' | 'custom'
   rules: readonly QualityRule[]
+  backendConfiguration?: RuleSet
 }
 
 export interface RuleEditorCatalog {

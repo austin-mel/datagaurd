@@ -66,7 +66,8 @@ function openOverview(datasetId: string) {
             </td>
             <td class="tabular-nums">{{ formatScore(dataset.quality) }}</td>
             <td class="whitespace-nowrap text-muted">
-              <time :datetime="dataset.lastValidatedAt">{{ formatValidatedAt(dataset.lastValidatedAt, false) }}</time>
+              <time v-if="dataset.lastValidatedAt" :datetime="dataset.lastValidatedAt">{{ formatValidatedAt(dataset.lastValidatedAt, false) }}</time>
+              <span v-else>Not available · {{ dataset.processingStatus === 'not_started' ? 'Not started' : dataset.processingStatus }}</span>
             </td>
             <td>
               <div class="flex items-center gap-6 whitespace-nowrap">

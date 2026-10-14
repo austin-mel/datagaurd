@@ -136,7 +136,7 @@ function saveRules() {
                   v-else
                   v-model="rule.condition"
                   class="ui-control"
-                  :readonly="rule.type === 'required' || rule.type === 'unique'"
+                  :readonly="rule.type === 'required' || rule.type === 'unique' || rule.type === 'numeric'"
                   :required="rule.enabled"
                   :aria-label="`Condition for rule ${index + 1}`"
                 />
@@ -157,12 +157,11 @@ function saveRules() {
           Create custom ruleset
         </button>
       </div>
-      <div v-else class="flex flex-wrap items-center justify-between gap-[15px] pt-[17px]">
+      <div v-else class="flex flex-wrap items-center justify-center gap-[15px] pt-[17px]">
         <button ref="addButton" type="button" class="ui-button px-2.5 py-[7px] text-[11px]" :disabled="saving || dataset.columns.length === 0" @click="addRule">
           <svg class="ui-icon size-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
           Add rule
         </button>
-        <p class="text-[11px] text-muted">Required and unique checks are evaluated separately.</p>
       </div>
       <p v-if="error" :id="errorId" class="mt-4 rounded-[7px] bg-coral-soft p-3 text-xs text-coral-text" role="alert">{{ error }}</p>
       <p v-if="saveError" class="mt-4 rounded-[7px] bg-coral-soft p-3 text-xs text-coral-text" role="alert">{{ saveError }}</p>
@@ -170,7 +169,7 @@ function saveRules() {
 
     <p class="mt-5 flex items-start gap-2 rounded-[7px] bg-cobalt-soft px-3.5 py-3 text-[11px] leading-[1.7]">
       <svg class="ui-icon mt-0.5 size-[15px] text-cobalt" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7h.01" /></svg>
-      <span v-if="isCustom">Saving applies these rules to <strong>{{ dataset.name }}</strong> and refreshes its validation issues and quality scores.</span>
+      <span v-if="isCustom">Saving applies these rules to <strong>{{ dataset.name }}</strong>. To refresh the validation issues table and update the quality scores click the "Run Dataset Validation" button.</span>
       <span v-else>Create a custom ruleset to change these default checks for <strong>{{ dataset.name }}</strong>.</span>
     </p>
 

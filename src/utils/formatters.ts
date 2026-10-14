@@ -3,9 +3,10 @@ const scoreFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1
 const timeZone = 'America/Los_Angeles'
 
 export function formatNumber(value: number) { return numberFormatter.format(value) }
-export function formatScore(value: number | null) { return value === null ? '—' : scoreFormatter.format(value) }
+export function formatScore(value: number | null) { return value === null ? 'Not available' : scoreFormatter.format(value) }
 
-export function formatValidatedAt(value: string, includeYear = true) {
+export function formatValidatedAt(value: string | null, includeYear = true) {
+  if (!value) return 'Not available'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return 'Not yet validated'
   const day = new Intl.DateTimeFormat('en-US', { timeZone, month: 'short', day: 'numeric', ...(includeYear ? { year: 'numeric' as const } : {}) }).format(date)

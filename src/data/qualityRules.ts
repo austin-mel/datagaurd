@@ -4,6 +4,7 @@ import { supportedDateConditions } from '@/types/ruleset'
 const ruleTypes = [
   { value: 'required', label: 'Required' },
   { value: 'unique', label: 'Unique' },
+  { value: 'numeric', label: 'Numeric' },
   { value: 'regex', label: 'Regex' },
   { value: 'range', label: 'Min / max' },
   { value: 'min', label: 'Minimum' },
@@ -21,7 +22,8 @@ export const seededRuleCatalog: RuleEditorCatalog = {
 export function ruleCondition(type: RuleType): string {
   switch (type) {
     case 'required': return 'Not empty'
-    case 'unique': return 'One occurrence per non-empty value'
+    case 'unique': return 'One occurrence per value'
+    case 'numeric': return 'Numeric value'
     case 'date': return 'On or before today'
     default: return ''
   }

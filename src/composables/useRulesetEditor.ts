@@ -25,7 +25,7 @@ export function useRulesetEditor(dataset: ComputedRef<Dataset | undefined>) {
     try {
       await saveRuleset(selected.id, ruleset)
       isOpen.value = false
-      message.value = `Quality rules for ${selected.name} saved. Validation issues and quality scores updated.`
+      message.value = `Quality rules for ${selected.name} saved. Use Re-run Dataset Validation to apply them in a new version.`
     } catch (cause) {
       error.value = cause instanceof RulesetValidationError ? cause.message
         : cause instanceof BackendUnavailableError ? 'The backend is unavailable. These changes have not been confirmed as saved; your draft is still here.'

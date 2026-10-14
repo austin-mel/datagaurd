@@ -33,11 +33,41 @@ export function createDatasetState(repository: DatasetRepository) {
     records.value = records.value.map(record => record.id === datasetId ? updated : record)
   }
 
+  async function refreshDataset(datasetId: string) {
+    const updated = await repository.getDataset(datasetId)
+    records.value = records.value.map(record => record.id === datasetId ? updated : record)
+  }
+
+  async function revalidate(datasetId: string, version: string) {
+    const previous = records.value.find(record => record.id === datasetId)
+    if (!previous || previous.processingStatus === 'running') return
+    records.value = records.value.map(record => record.id === datasetId ? {
+      ...record, processingStatus: 'running', status: 'running', quality: null,
+      lastValidatedAt: null, validation: null, columnProfiles: null,
+      qualityDimensions: record.qualityDimensions.map(dimension => ({ ...dimension, score: null, passed: null, total: null })),
+      qualityNote: 'Validation is running. Results are not available yet.',
+    } : record)
+    try {
+      const updated = await repository.revalidate(datasetId, version)
+      records.value = records.value.map(record => record.id === datasetId ? updated : record)
+    } catch (cause) {
+      // A transport failure can follow a committed run. Reconcile before claiming failure.
+      try { await refreshDataset(datasetId) } catch {
+        records.value = records.value.map(record => record.id === datasetId ? {
+          ...record, processingStatus: 'failed', status: 'failed',
+          processingError: 'Unable to confirm validation. Refresh to retrieve the latest attempt.',
+          qualityNote: 'Validation results are not available.',
+        } : record)
+      }
+      throw cause
+    }
+  }
+
   function download(datasetId: string, version: string) {
     return repository.download(datasetId, version)
   }
 
-  return { datasets: records, ruleCatalog, source, status, error, load, saveRuleset, download }
+  return { datasets: records, ruleCatalog, source, status, error, load, saveRuleset, download, revalidate, refreshDataset }
 }
 
 export const useDatasetStore = defineStore('datasets', () => createDatasetState(datasetRepository))

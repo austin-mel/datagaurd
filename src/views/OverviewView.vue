@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ColumnProfileTable, DatasetDetailsCard, DatasetHistoryCard, DatasetOverviewHeader, DatasetQualityCards, PageHeader, QualityRulesModal, RecentDatasets, ValidationIssuesTable } from '@/components'
@@ -13,6 +13,8 @@ const { datasets, ruleCatalog, source, status, error } = storeToRefs(datasetStor
 const { load } = datasetStore
 const isDownloading = ref(false)
 const downloadError = ref('')
+const isRevalidating = ref(false)
+const validationError = ref('')
 const recentStore = useRecentDatasetStore()
 const { visits, lastOpenedId } = storeToRefs(recentStore)
 const { record, reconcile } = recentStore
@@ -39,12 +41,41 @@ watch(() => selectedDataset.value?.id, id => {
   isRulesOpen.value = false
   saveMessage.value = ''
   downloadError.value = ''
+  validationError.value = ''
   if (id) record(id)
 }, { immediate: true })
 
 function openDataset(datasetId: string) {
   void router.push({ name: 'overview', query: { dataset: datasetId } })
 }
+
+async function rerunValidation() {
+  const dataset = selectedDataset.value
+  if (!dataset || isRevalidating.value || isSaving.value || dataset.processingStatus === 'running') return
+  isRevalidating.value = true
+  validationError.value = ''
+  saveMessage.value = ''
+  try { await datasetStore.revalidate(dataset.id, dataset.version) }
+  catch (cause) {
+    if (selectedDataset.value?.id === dataset.id) validationError.value = cause instanceof Error ? cause.message : 'Unable to re-run validation.'
+  } finally { isRevalidating.value = false }
+}
+
+// Future repositories may return a persisted running attempt before it completes.
+let refreshTimer: ReturnType<typeof setTimeout> | undefined
+let disposed = false
+function scheduleRefresh() {
+  clearTimeout(refreshTimer)
+  if (disposed || selectedDataset.value?.processingStatus !== 'running') return
+  const id = selectedDataset.value.id
+  refreshTimer = setTimeout(async () => {
+    try { await datasetStore.refreshDataset(id) }
+    catch { validationError.value = 'Unable to refresh validation status. Retrying…' }
+    scheduleRefresh()
+  }, 3000)
+}
+watch(() => [selectedDataset.value?.id, selectedDataset.value?.processingStatus], scheduleRefresh)
+onUnmounted(() => { disposed = true; clearTimeout(refreshTimer) })
 
 async function downloadDataset() {
   const dataset = selectedDataset.value
@@ -94,13 +125,22 @@ void load()
       <DatasetOverviewHeader :dataset="selectedDataset" :downloading="isDownloading" :saving-rules="isSaving" @download="downloadDataset" @edit-rules="openRules" />
       <p v-if="downloadError" class="mb-[18px] text-xs text-coral-text" role="alert">{{ downloadError }}</p>
       <DatasetQualityCards :dataset="selectedDataset" />
+      <button type="button"
+        class="mb-3 flex min-h-[76px] w-full cursor-pointer items-center justify-center rounded-xl bg-emerald-700 px-6 py-5 text-xl font-semibold text-white shadow-sm hover:bg-emerald-800 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 disabled:cursor-wait disabled:opacity-60"
+        :disabled="isRevalidating || isSaving || selectedDataset.processingStatus === 'running'"
+        :aria-busy="isRevalidating || selectedDataset.processingStatus === 'running'" @click="rerunValidation">
+        {{ isRevalidating || selectedDataset.processingStatus === 'running' ? 'Running Dataset Validation…' : 'Run Dataset Validation' }}
+      </button>
+      <p v-if="selectedDataset.rulesChangedSinceRun" class="mb-4 text-sm text-muted" role="status">Rules have changed since the displayed results. Re-run validation to apply them.</p>
+      <p v-if="selectedDataset.processingStatus === 'running'" class="mb-4 text-sm text-muted" role="status">Validation is running. Results are not available yet.</p>
+      <p v-if="selectedDataset.processingStatus === 'failed'" class="mb-4 text-sm text-coral-text" role="alert">Validation failed. Results are not available. {{ selectedDataset.processingError }}</p>
+      <p v-if="validationError" class="mb-4 text-sm text-coral-text" role="alert">{{ validationError }}</p>
       <div class="grid min-w-0 gap-[22px]">
         <div class="grid min-w-0 grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-[22px] max-[760px]:grid-cols-1">
-          <DatasetDetailsCard :dataset="selectedDataset" @edit-rules="openRules" />
           <DatasetHistoryCard :history="selectedDataset.history" />
         </div>
         <ColumnProfileTable :profiles="selectedDataset.columnProfiles" :version="selectedDataset.version" />
-        <ValidationIssuesTable :validation="selectedDataset.validation" :ruleset="selectedDataset.ruleset" :total-rows="selectedDataset.rowCount" @edit-rules="openRules" />
+        <ValidationIssuesTable :validation="selectedDataset.validation" :ruleset="selectedDataset.ruleset" :stale="selectedDataset.rulesChangedSinceRun" :total-rows="selectedDataset.rowCount" @edit-rules="openRules" />
       </div>
       <p role="status" class="mt-3 text-xs text-green-text">{{ saveMessage }}</p>
       <QualityRulesModal v-if="ruleCatalog && source" v-model="isRulesOpen" :dataset="selectedDataset" :rule-catalog="ruleCatalog" :source-kind="source.kind" :saving="isSaving" :save-error="saveError" @save="saveRules" />
