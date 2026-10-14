@@ -1,4 +1,4 @@
-import type { DatasetRuleset } from '@/data/qualityRules'
+import type { DatasetRuleset } from './ruleset'
 
 export type DatasetValue = string | number | boolean | null
 export type DatasetRow = Readonly<Record<string, DatasetValue>>
@@ -49,7 +49,6 @@ export interface Dataset {
   uploadedAt?: string
   uploadedBy?: string
   downloadFilename?: string
-  validationSetName?: string
   history?: readonly DatasetHistoryEvent[]
   rowCount: number
   version: string

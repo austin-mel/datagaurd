@@ -1,4 +1,5 @@
-import { dateConditions, type DatasetRuleset, type QualityRule } from '@/data/qualityRules'
+import { supportedDateConditions } from '@/types/ruleset'
+import type { DatasetRuleset, QualityRule } from '@/types'
 import type { Dataset, DatasetRow, DatasetValue, QualityDimension, ValidationIssue } from '@/types'
 
 export class RulesetValidationError extends Error {}
@@ -76,7 +77,7 @@ function prepareRule(rule: QualityRule, today: number): PreparedRule {
     }
     case 'date': {
       const condition = rule.condition.trim()
-      if (!dateConditions.some(option => option === condition)) fail('select a supported date condition.')
+      if (!supportedDateConditions.some(option => option === condition)) fail('select a supported date condition.')
       return check(`${label} must satisfy: ${condition.toLowerCase()}.`, value => {
         const date = dateValue(value)
         if (!Number.isFinite(date)) return false

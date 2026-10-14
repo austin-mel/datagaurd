@@ -1,54 +1,56 @@
-import { createSeededDatasets, cloneRuleset, getSeededDatasetRows, type DatasetRuleset } from '@/data'
-import type { Dataset } from '@/types'
-import { formatNumber, formatScore } from '@/utils'
-import { validateDataset } from './datasetValidation'
-import { createDatasetCsv } from './datasetCsv'
+import { createSeededDatasetRepository } from './seededDatasetRepository'
+import { BackendUnavailableError, type DatasetRepository } from './datasetRepositoryContract'
+import type { DatasetDataSource, DatasetWorkspace } from '@/types'
 
-// Implement this interface with API calls when the backend is available.
-export interface DatasetRepository {
-  list(): Promise<Dataset[]>
-  download(datasetId: string, version: string): Promise<{ filename: string; blob: Blob }>
-  updateRuleset(datasetId: string, ruleset: DatasetRuleset): Promise<Dataset>
-}
+export type { DatasetRepository } from './datasetRepositoryContract'
 
-export function createSeededDatasetRepository(): DatasetRepository {
-  let records: Dataset[] | undefined
-  function getRecords() {
-    records ??= createSeededDatasets().map(record => ({
-      ...record,
-      ...validateDataset(getSeededDatasetRows(record.id), record.columns, record.ruleset, new Date(record.lastValidatedAt)),
-    }))
-    return records
+// Select one complete workspace source. Never replay a failed live write against seeds.
+export function createDatasetRepository(primary?: DatasetRepository, fallback = createSeededDatasetRepository()): DatasetRepository {
+  let active: DatasetRepository | undefined
+  let pending: Promise<DatasetWorkspace> | undefined
+  let source: DatasetDataSource = fallback.source
+
+  async function selectSource(): Promise<DatasetWorkspace> {
+    if (primary) {
+      try {
+        const workspace = await primary.getWorkspace()
+        active = primary
+        source = primary.source
+        return workspace
+      } catch (cause) {
+        if (!(cause instanceof BackendUnavailableError)) throw cause
+      }
+    }
+    const workspace = await fallback.getWorkspace()
+    active = fallback
+    source = primary ? { kind: 'seeded', reason: 'backend-unavailable' } : fallback.source
+    return workspace
   }
-  return {
-    async list() {
-      return structuredClone(getRecords())
+
+  async function selectedRepository() {
+    if (!active) await repository.getWorkspace()
+    if (!active) throw new Error('No dataset source is available')
+    return active
+  }
+
+  const repository: DatasetRepository = {
+    get source() { return source },
+    getWorkspace() {
+      if (active === fallback) return fallback.getWorkspace()
+      pending ??= selectSource().finally(() => { pending = undefined })
+      return pending
     },
     async download(datasetId, version) {
-      const record = getRecords().find(dataset => dataset.id === datasetId && dataset.version === version)
-      if (!record) throw new Error('Dataset version not found')
-      return {
-        filename: record.downloadFilename ?? `${record.id}_${record.version}.csv`,
-        blob: createDatasetCsv(record.columns, getSeededDatasetRows(record.id)),
-      }
+      return (await selectedRepository()).download(datasetId, version)
     },
     async updateRuleset(datasetId, ruleset) {
-      const record = getRecords().find(dataset => dataset.id === datasetId)
-      if (!record) throw new Error('Dataset not found')
-      const savedRuleset = cloneRuleset(ruleset)
-      const report = validateDataset(getSeededDatasetRows(record.id), record.columns, savedRuleset, new Date())
-      const issueCount = report.validation.issues.length
-      const history = [...(record.history ?? []), {
-        id: crypto.randomUUID(),
-        occurredAt: report.lastValidatedAt,
-        title: 'Quality rules updated and validation completed',
-        description: `System · ${formatNumber(issueCount)} ${issueCount === 1 ? 'issue' : 'issues'} · ${report.quality === null ? 'No quality score available' : `Overall quality ${formatScore(report.quality)} / 100`}`,
-      }]
-      // Commit the rules and their results together only after validation succeeds.
-      Object.assign(record, report, { ruleset: savedRuleset, history })
-      return structuredClone(record)
+      return (await selectedRepository()).updateRuleset(datasetId, ruleset)
     },
   }
+  return repository
 }
 
-export const datasetRepository: DatasetRepository = createSeededDatasetRepository()
+// Future backend integration point: supply an implementation of DatasetRepository here.
+// No HTTP client, endpoint configuration, or network requests are implemented yet.
+const backendRepository: DatasetRepository | undefined = undefined
+export const datasetRepository = createDatasetRepository(backendRepository)

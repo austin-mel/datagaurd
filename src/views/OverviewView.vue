@@ -9,7 +9,7 @@ import { useDatasetStore, useRecentDatasetStore } from '@/stores'
 const route = useRoute()
 const router = useRouter()
 const datasetStore = useDatasetStore()
-const { datasets, status, error } = storeToRefs(datasetStore)
+const { datasets, ruleCatalog, source, status, error } = storeToRefs(datasetStore)
 const { load } = datasetStore
 const isDownloading = ref(false)
 const downloadError = ref('')
@@ -100,10 +100,10 @@ void load()
           <DatasetHistoryCard :history="selectedDataset.history" />
         </div>
         <ColumnProfileTable :profiles="selectedDataset.columnProfiles" :version="selectedDataset.version" />
-        <ValidationIssuesTable :validation="selectedDataset.validation" :ruleset-kind="selectedDataset.ruleset.kind" :total-rows="selectedDataset.rowCount" @edit-rules="openRules" />
+        <ValidationIssuesTable :validation="selectedDataset.validation" :ruleset="selectedDataset.ruleset" :total-rows="selectedDataset.rowCount" @edit-rules="openRules" />
       </div>
       <p role="status" class="mt-3 text-xs text-green-text">{{ saveMessage }}</p>
-      <QualityRulesModal v-model="isRulesOpen" :dataset="selectedDataset" :saving="isSaving" :save-error="saveError" @save="saveRules" />
+      <QualityRulesModal v-if="ruleCatalog && source" v-model="isRulesOpen" :dataset="selectedDataset" :rule-catalog="ruleCatalog" :source-kind="source.kind" :saving="isSaving" :save-error="saveError" @save="saveRules" />
     </template>
     <div v-else class="ui-panel p-5">
       <p class="mb-3 text-sm text-muted">{{ datasets.length ? 'This dataset is no longer available. Choose another dataset to continue.' : 'No datasets are available yet.' }}</p>

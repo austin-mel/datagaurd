@@ -8,7 +8,7 @@ import { useDatasetStore } from '@/stores'
 const search = ref('')
 const isConnectOpen = ref(false)
 const datasetStore = useDatasetStore()
-const { datasets, status, error } = storeToRefs(datasetStore)
+const { datasets, ruleCatalog, source, status, error } = storeToRefs(datasetStore)
 const { load } = datasetStore
 const selectedDatasetId = ref<string | null>(null)
 const selectedDataset = computed(() => datasets.value.find(dataset => dataset.id === selectedDatasetId.value))
@@ -52,6 +52,6 @@ void load()
   </div>
   <DatasetTable v-else :datasets="datasets" :search="search" @edit-quality-rules="openRules" />
   <p role="status" class="mt-3 text-xs text-green-text">{{ saveMessage }}</p>
-  <QualityRulesModal v-if="selectedDataset" v-model="isRulesOpen" :dataset="selectedDataset" :saving="isSaving" :save-error="saveError" @save="saveRules" />
+  <QualityRulesModal v-if="selectedDataset && ruleCatalog && source" v-model="isRulesOpen" :dataset="selectedDataset" :rule-catalog="ruleCatalog" :source-kind="source.kind" :saving="isSaving" :save-error="saveError" @save="saveRules" />
   <ConnectDatasetModal v-model="isConnectOpen" />
 </template>

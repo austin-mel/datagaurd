@@ -1,1 +1,3 @@
 export type { Dataset, DatasetHistoryEvent, DatasetValue, DatasetRow, QualityDimension, ColumnProfile, ProfileSummary, ValidationIssue } from './dataset'
+export type { DatasetRuleset, QualityRule, RuleType, DateCondition, RuleEditorCatalog } from './ruleset'
+export type { DatasetWorkspace, DatasetDataSource } from './workspace'

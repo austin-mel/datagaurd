@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { DataguardIcon, DataguardLogo } from '@/assets'
+import { useDatasetStore } from '@/stores'
 
 const route = useRoute()
+const datasetStore = useDatasetStore()
 </script>
 
 <template>

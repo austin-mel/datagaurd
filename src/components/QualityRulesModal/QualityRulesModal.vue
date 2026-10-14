@@ -1,31 +1,30 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
 import { ModalShell } from '../ModalShell'
-import { ruleTypes, dateConditions, ruleCondition, type Dataset, type DatasetRuleset, type QualityRule } from '@/data'
+import type { Dataset, DatasetDataSource, DatasetRuleset, QualityRule, RuleEditorCatalog } from '@/types'
+import { cloneRuleset, createQualityRule, ruleDefaults } from '@/utils'
 import { assertValidRuleset, RulesetValidationError } from '@/services'
 
-const props = defineProps<{ dataset: Dataset; saving?: boolean; saveError?: string }>()
+const props = defineProps<{ dataset: Dataset; ruleCatalog: RuleEditorCatalog; sourceKind: DatasetDataSource['kind']; saving?: boolean; saveError?: string }>()
 const isOpen = defineModel<boolean>({ required: true })
 const emit = defineEmits<{ save: [ruleset: DatasetRuleset] }>()
 const formId = useId()
 const errorId = useId()
 const addButton = useTemplateRef<HTMLButtonElement>('addButton')
-const draft = ref<QualityRule[]>([])
-const draftKind = ref<DatasetRuleset['kind']>('default')
-const isCustom = computed(() => draftKind.value === 'custom')
+const draft = ref(cloneRuleset(props.dataset.ruleset))
+const isCustom = computed(() => draft.value.kind === 'custom')
 const error = ref('')
-const enabledCount = computed(() => draft.value.filter(rule => rule.enabled).length)
+const enabledCount = computed(() => draft.value.rules.filter(rule => rule.enabled).length)
 
 watch([isOpen, () => props.dataset.id], ([open]) => {
   if (open) {
-    draft.value = props.dataset.ruleset.rules.map(rule => ({ ...rule }))
-    draftKind.value = props.dataset.ruleset.kind
+    draft.value = cloneRuleset(props.dataset.ruleset)
     error.value = ''
   }
 }, { immediate: true })
 
 async function createCustomRuleset() {
-  draftKind.value = 'custom'
+  draft.value = { ...draft.value, id: crypto.randomUUID(), kind: 'custom' }
   error.value = ''
   await nextTick()
   addButton.value?.focus()
@@ -34,16 +33,13 @@ async function createCustomRuleset() {
 function addRule() {
   const column = props.dataset.columns[0]
   if (!isCustom.value || props.saving || !column) return
-  draft.value.push({
-    id: crypto.randomUUID(), enabled: true, column, type: 'required',
-    condition: ruleCondition('required'), minimum: 0, maximum: 100,
-  })
+  draft.value.rules.push(createQualityRule(props.ruleCatalog, column))
   error.value = ''
 }
 
 async function removeRule(id: string) {
   if (!isCustom.value || props.saving) return
-  draft.value = draft.value.filter(rule => rule.id !== id)
+  draft.value.rules = draft.value.rules.filter(rule => rule.id !== id)
   error.value = ''
   await nextTick()
   addButton.value?.focus()
@@ -51,9 +47,7 @@ async function removeRule(id: string) {
 
 function resetCondition(rule: QualityRule) {
   if (!isCustom.value || props.saving) return
-  rule.condition = ruleCondition(rule.type)
-  rule.minimum = 0
-  rule.maximum = 100
+  Object.assign(rule, ruleDefaults(props.ruleCatalog, rule.type))
   error.value = ''
 }
 
@@ -61,12 +55,12 @@ function saveRules() {
   if (!isCustom.value || props.saving) return
   error.value = ''
   try {
-    assertValidRuleset({ kind: 'custom', rules: draft.value }, props.dataset.columns)
+    assertValidRuleset(draft.value, props.dataset.columns)
   } catch (cause) {
     error.value = cause instanceof RulesetValidationError ? cause.message : 'Unable to validate these rules.'
     return
   }
-  emit('save', { kind: 'custom', rules: draft.value.map(rule => ({ ...rule })) })
+  emit('save', cloneRuleset(draft.value))
 }
 </script>
 
@@ -88,10 +82,11 @@ function saveRules() {
         <p class="mt-1 text-xs text-muted">{{ dataset.source }} · Current version {{ dataset.version }}</p>
       </div>
       <span class="rounded-[5px] bg-cobalt-soft px-[7px] py-1 text-[10px] font-semibold text-cobalt" aria-live="polite">
-        {{ isCustom ? 'Custom ruleset' : 'Default rules' }} · {{ enabledCount }} enabled {{ enabledCount === 1 ? 'rule' : 'rules' }}
+        {{ draft.name }} · {{ enabledCount }} enabled {{ enabledCount === 1 ? 'rule' : 'rules' }}
       </span>
     </div>
 
+    <p v-if="draft.description" class="mb-4 text-xs text-muted">{{ draft.description }}</p>
     <form :id="formId" :aria-describedby="error ? errorId : undefined" @submit.prevent="saveRules">
       <fieldset :disabled="!isCustom || saving" class="min-w-0">
         <legend class="sr-only">{{ isCustom ? 'Custom ruleset' : 'Default rules (read only)' }}</legend>
@@ -107,7 +102,7 @@ function saveRules() {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(rule, index) in draft" :key="rule.id" class="border-b border-line last:border-0">
+            <tr v-for="(rule, index) in draft.rules" :key="rule.id" class="border-b border-line last:border-0">
               <td>
                 <input v-model="rule.enabled" type="checkbox" class="size-3.5 accent-cobalt" :aria-label="`Enable rule ${index + 1}: ${rule.column}`" />
               </td>
@@ -118,7 +113,7 @@ function saveRules() {
               </td>
               <td>
                 <select v-model="rule.type" class="ui-control w-[135px]" :aria-label="`Type for rule ${index + 1}`" @change="resetCondition(rule)">
-                  <option v-for="type in ruleTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
+                  <option v-for="type in ruleCatalog.ruleTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
                 </select>
               </td>
               <td class="min-w-[235px]">
@@ -135,7 +130,7 @@ function saveRules() {
                 <input v-else-if="rule.type === 'min'" v-model="rule.minimum" type="number" step="any" class="ui-control" :required="rule.enabled" :aria-label="`Minimum for rule ${index + 1}`" />
                 <input v-else-if="rule.type === 'max'" v-model="rule.maximum" type="number" step="any" class="ui-control" :required="rule.enabled" :aria-label="`Maximum for rule ${index + 1}`" />
                 <select v-else-if="rule.type === 'date'" v-model="rule.condition" class="ui-control" :aria-label="`Date condition for rule ${index + 1}`">
-                  <option v-for="condition in dateConditions" :key="condition" :value="condition">{{ condition }}</option>
+                  <option v-for="condition in ruleCatalog.dateConditions" :key="condition" :value="condition">{{ condition }}</option>
                 </select>
                 <input
                   v-else
@@ -152,7 +147,7 @@ function saveRules() {
                 </button>
               </td>
             </tr>
-            <tr v-if="draft.length === 0"><td colspan="5" class="text-center text-muted">No rules yet. Add a rule to start defining your checks.</td></tr>
+            <tr v-if="draft.rules.length === 0"><td colspan="5" class="text-center text-muted">No rules yet. Add a rule to start defining your checks.</td></tr>
           </tbody>
         </table>
       </div>
@@ -180,7 +175,7 @@ function saveRules() {
     </p>
 
     <template #footer="{ close }">
-      <p class="text-[10px] text-muted">Changes are kept for this page session.</p>
+      <p class="text-[10px] text-muted">{{ sourceKind === 'seeded' ? 'Sample data: changes are kept for this page session.' : 'Changes are saved to the connected workspace.' }}</p>
       <div class="ml-auto flex gap-[9px]">
         <button type="button" class="ui-button" :disabled="saving" @click="close">Cancel</button>
         <button type="submit" :form="formId" class="ui-button ui-button-primary" :disabled="!isCustom || saving">{{ saving ? 'Saving…' : 'Save rules' }}</button>

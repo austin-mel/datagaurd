@@ -1,4 +1,7 @@
-export const ruleTypes = [
+import type { QualityRule, RuleEditorCatalog, RuleType } from '@/types'
+import { supportedDateConditions } from '@/types/ruleset'
+
+const ruleTypes = [
   { value: 'required', label: 'Required' },
   { value: 'unique', label: 'Unique' },
   { value: 'regex', label: 'Regex' },
@@ -9,23 +12,10 @@ export const ruleTypes = [
   { value: 'date', label: 'Date constraint' },
 ] as const
 
-export type RuleType = (typeof ruleTypes)[number]['value']
-
-export const dateConditions = ['On or before today', 'On or after today', 'Before today', 'After today', 'Valid date'] as const
-
-export interface QualityRule {
-  id: string
-  enabled: boolean
-  column: string
-  type: RuleType
-  condition: string
-  minimum: number | ''
-  maximum: number | ''
-}
-
-export interface DatasetRuleset {
-  kind: 'default' | 'custom'
-  rules: readonly QualityRule[]
+export const seededRuleCatalog: RuleEditorCatalog = {
+  defaultRuleType: 'required',
+  ruleTypes: ruleTypes.map(option => ({ ...option, defaults: { condition: ruleCondition(option.value), minimum: 0, maximum: 100 } })),
+  dateConditions: [...supportedDateConditions],
 }
 
 export function ruleCondition(type: RuleType): string {
@@ -48,8 +38,4 @@ export function createDefaultRules(identifierColumn: string): QualityRule[] {
     minimum: 0,
     maximum: 100,
   }))
-}
-
-export function cloneRuleset(ruleset: DatasetRuleset): DatasetRuleset {
-  return { kind: ruleset.kind, rules: ruleset.rules.map(rule => ({ ...rule })) }
 }

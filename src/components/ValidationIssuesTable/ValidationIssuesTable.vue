@@ -2,7 +2,7 @@
 import { computed, useId } from 'vue'
 import type { Dataset } from '@/types'
 import { formatNumber } from '@/utils'
-const props = defineProps<{ validation: Dataset['validation']; rulesetKind: Dataset['ruleset']['kind']; totalRows: number }>()
+const props = defineProps<{ validation: Dataset['validation']; ruleset: Dataset['ruleset']; totalRows: number }>()
 const emit = defineEmits<{ editRules: [] }>()
 const headingId = useId()
 const affectedColumns = computed(() => new Set(props.validation.issues.map(issue => issue.column)).size)
@@ -11,9 +11,9 @@ const affectedColumns = computed(() => new Set(props.validation.issues.map(issue
 <template>
   <section class="ui-panel" :aria-labelledby="headingId">
     <header class="ui-panel-header">
-      <div><h2 :id="headingId">Validation issues</h2><p>{{ formatNumber(validation.checksRun) }} enabled {{ validation.checksRun === 1 ? 'check' : 'checks' }} in the current {{ rulesetKind }} ruleset. Updated when rules are saved.</p></div>
+      <div><h2 :id="headingId">Validation issues</h2><p>{{ formatNumber(validation.checksRun) }} enabled {{ validation.checksRun === 1 ? 'check' : 'checks' }} in the current {{ ruleset.kind }} ruleset. Updated when rules are saved.</p></div>
       <div class="flex flex-wrap items-center gap-2">
-        <span class="ui-badge bg-cobalt-soft text-cobalt">{{ rulesetKind === 'default' ? 'Default ruleset' : 'Custom ruleset' }}</span>
+        <span class="ui-badge bg-cobalt-soft text-cobalt">{{ ruleset.name }}</span>
         <span v-if="!validation.checksRun" class="ui-badge bg-ivory text-muted">0 enabled checks</span>
         <span v-else class="ui-badge" :class="validation.issues.length ? 'bg-coral-soft text-coral-text' : 'bg-emerald-soft text-green-text'">{{ formatNumber(validation.issues.length) }} {{ validation.issues.length === 1 ? 'issue' : 'issues' }}</span>
       </div>

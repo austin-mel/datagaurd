@@ -15,7 +15,6 @@ export const seededDatasets: readonly DatasetSeed[] = [
     uploadedAt: '2026-10-07T09:12:00-07:00',
     uploadedBy: 'Alex Lee',
     downloadFilename: 'county_facilities_v3.csv',
-    validationSetName: 'Facilities checks',
     history: [
       { id: 'facilities-v3-uploaded', occurredAt: '2026-10-07T09:12:00-07:00', title: 'Version v3 uploaded', description: 'Alex Lee · 20 rows, 6 columns' },
       { id: 'facilities-v3-validated', occurredAt: '2026-10-07T09:12:02-07:00', title: 'Profile, validation, and scoring completed', description: 'System · 5 issues · Overall quality 89.1 / 100' },
@@ -35,6 +34,9 @@ export const seededDatasets: readonly DatasetSeed[] = [
       { name: 'inspection_date', type: 'date', missingCount: 0, uniqueCount: 16, summary: { kind: 'date-range', minimum: '2026-09-01', maximum: '2026-10-12' } },
     ],
     ruleset: {
+      id: 'facilities-checks',
+      name: 'Facilities checks',
+      description: 'Required and unique facility IDs, inspection scores and dates, and approved counties.',
       kind: 'custom',
       rules: [
         ...createDefaultRules('facility_id'),
@@ -64,7 +66,11 @@ export const seededDatasets: readonly DatasetSeed[] = [
       { name: 'email', type: 'text', missingCount: 2100, uniqueCount: 244810, summary: { kind: 'top-values', values: [{ value: 'contact@example.com', count: 8 }] } },
       { name: 'country', type: 'text', missingCount: 45, uniqueCount: 28, summary: { kind: 'top-values', values: [{ value: 'United States', count: 176432 }, { value: 'Canada', count: 31320 }] } },
     ],
-    ruleset: { kind: 'default', rules: createDefaultRules('customer_id') },
+    ruleset: {
+      id: 'customer-id-checks', name: 'Customer ID checks',
+      description: 'Required and unique customer IDs.',
+      kind: 'default', rules: createDefaultRules('customer_id'),
+    },
   },
 ]
 

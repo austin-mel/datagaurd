@@ -7,7 +7,6 @@ const props = defineProps<{ dataset: Dataset }>()
 const emit = defineEmits<{ 'edit-rules': [] }>()
 const headingId = useId()
 const enabledRuleCount = computed(() => props.dataset.ruleset.rules.filter(rule => rule.enabled).length)
-const validationSetName = computed(() => props.dataset.ruleset.kind === 'default' ? 'Default rules' : props.dataset.validationSetName ?? 'Custom ruleset')
 </script>
 
 <template>
@@ -36,7 +35,7 @@ const validationSetName = computed(() => props.dataset.ruleset.kind === 'default
         <dt class="mb-1 text-[10px] text-muted">Validation set</dt>
         <dd>
           <button type="button" class="cursor-pointer text-left font-[550] text-cobalt wrap-anywhere hover:underline" aria-haspopup="dialog" aria-controls="quality-rules-dialog" @click="emit('edit-rules')">
-            {{ validationSetName }} · {{ formatNumber(enabledRuleCount) }} {{ enabledRuleCount === 1 ? 'rule' : 'rules' }}
+            {{ dataset.ruleset.name }} · {{ formatNumber(enabledRuleCount) }} {{ enabledRuleCount === 1 ? 'rule' : 'rules' }}
           </button>
         </dd>
       </div>

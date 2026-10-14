@@ -1,11 +1,12 @@
 import { ref, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
 import { datasetRepository, type DatasetRepository } from '@/services'
-import type { Dataset } from '@/types'
-import type { DatasetRuleset } from '@/data'
+import type { Dataset, DatasetDataSource, DatasetRuleset, RuleEditorCatalog } from '@/types'
 
 export function createDatasetState(repository: DatasetRepository) {
   const records = shallowRef<Dataset[]>([])
+  const ruleCatalog = shallowRef<RuleEditorCatalog | null>(null)
+  const source = shallowRef<DatasetDataSource | null>(null)
   const status = ref<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const error = ref('')
   let pending: Promise<void> | null = null
@@ -15,8 +16,10 @@ export function createDatasetState(repository: DatasetRepository) {
     if (status.value === 'ready') return Promise.resolve()
     status.value = 'loading'
     error.value = ''
-    pending = repository.list().then(data => {
-      records.value = data
+    pending = repository.getWorkspace().then(workspace => {
+      records.value = workspace.datasets
+      ruleCatalog.value = workspace.ruleCatalog
+      source.value = repository.source
       status.value = 'ready'
     }).catch(() => {
       error.value = 'Unable to load datasets. Please try again.'
@@ -34,7 +37,7 @@ export function createDatasetState(repository: DatasetRepository) {
     return repository.download(datasetId, version)
   }
 
-  return { datasets: records, status, error, load, saveRuleset, download }
+  return { datasets: records, ruleCatalog, source, status, error, load, saveRuleset, download }
 }
 
 export const useDatasetStore = defineStore('datasets', () => createDatasetState(datasetRepository))

@@ -1,3 +1,5 @@
-export { datasetRepository, createSeededDatasetRepository } from './datasetRepository'
+export { datasetRepository, createDatasetRepository } from './datasetRepository'
+export { createSeededDatasetRepository } from './seededDatasetRepository'
 export type { DatasetRepository } from './datasetRepository'
+export { BackendUnavailableError } from './datasetRepositoryContract'
 export { assertValidRuleset, RulesetValidationError, validateDataset } from './datasetValidation'
