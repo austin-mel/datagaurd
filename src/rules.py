@@ -19,6 +19,7 @@ class BaseRule(ConfigModel):
     column: str = Field(min_length=1)
     severity: Literal["error", "warning"] = "error"
     explanation: str = Field(min_length=1)
+    enabled: bool = True
 
 
 class RequiredRule(BaseRule):
@@ -72,6 +73,18 @@ class RangeRule(BaseRule):
         return self
 
 
+class MinRule(BaseRule):
+    kind: Literal["min"]
+    minimum: float
+    prerequisite: str
+
+
+class MaxRule(BaseRule):
+    kind: Literal["max"]
+    maximum: float
+    prerequisite: str
+
+
 DateFormat = Literal["%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y"]
 
 
@@ -93,8 +106,14 @@ class NotFutureRule(BaseRule):
     prerequisite: str
 
 
+class RelativeDateRule(BaseRule):
+    kind: Literal["before_today", "after_today", "on_or_after_today"]
+    prerequisite: str
+
+
 Rule = Annotated[
-    RequiredRule | UniqueRule | PatternRule | AllowedRule | NumericRule | RangeRule | DateRule | NotFutureRule,
+    RequiredRule | UniqueRule | PatternRule | AllowedRule | NumericRule | RangeRule | MinRule | MaxRule
+    | DateRule | NotFutureRule | RelativeDateRule,
     Field(discriminator="kind"),
 ]
 
@@ -121,8 +140,8 @@ class RuleSet(ConfigModel):
     def coherent_rules(self) -> Self:
         if not self.name.strip():
             raise ValueError("name must be nonblank")
-        if self.identifier_policy == "configured" and (not self.required_columns or not self.rules):
-            raise ValueError("configured rule sets require columns and rules")
+        if self.identifier_policy == "configured" and not self.required_columns:
+            raise ValueError("configured rule sets require columns")
         if self.identifier_policy == "auto" and {self.structural_rule_id, *(rule.id for rule in self.rules)} & {
             "GENERIC_ID_REQUIRED", "GENERIC_ID_UNIQUE"
         }:
@@ -139,11 +158,13 @@ class RuleSet(ConfigModel):
                 raise ValueError(f"duplicate rule ID: {rule.id}")
             if rule.column not in self.required_columns:
                 raise ValueError(f"{rule.id}: rule column must be declared in required_columns")
-            if isinstance(rule, (RangeRule, NotFutureRule)):
+            if isinstance(rule, (RangeRule, MinRule, MaxRule, NotFutureRule, RelativeDateRule)):
                 parent = seen.get(rule.prerequisite)
-                expected_type = NumericRule if isinstance(rule, RangeRule) else DateRule
+                expected_type = NumericRule if isinstance(rule, (RangeRule, MinRule, MaxRule)) else DateRule
                 if not isinstance(parent, expected_type) or parent.column != rule.column:
                     raise ValueError(f"{rule.id}: prerequisite must be an earlier parsing rule on the same column")
+                if rule.enabled and not parent.enabled:
+                    raise ValueError(f"{rule.id}: an enabled rule requires an enabled prerequisite")
             seen[rule.id] = rule
         return self
 

@@ -7,7 +7,7 @@ def identifier_column(rules: RuleSet, headers: list[str]) -> tuple[str | None, s
     if rules.identifier_column:
         return rules.identifier_column, None
     if rules.identifier_policy == "configured":
-        columns = {rule.column for rule in rules.rules if isinstance(rule, UniqueRule)}
+        columns = {rule.column for rule in rules.rules if isinstance(rule, UniqueRule) and rule.enabled}
         if len(columns) == 1:
             return next(iter(columns)), None
         return None, "No unambiguous identifier column is configured."
@@ -32,6 +32,7 @@ def identifier_column(rules: RuleSet, headers: list[str]) -> tuple[str | None, s
 
 
 def resolved_rules(rules: RuleSet, headers: list[str]) -> tuple[RuleSet, str | None]:
+    rules = rules.model_copy(update={"rules": [rule for rule in rules.rules if rule.enabled]})
     column, reason = identifier_column(rules, headers)
     if rules.identifier_policy != "auto" or column is None:
         return rules, reason

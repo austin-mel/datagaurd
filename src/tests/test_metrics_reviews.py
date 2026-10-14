@@ -31,8 +31,9 @@ def test_metrics_match_hand_calculated_values(settings: Settings) -> None:
     ).encode()
     result = check_dataset(parse_dataset(content, "x.csv", settings), load_rules(settings.rules_path), settings)
     metrics = result.metrics
-    assert (metrics.completeness.numerator, metrics.completeness.denominator) == (18, 20)
-    assert metrics.completeness.percentage == 90
+    assert (metrics.completeness.numerator, metrics.completeness.denominator) == (3, 4)
+    assert metrics.completeness.percentage == 75
+    assert (metrics.uniqueness.numerator, metrics.uniqueness.denominator) == (1, 4)
     assert (metrics.valid_row_rate.numerator, metrics.valid_row_rate.denominator) == (1, 4)
     assert metrics.valid_row_rate.percentage == 25
     assert (metrics.duplicate_id_rate.numerator, metrics.duplicate_id_rate.denominator) == (2, 3)
@@ -46,7 +47,7 @@ def test_clean_dirty_fixture_metrics(settings: Settings) -> None:
     assert clean_metrics.completeness.percentage == clean_metrics.valid_row_rate.percentage == 100
     assert clean_metrics.duplicate_id_rate.percentage == 0
     dirty_metrics = check_dataset(parse_dataset(dirty, "dirty.csv", settings), rules, settings).metrics
-    assert (dirty_metrics.completeness.numerator, dirty_metrics.completeness.denominator) == (743, 750)
+    assert (dirty_metrics.completeness.numerator, dirty_metrics.completeness.denominator) == (143, 150)
     assert (dirty_metrics.valid_row_rate.numerator, dirty_metrics.valid_row_rate.denominator) == (130, 150)
     assert (dirty_metrics.duplicate_id_rate.numerator, dirty_metrics.duplicate_id_rate.denominator) == (3, 148)
 

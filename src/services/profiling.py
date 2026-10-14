@@ -25,7 +25,7 @@ def quartile(ordered: list[float], quarter: int) -> Decimal:
 
 def profile_dataset(dataset: ParsedDataset, rules: RuleSet, top_count: int = 5) -> DatasetProfile:
     profiles: list[ColumnProfile] = []
-    date_formats = {rule.column: rule.formats for rule in rules.rules if isinstance(rule, DateRule)}
+    date_formats = {rule.column: rule.formats for rule in rules.rules if isinstance(rule, DateRule) and rule.enabled}
     for column in dataset.metadata.headers:
         values = dataset.column(column)
         populated = [value for value in values if not is_missing(value)]

@@ -119,6 +119,7 @@ class QualityMetrics(ApiModel):
     completeness: Metric = Field(default_factory=Metric)
     valid_row_rate: Metric = Field(default_factory=Metric)
     duplicate_id_rate: Metric = Field(default_factory=Metric)
+    uniqueness: Metric = Field(default_factory=Metric)
 
 
 class AnalysisResult(ApiModel):
@@ -236,6 +237,29 @@ class AuditView(ApiModel):
     entity_id: str
     actor: str
     created_at: datetime
+
+
+class UploadPolicy(ApiModel):
+    extensions: list[str]
+    max_upload_bytes: int
+    source_kind: Literal["file_upload"] = "file_upload"
+
+
+class DatasetDetail(ApiModel):
+    dataset: DatasetView
+    selected_version: VersionView | None
+    latest_version_id: str | None
+    latest_run: RunView | None
+    assigned_rules: RuleSetView
+    rules_changed_since_run: bool
+    source_kind: Literal["file_upload"] = "file_upload"
+    uploaded_at: datetime | None
+    uploaded_by: str | None
+    recent_events: list[AuditView]
+
+
+class RevalidateRequest(ApiModel):
+    source_version_id: str = Field(min_length=1)
 
 
 ReviewValue = Literal["needs_correction", "accepted_as_is", "dismissed"]

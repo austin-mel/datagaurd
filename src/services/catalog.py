@@ -8,16 +8,17 @@ from uuid import uuid4
 
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.selectable import ScalarSelect
 
 from src.database import Database
 from src.errors import InputError
 from src.models import AuditEvent, Base, CheckRun, Dataset, DatasetVersion, FindingRecord, ReviewDecision, RuleSetRecord
 from src.rules import RuleSet, StatisticalSettings
 from src.schemas import (
-    AffectedRecord, AuditView, CheckResponse, DatasetMetadata, DatasetView, Finding,
-    Page, QualityMetrics, ReviewRequest, ReviewView, RuleSetView, RunView, StoredFinding, UploadResponse, VersionView,
+    AffectedRecord, AuditView, CheckResponse, DatasetDetail, DatasetMetadata, DatasetView, Finding,
+    Page, QualityMetrics, ReviewRequest, ReviewView, RuleSetView, RunView, StoredFinding, UploadResponse, UploadPolicy, VersionView,
 )
-from src.services.tabular import ParsedDataset, parse_dataset
+from src.services.tabular import MEDIA_TYPES, ParsedDataset, parse_dataset
 from src.services.storage import FileStorage
 from src.services.validation import IMPLEMENTATION_VERSION, check_dataset
 from src.settings import Settings
@@ -56,6 +57,12 @@ def version_view(row: DatasetVersion) -> VersionView:
 def finding_view(row: FindingRecord) -> StoredFinding:
     return StoredFinding(id=row.id, check_run_id=row.check_run_id,
                          **Finding.model_validate_json(row.payload_json).model_dump())
+
+
+def run_order() -> ScalarSelect[int]:
+    # Windows timestamps can tie. The audit sequence records actual insertion order.
+    return select(AuditEvent.sequence).where(AuditEvent.entity_id == CheckRun.id,
+                                             AuditEvent.action == "check_started").scalar_subquery()
 
 
 class Catalog:
@@ -283,6 +290,73 @@ class Catalog:
         with self.database.read() as session:
             return DatasetView.model_validate(require(session, Dataset, dataset_id), from_attributes=True)
 
+    def _detail(self, session: Session, dataset: Dataset, version_id: str | None = None) -> DatasetDetail:
+        latest = session.scalar(select(DatasetVersion).where(DatasetVersion.dataset_id == dataset.id)
+                                .order_by(DatasetVersion.number.desc()).limit(1))
+        selected = require(session, DatasetVersion, version_id) if version_id else latest
+        if selected and selected.dataset_id != dataset.id:
+            raise InputError("not_found", "The selected version does not belong to this dataset.", 404)
+        run = session.scalar(select(CheckRun).where(CheckRun.version_id == selected.id)
+                             .order_by(CheckRun.created_at.desc(), run_order().desc(), CheckRun.id.desc()).limit(1)) if selected else None
+        assignment = require(session, RuleSetRecord, dataset.rule_set_id or self.default_rule_set_id)
+        upload = session.scalar(select(AuditEvent).join(DatasetVersion, AuditEvent.entity_id == DatasetVersion.id)
+                                .where(AuditEvent.dataset_id == dataset.id, AuditEvent.action == "version_uploaded",
+                                       DatasetVersion.number <= selected.number)
+                                .order_by(DatasetVersion.number.desc()).limit(1)) if selected else None
+        events = session.scalars(select(AuditEvent).where(AuditEvent.dataset_id == dataset.id)
+                                 .order_by(AuditEvent.sequence.desc()).limit(20)).all()
+        return DatasetDetail(
+            dataset=DatasetView.model_validate(dataset, from_attributes=True),
+            selected_version=version_view(selected) if selected else None,
+            latest_version_id=latest.id if latest else None,
+            latest_run=self._run_view(session, run) if run else None, assigned_rules=self._rule_view(assignment),
+            rules_changed_since_run=run is None or run.rule_set_id != assignment.id,
+            uploaded_at=datetime.fromisoformat(upload.created_at) if upload else None,
+            uploaded_by=upload.actor if upload else None,
+            recent_events=[AuditView.model_validate(event, from_attributes=True) for event in reversed(events)],
+        )
+
+    def detail(self, dataset_id: str, version_id: str | None = None) -> DatasetDetail:
+        with self.database.read() as session:
+            return self._detail(session, require(session, Dataset, dataset_id), version_id)
+
+    def upload_policy(self) -> UploadPolicy:
+        return UploadPolicy(extensions=[f".{extension}" for extension in MEDIA_TYPES],
+                            max_upload_bytes=self.settings.max_upload_bytes)
+
+    def summaries(self, limit: int, offset: int) -> Page[DatasetDetail]:
+        with self.database.read() as session:
+            return page_of(session, select(Dataset).order_by(Dataset.created_at.desc(), Dataset.id.desc()),
+                           lambda row: self._detail(session, row), limit, offset)
+
+    def revalidate(self, dataset_id: str, source_version_id: str) -> DatasetDetail:
+        # The version and its pinned run are committed together under the database write lock.
+        try:
+            with self.database.write() as session:
+                require(session, Dataset, dataset_id)
+                source = require(session, DatasetVersion, source_version_id)
+                latest = session.scalar(select(DatasetVersion).where(DatasetVersion.dataset_id == dataset_id)
+                                        .order_by(DatasetVersion.number.desc()).limit(1))
+                if source.dataset_id != dataset_id:
+                    raise InputError("not_found", "The source version does not belong to this dataset.", 404)
+                if latest is None or source.id != latest.id:
+                    raise InputError("stale_version", "The dataset has a newer version. Refresh before revalidating.", 409)
+                content = self.files.read(source.file_id, source.content_sha256)
+                metadata = DatasetMetadata.model_validate_json(source.metadata_json)
+                # Copy the immutable source without parsing; parse failures belong to the saved run.
+                version = self.save_version(session, dataset_id, content,
+                                            ParsedDataset(metadata=metadata, records=()), source)
+                self.audit(session, dataset_id, "version_revalidated", version.id)
+                run = self.start_check(session, version)
+        except Exception:
+            try:
+                self.reconcile()
+            except Exception:
+                logger.warning("File reconciliation deferred until storage is available")
+            raise
+        self.process_check(run.id)
+        return self.detail(dataset_id, version.id)
+
     def versions(self, dataset_id: str, limit: int, offset: int) -> Page[VersionView]:
         with self.database.read() as session:
             require(session, Dataset, dataset_id)
@@ -302,7 +376,7 @@ class Catalog:
         with self.database.read() as session:
             require(session, DatasetVersion, version_id)
             return page_of(session, select(CheckRun).where(CheckRun.version_id == version_id)
-                           .order_by(CheckRun.created_at, CheckRun.id),
+                           .order_by(CheckRun.created_at, run_order(), CheckRun.id),
                            lambda row: self._run_view(session, row), limit, offset)
 
     def run(self, run_id: str) -> RunView:
@@ -357,6 +431,8 @@ class Catalog:
         with self.database.read() as session:
             require(session, FindingRecord, finding_id)
             return page_of(session, select(ReviewDecision).where(ReviewDecision.finding_id == finding_id)
-                           .order_by(ReviewDecision.created_at, ReviewDecision.id),
+                           .order_by(ReviewDecision.created_at, select(AuditEvent.sequence).where(
+                               AuditEvent.entity_id == ReviewDecision.id,
+                               AuditEvent.action == "review_added").scalar_subquery(), ReviewDecision.id),
                            lambda row: ReviewView.model_validate(row, from_attributes=True), limit, offset)
 

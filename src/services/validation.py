@@ -8,7 +8,7 @@ from typing import assert_never
 from pydantic import JsonValue
 
 from src.rules import (
-    AllowedRule, DateRule, NotFutureRule, NumericRule, PatternRule, RangeRule,
+    AllowedRule, DateRule, NotFutureRule, NumericRule, PatternRule, RangeRule, MinRule, MaxRule, RelativeDateRule,
     RequiredRule, RuleSet, UniqueRule,
 )
 from src.schemas import CheckResponse, Finding, RecordSample, RuleResult
@@ -20,7 +20,7 @@ from src.services.statistics import analyze
 from src.services.value_parsing import parse_date, parse_number
 from src.settings import Settings
 
-IMPLEMENTATION_VERSION = "tabular-validation/1.4.0"
+IMPLEMENTATION_VERSION = "tabular-validation/2.0.0"
 
 
 def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
@@ -95,6 +95,16 @@ def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
             affected = [number for number, value in parsed_numbers.items() if not rule.minimum <= value <= rule.maximum]
             threshold = {"minimum": rule.minimum, "maximum": rule.maximum, "inclusive": True}
             reason = f"Missing values or failed prerequisite {rule.prerequisite}."
+        elif isinstance(rule, (MinRule, MaxRule)):
+            parsed_numbers = numeric_values[rule.prerequisite]
+            candidates = list(parsed_numbers)
+            if isinstance(rule, MinRule):
+                affected = [number for number, value in parsed_numbers.items() if value < rule.minimum]
+                threshold = {"minimum": rule.minimum, "inclusive": True}
+            else:
+                affected = [number for number, value in parsed_numbers.items() if value > rule.maximum]
+                threshold = {"maximum": rule.maximum, "inclusive": True}
+            reason = f"Missing values or failed prerequisite {rule.prerequisite}."
         elif isinstance(rule, DateRule):
             parsed_dates = {number: parsed_day for number, value in nonmissing.items()
                             if (parsed_day := parse_date(value, rule.formats)) is not None}
@@ -106,6 +116,14 @@ def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
             candidates = list(parsed_dates)
             affected = [number for number, value in parsed_dates.items() if value > reference_date]
             threshold = {"latest": reference_date.isoformat(), "inclusive": True}
+            reason = f"Missing values or failed prerequisite {rule.prerequisite}."
+        elif isinstance(rule, RelativeDateRule):
+            parsed_dates = date_values[rule.prerequisite]
+            candidates = list(parsed_dates)
+            affected = [number for number, value in parsed_dates.items()
+                        if (value >= reference_date if rule.kind == "before_today" else
+                            value <= reference_date if rule.kind == "after_today" else value < reference_date)]
+            threshold = {"reference_date": reference_date.isoformat(), "condition": rule.kind}
             reason = f"Missing values or failed prerequisite {rule.prerequisite}."
         else:
             assert_never(rule)
