@@ -41,7 +41,7 @@ export const seededDatasets: readonly DatasetSeed[] = [
       rules: [
         ...createDefaultRules('facility_id'),
         { id: 'score-range', enabled: true, column: 'inspection_score', type: 'range', condition: '', minimum: 0, maximum: 100 },
-        { id: 'inspection-date', enabled: true, column: 'inspection_date', type: 'date', condition: ruleCondition('date'), minimum: 0, maximum: 100 },
+        { id: 'inspection-date', enabled: true, column: 'inspection_date', type: 'date', condition: ruleCondition('date'), selectedDate: '2026-10-07', minimum: 0, maximum: 100 },
         { id: 'county-allowed', enabled: true, column: 'county', type: 'allowed', condition: 'Alameda, Contra Costa, Sacramento', minimum: 0, maximum: 100 },
       ],
     },

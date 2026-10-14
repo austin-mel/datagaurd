@@ -15,7 +15,7 @@ const ruleTypes = [
 
 export const seededRuleCatalog: RuleEditorCatalog = {
   defaultRuleType: 'required',
-  ruleTypes: ruleTypes.map(option => ({ ...option, defaults: { condition: ruleCondition(option.value), minimum: 0, maximum: 100 } })),
+  ruleTypes: ruleTypes.map(option => ({ ...option, defaults: { condition: ruleCondition(option.value), minimum: 0, maximum: 100, selectedDate: '', endDate: '' } })),
   dateConditions: [...supportedDateConditions],
 }
 
@@ -24,7 +24,7 @@ export function ruleCondition(type: RuleType): string {
     case 'required': return 'Not empty'
     case 'unique': return 'One occurrence per value'
     case 'numeric': return 'Numeric value'
-    case 'date': return 'On or before today'
+    case 'date': return 'On or before selected date'
     default: return ''
   }
 }

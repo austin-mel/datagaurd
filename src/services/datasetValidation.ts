@@ -21,11 +21,11 @@ function dateValue(value: DatasetValue, formats: QualityRule['dateFormats'] = ['
     const [, a, b, c] = match
     const iso = format === '%Y-%m-%d' ? value.trim() : format === '%m/%d/%Y' ? c + '-' + a + '-' + b : c + '-' + b + '-' + a
     const day = new Date(iso + 'T00:00:00Z')
-    if (Number.isFinite(day.getTime()) && day.toISOString().slice(0, 10) === iso) return day.getTime()
+    if (Number.isFinite(day.getTime()) && day.getUTCFullYear() >= 1 && day.toISOString().slice(0, 10) === iso) return day.getTime()
   }
   return NaN
 }
-function prepareRule(rule: QualityRule, today: number) {
+function prepareRule(rule: QualityRule) {
   const fail = (message: string): never => { throw new RulesetValidationError(rule.column + ': ' + message) }
   const bound = (value: number | '', name: string): number => value === '' || !Number.isFinite(value) ? fail('enter a finite ' + name + '.') : value
   switch (rule.type) {
@@ -53,15 +53,23 @@ function prepareRule(rule: QualityRule, today: number) {
     }
     case 'date': {
       if (!supportedDateConditions.some(option => option === rule.condition)) fail('select a supported date condition.')
+      const selected = dateValue(rule.selectedDate ?? '')
+      const end = dateValue(rule.endDate ?? '')
+      if (!Number.isFinite(selected)) fail('select a valid calendar date.')
+      if (rule.condition === 'Between two selected dates') {
+        if (!Number.isFinite(end)) fail('select a valid end date.')
+        if (selected > end) fail('the start date must be on or before the end date.')
+      }
       return (value: DatasetValue) => {
         const day = dateValue(value, rule.dateFormats)
         if (!Number.isFinite(day)) return false
         switch (rule.condition) {
-          case 'On or before today': return day <= today
-          case 'On or after today': return day >= today
-          case 'Before today': return day < today
-          case 'After today': return day > today
-          default: return true
+          case 'On or before selected date': return day <= selected
+          case 'On or after selected date': return day >= selected
+          case 'Before selected date': return day < selected
+          case 'After selected date': return day > selected
+          case 'Between two selected dates': return day >= selected && day <= end
+          default: return false
         }
       }
     }
@@ -74,17 +82,15 @@ export function assertValidRuleset(ruleset: DatasetRuleset, columns: readonly st
     ids.add(rule.id)
     if (!rule.enabled) continue
     if (!columns.includes(rule.column)) throw new RulesetValidationError('Unknown column: ' + rule.column)
-    prepareRule(rule, 0)
+    prepareRule(rule)
   }
 }
 
 export function validateDataset(input: Iterable<DatasetRow>, columns: readonly string[], ruleset: DatasetRuleset, validatedAt: Date): ValidationResult {
   assertValidRuleset(ruleset, columns)
-  // Future live reports use the backend's persisted reference_date; sample runs use UTC.
-  const today = dateValue(validatedAt.toISOString().slice(0, 10))
   const rows = [...input]
   const checks = ruleset.rules.filter(rule => rule.enabled).map(rule => ({
-    rule, passes: prepareRule(rule, today), affected: new Set<number>(), frequencies: new Map<DatasetValue, number>(),
+    rule, passes: prepareRule(rule), affected: new Set<number>(), frequencies: new Map<DatasetValue, number>(),
   }))
   for (const check of checks) {
     if (check.rule.type === 'unique') for (const row of rows) {
@@ -109,7 +115,9 @@ export function validateDataset(input: Iterable<DatasetRow>, columns: readonly s
   })
   const issues: ValidationIssue[] = checks.filter(check => check.affected.size).map(check => ({
     id: check.rule.id, column: check.rule.column, rule: check.rule.type,
-    message: check.rule.column + ' failed ' + check.rule.type + (check.rule.condition ? ': ' + check.rule.condition : '') + '.',
+    message: check.rule.column + ' failed ' + check.rule.type + (check.rule.condition ? ': ' + check.rule.condition : '')
+      + (check.rule.type === 'date' ? ' (' + check.rule.selectedDate
+        + (check.rule.condition === 'Between two selected dates' ? ' – ' + check.rule.endDate : '') + ')' : '') + '.',
     affectedRows: check.affected.size,
   }))
   const dimension = (id: string, label: string, passed: number, description: string, available = true): QualityDimension => ({

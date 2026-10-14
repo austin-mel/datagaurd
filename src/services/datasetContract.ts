@@ -4,8 +4,8 @@ import { createDefaultRules } from '../data/qualityRules'
 import { assertValidRuleset, qualityNote, RulesetValidationError } from './datasetValidation'
 
 const dateConditions = {
-  not_future: 'On or before today', before_today: 'Before today',
-  after_today: 'After today', on_or_after_today: 'On or after today',
+  on_or_before_date: 'On or before selected date', before_date: 'Before selected date',
+  after_date: 'After selected date', on_or_after_date: 'On or after selected date',
 } as const
 
 export function rulesFromBackend(view: RuleSetView, identifier?: string | null): DatasetRuleset {
@@ -22,11 +22,8 @@ export function rulesFromBackend(view: RuleSetView, identifier?: string | null):
       case 'range': return { ...base, type: 'range', minimum: rule.minimum, maximum: rule.maximum }
       case 'min': return { ...base, type: 'min', minimum: rule.minimum }
       case 'max': return { ...base, type: 'max', maximum: rule.maximum }
-      case 'date': return { ...base, type: 'date', condition: 'Valid date', dateFormats: rule.formats }
-      default: {
-        const parser = view.configuration.rules.find(candidate => candidate.id === rule.prerequisite)
-        return { ...base, type: 'date', condition: dateConditions[rule.kind], dateFormats: parser?.kind === 'date' ? parser.formats : ['%Y-%m-%d'] }
-      }
+      case 'between_dates': return { ...base, type: 'date', condition: 'Between two selected dates', selectedDate: rule.start_date, endDate: rule.end_date, dateFormats: rule.formats }
+      default: return { ...base, type: 'date', condition: dateConditions[rule.kind], selectedDate: rule.date, dateFormats: rule.formats }
     }
   })
   if (view.configuration.identifier_policy === 'auto' && identifier) {
@@ -58,17 +55,18 @@ export function rulesToBackend(ruleset: DatasetRuleset, columns: readonly string
     const id = ids.get(rule.id)
     if (!id) throw new RulesetValidationError('Rule ID is missing.')
     const common = { id, column: rule.column, enabled: rule.enabled, severity: rule.severity ?? 'error',
-      explanation: rule.backendRule?.explanation ?? rule.column + ' must satisfy ' + rule.type + '.' }
-    const prerequisite = (kind: 'numeric' | 'date') => {
+      explanation: rule.type === 'date' ? rule.column + ' must satisfy ' + rule.condition.toLowerCase() + ': ' + rule.selectedDate
+        + (rule.condition === 'Between two selected dates' ? ' through ' + rule.endDate + ' (inclusive)' : '') + '.'
+        : rule.backendRule?.explanation ?? rule.column + ' must satisfy ' + rule.type + '.' }
+    const prerequisite = () => {
       const original = rule.backendRule && 'prerequisite' in rule.backendRule ? rule.backendRule.prerequisite : undefined
       const parser = ruleset.rules.find(candidate => candidate.id === original && candidate.column === rule.column
-        && (!rule.enabled || candidate.enabled) && (kind === 'numeric' ? candidate.type === 'numeric' : candidate.type === 'date' && candidate.condition === 'Valid date'))
+        && (!rule.enabled || candidate.enabled) && candidate.type === 'numeric')
       if (parser) return ids.get(parser.id) ?? parser.id
       let parserId = id + '_PARSE'
       while (used.has(parserId)) parserId += '_P'
       used.add(parserId)
-      const parseBase = { ...common, id: parserId, explanation: rule.column + ' must contain a valid ' + kind + ' value.' }
-      result.push(kind === 'numeric' ? { ...parseBase, kind } : { ...parseBase, kind, formats: [...(rule.dateFormats ?? ['%Y-%m-%d'])] })
+      result.push({ ...common, id: parserId, kind: 'numeric', explanation: rule.column + ' must contain a valid numeric value.' })
       return parserId
     }
     switch (rule.type) {
@@ -80,17 +78,19 @@ export function rulesToBackend(ruleset: DatasetRuleset, columns: readonly string
         const values = original?.join(', ') === rule.condition ? original : [...new Set(rule.condition.split(',').map(value => value.trim()).filter(Boolean))]
         result.push({ ...common, kind: 'allowed_values', values }); break
       }
-      case 'min': result.push({ ...common, kind: 'min', minimum: Number(rule.minimum), prerequisite: prerequisite('numeric') }); break
-      case 'max': result.push({ ...common, kind: 'max', maximum: Number(rule.maximum), prerequisite: prerequisite('numeric') }); break
-      case 'range': result.push({ ...common, kind: 'range', minimum: Number(rule.minimum), maximum: Number(rule.maximum), prerequisite: prerequisite('numeric') }); break
-      case 'date':
-        if (rule.condition === 'Valid date') result.push({ ...common, kind: 'date', formats: [...(rule.dateFormats ?? ['%Y-%m-%d'])] })
+      case 'min': result.push({ ...common, kind: 'min', minimum: Number(rule.minimum), prerequisite: prerequisite() }); break
+      case 'max': result.push({ ...common, kind: 'max', maximum: Number(rule.maximum), prerequisite: prerequisite() }); break
+      case 'range': result.push({ ...common, kind: 'range', minimum: Number(rule.minimum), maximum: Number(rule.maximum), prerequisite: prerequisite() }); break
+      case 'date': {
+        const formats = [...(rule.dateFormats ?? ['%Y-%m-%d'])]
+        if (rule.condition === 'Between two selected dates') result.push({ ...common, kind: 'between_dates', formats, start_date: rule.selectedDate ?? '', end_date: rule.endDate ?? '' })
         else {
-          const kind = rule.condition === 'On or before today' ? 'not_future' : rule.condition === 'Before today' ? 'before_today'
-            : rule.condition === 'After today' ? 'after_today' : 'on_or_after_today'
-          result.push({ ...common, kind, prerequisite: prerequisite('date') })
+          const kind = rule.condition === 'On or before selected date' ? 'on_or_before_date' : rule.condition === 'Before selected date' ? 'before_date'
+            : rule.condition === 'After selected date' ? 'after_date' : 'on_or_after_date'
+          result.push({ ...common, kind, formats, date: rule.selectedDate ?? '' })
         }
         break
+      }
     }
   }
   return {
@@ -100,7 +100,7 @@ export function rulesToBackend(ruleset: DatasetRuleset, columns: readonly string
     rules: result,
   }
 }
-function isParser(rule: QualityRule) { return rule.type === 'numeric' || rule.type === 'date' && rule.condition === 'Valid date' }
+function isParser(rule: QualityRule) { return rule.type === 'numeric' }
 
 function profileFromBackend(profile: BackendColumnProfile): ColumnProfile {
   const summary: ColumnProfile['summary'] = profile.observed_types.every(type => type === 'integer' || type === 'number')
@@ -116,7 +116,7 @@ export function datasetFromBackend(detail: DatasetDetail): Dataset {
   const version = detail.selected_version, run = detail.latest_run
   const result = run?.processing_status === 'completed' ? run.result : null
   // Older saved reports retain their historical semantics; require a rerun for row scores.
-  const metrics = result?.implementation_version === 'tabular-validation/2.0.0' ? result.metrics : undefined
+  const metrics = result && ['tabular-validation/2.0.0', 'tabular-validation/2.1.0'].includes(result.implementation_version) ? result.metrics : undefined
   const metric = (id: string, label: string, value: Metric | undefined, description: string): QualityDimension => ({
     id, label, score: value?.status === 'available' ? value.percentage ?? null : null,
     passed: value?.numerator ?? null, total: value?.denominator ?? null,

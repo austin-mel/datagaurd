@@ -129,9 +129,21 @@ function saveRules() {
                 </div>
                 <input v-else-if="rule.type === 'min'" v-model="rule.minimum" type="number" step="any" class="ui-control" :required="rule.enabled" :aria-label="`Minimum for rule ${index + 1}`" />
                 <input v-else-if="rule.type === 'max'" v-model="rule.maximum" type="number" step="any" class="ui-control" :required="rule.enabled" :aria-label="`Maximum for rule ${index + 1}`" />
-                <select v-else-if="rule.type === 'date'" v-model="rule.condition" class="ui-control" :aria-label="`Date condition for rule ${index + 1}`">
-                  <option v-for="condition in ruleCatalog.dateConditions" :key="condition" :value="condition">{{ condition }}</option>
-                </select>
+                <div v-else-if="rule.type === 'date'" class="space-y-2">
+                  <select v-model="rule.condition" class="ui-control" :aria-label="`Date condition for rule ${index + 1}`">
+                    <option v-for="condition in ruleCatalog.dateConditions" :key="condition" :value="condition">{{ condition }}</option>
+                  </select>
+                  <div class="flex gap-2">
+                    <label class="min-w-0 flex-1 text-[9px] text-muted">
+                      {{ rule.condition === 'Between two selected dates' ? 'Start date (inclusive)' : 'Selected date' }}
+                      <input v-model="rule.selectedDate" type="date" min="0001-01-01" :max="rule.condition === 'Between two selected dates' && rule.endDate ? rule.endDate : '9999-12-31'" :required="rule.enabled" class="ui-control mt-[3px]" :aria-label="`Selected date for rule ${index + 1}`" />
+                    </label>
+                    <label v-if="rule.condition === 'Between two selected dates'" class="min-w-0 flex-1 text-[9px] text-muted">
+                      End date (inclusive)
+                      <input v-model="rule.endDate" type="date" :min="rule.selectedDate || '0001-01-01'" max="9999-12-31" :required="rule.enabled" class="ui-control mt-[3px]" :aria-label="`End date for rule ${index + 1}`" />
+                    </label>
+                  </div>
+                </div>
                 <input
                   v-else
                   v-model="rule.condition"

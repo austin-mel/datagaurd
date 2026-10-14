@@ -1,6 +1,6 @@
 import { createSeededDatasets, getSeededDatasetRows, seededRuleCatalog } from '@/data'
 import type { Dataset } from '@/types'
-import { cloneRuleset } from '@/utils'
+import { cloneRuleset, rulesetSignature } from '@/utils'
 import { assertValidRuleset, validateDataset } from './datasetValidation'
 import { createDatasetCsv } from './datasetCsv'
 import type { DatasetRepository } from './datasetRepositoryContract'
@@ -39,18 +39,18 @@ export function createSeededDatasetRepository(): DatasetRepository {
     async updateRuleset(datasetId, ruleset) {
       const record = find(datasetId)
       assertValidRuleset(ruleset, record.columns)
+      const signature = rulesetSignature(ruleset)
+      if (signature === rulesetSignature(record.ruleset)) return structuredClone(record)
+      const lastRun = versions.get(record.id + ':' + record.version)
       Object.assign(record, {
-        ruleset: cloneRuleset(ruleset), rulesChangedSinceRun: true,
-        history: [...(record.history ?? []), {
-          id: crypto.randomUUID(), occurredAt: new Date().toISOString(),
-          title: 'Quality rules saved', description: 'Re-run Dataset Validation to apply these rules in a new version.',
-        }],
+        ruleset: cloneRuleset(ruleset), rulesChangedSinceRun: !lastRun || signature !== rulesetSignature(lastRun.ruleset),
       })
       return structuredClone(record)
     },
     async revalidate(datasetId, sourceVersion) {
       const record = find(datasetId)
       if (record.version !== sourceVersion) throw new Error('A newer version is available. Refresh before revalidating.')
+      if (!record.rulesChangedSinceRun) return structuredClone(record)
       const version = 'v' + (Number(sourceVersion.replace(/^v/, '')) + 1)
       const startedAt = new Date().toISOString()
       Object.assign(record, {

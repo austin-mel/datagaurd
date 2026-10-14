@@ -16,3 +16,16 @@ export function createQualityRule(catalog: RuleEditorCatalog, column: string): Q
     ...ruleDefaults(catalog, catalog.defaultRuleType),
   }
 }
+
+// Compare saved checks with the version's applied checks, ignoring editor-only metadata.
+export function rulesetSignature(ruleset: DatasetRuleset): string {
+  return JSON.stringify({ kind: ruleset.kind, rules: ruleset.rules.map(rule => ({
+    id: rule.id, enabled: rule.enabled, column: rule.column, type: rule.type, severity: rule.severity ?? 'error',
+    condition: ['regex', 'allowed', 'date'].includes(rule.type) ? rule.condition : undefined,
+    minimum: ['range', 'min'].includes(rule.type) ? rule.minimum : undefined,
+    maximum: ['range', 'max'].includes(rule.type) ? rule.maximum : undefined,
+    selectedDate: rule.type === 'date' ? rule.selectedDate ?? '' : undefined,
+    endDate: rule.type === 'date' && rule.condition === 'Between two selected dates' ? rule.endDate ?? '' : undefined,
+    dateFormats: rule.type === 'date' ? rule.dateFormats ?? ['%Y-%m-%d'] : undefined,
+  })).sort((a, b) => a.id.localeCompare(b.id)) })
+}

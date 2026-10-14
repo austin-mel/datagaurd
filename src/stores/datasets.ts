@@ -40,7 +40,7 @@ export function createDatasetState(repository: DatasetRepository) {
 
   async function revalidate(datasetId: string, version: string) {
     const previous = records.value.find(record => record.id === datasetId)
-    if (!previous || previous.processingStatus === 'running') return
+    if (!previous || previous.processingStatus === 'running' || !previous.rulesChangedSinceRun) return
     records.value = records.value.map(record => record.id === datasetId ? {
       ...record, processingStatus: 'running', status: 'running', quality: null,
       lastValidatedAt: null, validation: null, columnProfiles: null,
