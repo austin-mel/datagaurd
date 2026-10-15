@@ -180,7 +180,7 @@ def _parquet_rows(content: bytes, settings: Settings) -> Iterable[list[str]]:
                 yield [scalar_text(column[index].as_py()) for column in batch.columns]
 
 
-def _collect(source: Iterable[list[str]], settings: Settings) -> tuple[list[str], tuple[tuple[str, ...], ...]]:
+def _collect(source: Iterable[list[str]], settings: Settings, allow_empty: bool = False) -> tuple[list[str], tuple[tuple[str, ...], ...]]:
     iterator = iter(source)
     headers = next(iterator, [])
     if not headers or any(is_missing(header) for header in headers):
@@ -200,17 +200,20 @@ def _collect(source: Iterable[list[str]], settings: Settings) -> tuple[list[str]
         size += sum(len(value.encode("utf-8")) for value in row)
         _decoded_limit(size, settings)
         rows.append(tuple(row))
-    if not rows:
+    if not rows and not allow_empty:
         raise InputError("zero_rows", "The file contains a header but no data records.")
     return headers, tuple(rows)
 
 
 def parse_dataset(content: bytes, filename: str | None, settings: Settings,
-                  content_type: str | None = None, sheet_name: str | None = None) -> ParsedDataset:
+                  content_type: str | None = None, sheet_name: str | None = None, *, allow_empty: bool = False,
+                  internal_snapshot: bool = False) -> ParsedDataset:
     original_filename = validate_file_type(filename, content_type)
     file_format = cast(DataFormat, PurePath(original_filename).suffix.lower()[1:])
-    if len(content) > settings.max_upload_bytes:
-        raise InputError("upload_too_large", "The file exceeds the upload byte limit.", 413)
+    encoded_limit = settings.max_decoded_bytes if internal_snapshot else settings.max_upload_bytes
+    if len(content) > encoded_limit:
+        raise InputError("snapshot_too_large" if internal_snapshot else "upload_too_large",
+                         "The file exceeds the configured byte limit.", 413)
     if sheet_name is not None and file_format != "xlsx":
         raise InputError("unexpected_sheet", "sheet_name applies only to Excel files.")
     try:
@@ -221,13 +224,13 @@ def parse_dataset(content: bytes, filename: str | None, settings: Settings,
             try:
                 sheet = _worksheet(book, sheet_name)
                 sheet_name = sheet.title
-                headers, rows = _collect(_xlsx_rows(sheet, settings), settings)
+                headers, rows = _collect(_xlsx_rows(sheet, settings), settings, allow_empty)
             finally:
                 book.close()
         elif file_format == "parquet":
-            headers, rows = _collect(_parquet_rows(content, settings), settings)
+            headers, rows = _collect(_parquet_rows(content, settings), settings, allow_empty)
         else:
-            headers, rows = _collect(_text_rows(content, "\t" if file_format == "tsv" else ","), settings)
+            headers, rows = _collect(_text_rows(content, "\t" if file_format == "tsv" else ","), settings, allow_empty)
     except InputError:
         raise
     except Exception as exc:

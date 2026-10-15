@@ -5,7 +5,7 @@ from typing import Literal
 
 import pandas as pd
 
-from src.rules import DateRule, RuleSet
+from src.rules import DateFormat, DateRule, RuleSet
 from src.schemas import CategoryCount, ColumnProfile, DatasetProfile
 from src.services.tabular import ParsedDataset, is_missing
 from src.services.value_parsing import parse_date, parse_number
@@ -25,7 +25,10 @@ def quartile(ordered: list[float], quarter: int) -> Decimal:
 
 def profile_dataset(dataset: ParsedDataset, rules: RuleSet, top_count: int = 5) -> DatasetProfile:
     profiles: list[ColumnProfile] = []
-    date_formats = {rule.column: rule.formats for rule in rules.rules if isinstance(rule, DateRule) and rule.enabled}
+    date_formats: dict[str, list[DateFormat]] = {}
+    for rule in rules.rules:
+        if isinstance(rule, DateRule) and rule.enabled:
+            date_formats.setdefault(rule.column, rule.formats)
     for column in dataset.metadata.headers:
         values = dataset.column(column)
         populated = [value for value in values if not is_missing(value)]

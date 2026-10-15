@@ -13,7 +13,8 @@ def percentage(numerator: int, denominator: int) -> Metric:
                   percentage=100 * numerator / denominator, reason=None)
 
 
-def quality_metrics(dataset: ParsedDataset, rules: RuleSet, findings: list[Finding]) -> QualityMetrics:
+def quality_metrics(dataset: ParsedDataset, rules: RuleSet, findings: list[Finding],
+                    ignored_unique: dict[str, set[int]] | None = None) -> QualityMetrics:
     rules, _ = resolved_rules(rules, dataset.metadata.headers)
     if any(column not in dataset.metadata.headers for column in rules.required_columns):
         unavailable = Metric(reason="Required dataset structure is unavailable.")
@@ -29,15 +30,16 @@ def quality_metrics(dataset: ParsedDataset, rules: RuleSet, findings: list[Findi
         identifiers = [value for value in dataset.column(identifier) if not is_missing(value)]
         counts = Counter(identifiers)
         duplicate = percentage(sum(count for count in counts.values() if count > 1), len(identifiers))
-    unique_columns = {rule.column for rule in rules.rules if isinstance(rule, UniqueRule)}
+    unique_rules = [rule for rule in rules.rules if isinstance(rule, UniqueRule)]
     uniqueness = Metric(reason="No enabled uniqueness rules are configured.")
-    if unique_columns:
+    if unique_rules:
         nonunique: set[int] = set()
-        for column in unique_columns:
-            values = dataset.column(column)
+        for rule in unique_rules:
+            values = dataset.column(rule.column)
+            ignored = (ignored_unique or {}).get(rule.id, set())
             counts = Counter(value for value in values if not is_missing(value))
             nonunique.update(number for number, value in enumerate(values, 1)
-                             if is_missing(value) or counts[value] != 1)
+                             if number not in ignored and (is_missing(value) or counts[value] != 1))
         uniqueness = percentage(rows - len(nonunique), rows)
     return QualityMetrics(
         completeness=percentage(populated, rows), uniqueness=uniqueness,

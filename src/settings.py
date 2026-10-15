@@ -12,11 +12,11 @@ class Settings(BaseSettings):
         env_prefix="DATAGUARD_", env_file=PROJECT_ROOT / "environment" / "back-end.env", extra="ignore"
     )
 
-    max_upload_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
-    max_rows: int = Field(default=50_000, gt=0)
+    max_upload_bytes: int = Field(default=100 * 1024 * 1024, gt=0)
+    max_rows: int = Field(default=500_000, gt=0)
     max_columns: int = Field(default=1000, gt=0)
     max_cells: int = Field(default=2_000_000, gt=0)
-    max_decoded_bytes: int = Field(default=50 * 1024 * 1024, gt=0)
+    max_decoded_bytes: int = Field(default=200 * 1024 * 1024, gt=0)
     statistical_min_samples: int = Field(default=20, ge=1)
     iqr_multiplier: float = Field(default=1.5, ge=0, allow_inf_nan=False)
     missingness_increase_percentage_points: float = Field(default=5, ge=0, le=100)

@@ -1,10 +1,10 @@
-import re
 from pathlib import Path
 from datetime import date
 from typing import Annotated, Literal, Self
 
 import yaml
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+from src.services.rule_syntax import portable_pattern
 
 
 class ConfigurationError(ValueError):
@@ -22,6 +22,13 @@ class BaseRule(ConfigModel):
     explanation: str = Field(min_length=1)
     enabled: bool = True
 
+    @field_validator("column", "explanation")
+    @classmethod
+    def nonblank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("value must be nonblank, including for disabled rules")
+        return value
+
 
 class RequiredRule(BaseRule):
     kind: Literal["required"]
@@ -38,10 +45,7 @@ class PatternRule(BaseRule):
     @field_validator("pattern")
     @classmethod
     def valid_pattern(cls, value: str) -> str:
-        try:
-            re.compile(value)
-        except re.error as exc:
-            raise ValueError("pattern must be a valid regular expression") from exc
+        portable_pattern(value)
         return value
 
 
@@ -59,6 +63,7 @@ class AllowedRule(BaseRule):
 
 class NumericRule(BaseRule):
     kind: Literal["numeric"]
+    generated_for: str | None = Field(default=None, min_length=1)
 
 
 class RangeRule(BaseRule):
@@ -182,6 +187,13 @@ class RuleSet(ConfigModel):
                 if rule.enabled and not parent.enabled:
                     raise ValueError(f"{rule.id}: an enabled rule requires an enabled prerequisite")
             seen[rule.id] = rule
+        for rule in self.rules:
+            if isinstance(rule, NumericRule) and rule.generated_for:
+                target = seen.get(rule.generated_for)
+                if not isinstance(target, (RangeRule, MinRule, MaxRule)) or target.prerequisite != rule.id or target.column != rule.column:
+                    raise ValueError(f"{rule.id}: generated parser must belong to its numeric constraint")
+                if target.enabled != rule.enabled or target.severity != rule.severity:
+                    raise ValueError(f"{rule.id}: generated parser must share its constraint's enabled state and severity")
         return self
 
 

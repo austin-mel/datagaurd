@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Generic, Literal, Self, TypeVar
+from typing import Annotated, Generic, Literal, Self, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator, model_validator
 
@@ -134,6 +134,7 @@ class AnalysisResult(ApiModel):
 
 
 class CheckResponse(ProfileResponse):
+    metric_semantics: Literal["row-based-v1"] | None = None
     resolved_identifier_column: str | None = None
     processing_status: Literal["completed"] = "completed"
     validation_status: Literal["passed", "failed"]
@@ -237,12 +238,81 @@ class AuditView(ApiModel):
     entity_id: str
     actor: str
     created_at: datetime
+    description: str = ""
 
 
 class UploadPolicy(ApiModel):
     extensions: list[str]
     max_upload_bytes: int
     source_kind: Literal["file_upload"] = "file_upload"
+    max_rows: int = 500_000
+    max_columns: int = 1000
+    max_cells: int = 2_000_000
+    max_decoded_bytes: int = 200 * 1024 * 1024
+
+
+class ReviewedCell(ApiModel):
+    rowNumber: int = Field(ge=1)
+    identifier: str | None
+
+
+class CellReviewGroup(ApiModel):
+    id: str
+    column: str
+    ruleId: str
+    rule: str
+    kind: Literal["violation", "warning"]
+    reason: str
+    currentValue: str | None
+    cells: list[ReviewedCell]
+
+
+class ReplaceCellAction(ApiModel):
+    type: Literal["replace"]
+    value: str | None
+
+    @field_validator("value")
+    @classmethod
+    def valid_value(cls, value: str | None) -> str | None:
+        if value is not None and (not value.strip() or "\x00" in value):
+            raise ValueError("Enter a nonblank replacement without NUL characters, or use null.")
+        return value
+
+
+class DeleteRowAction(ApiModel):
+    type: Literal["delete-row"]
+
+
+class IgnoreCellAction(ApiModel):
+    type: Literal["ignore"]
+    reason: str = Field(default="", max_length=2000)
+
+
+class CellReviewRequest(ApiModel):
+    version: str = Field(min_length=1)
+    groupId: str
+    rowNumber: int = Field(ge=1)
+    scope: Literal["one", "all"]
+    action: Annotated[ReplaceCellAction | DeleteRowAction | IgnoreCellAction, Field(discriminator="type")]
+
+
+class IgnoredCell(ApiModel):
+    row_id: int
+    column: str
+    kind: Literal["violation", "warning"]
+    rule_id: str
+    value: str | None
+    signature: str | None
+    reason: str = ""
+
+
+class VersionReviewState(ApiModel):
+    # Empty row_ids means original one-based identities. Deletions retain original IDs.
+    row_ids: list[int] = Field(default_factory=list)
+    ignored: list[IgnoredCell] = Field(default_factory=list)
+    pending_groups: list[CellReviewGroup] | None = None
+    review_changed: bool = False
+    data_changed: bool = False
 
 
 class DatasetDetail(ApiModel):
@@ -255,7 +325,16 @@ class DatasetDetail(ApiModel):
     source_kind: Literal["file_upload"] = "file_upload"
     uploaded_at: datetime | None
     uploaded_by: str | None
+    source_filename: str | None = None
+    source_format: DataFormat | None = None
     recent_events: list[AuditView]
+    cell_review: list[CellReviewGroup] | None = None
+    review_changed_since_run: bool = False
+    data_changed_since_run: bool = False
+    validation_pending: bool = False
+    resolved_identifier_column: str | None = None
+    identifier_reason: str | None = None
+    ignored_cell_count: int = 0
 
 
 class RevalidateRequest(ApiModel):

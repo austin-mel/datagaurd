@@ -42,6 +42,7 @@ class DatasetVersion(Base):
     original_filename: Mapped[str] = mapped_column(Text)
     metadata_json: Mapped[str] = mapped_column(Text)
     created_at: Mapped[str] = mapped_column(String)
+    review_state_json: Mapped[str] = mapped_column(Text, default="{}", server_default="{}")
 
 
 class CheckRun(Base):
@@ -61,6 +62,7 @@ class CheckRun(Base):
     created_at: Mapped[str] = mapped_column(String)
     completed_at: Mapped[str | None] = mapped_column(String)
     rule_set_id: Mapped[str | None] = mapped_column(ForeignKey("rule_sets.id"), index=True)
+    review_state_json: Mapped[str] = mapped_column(Text, default="{}", server_default="{}")
 
 
 class FindingRecord(Base):
@@ -83,6 +85,7 @@ class AuditEvent(Base):
     entity_id: Mapped[str] = mapped_column(String(36))
     actor: Mapped[str] = mapped_column(String)
     created_at: Mapped[str] = mapped_column(String)
+    description: Mapped[str] = mapped_column(Text, default="", server_default="")
 
 
 class ReviewDecision(Base):

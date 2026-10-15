@@ -33,7 +33,7 @@ def scores(expected: set[Detection], actual: set[Detection]) -> dict[str, int | 
 
 
 def evaluate(rows: int = 5000) -> dict[str, object]:
-    settings = Settings(_env_file=None, reference_date=REFERENCE_DATE, max_rows=max(rows, 50_000),
+    settings = Settings(_env_file=None, reference_date=REFERENCE_DATE, max_rows=max(rows, 500_000),
                         rules_path=PROJECT_ROOT / "config" / "facilities.yaml")
     rules = load_rules(settings.rules_path)
     clean, dirty, manifest = generate(rows)

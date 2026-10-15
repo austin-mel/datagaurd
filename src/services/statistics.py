@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import JsonValue
 
-from src.rules import NumericRule, RuleSet
+from src.rules import RuleSet
 from src.schemas import AnalysisResult, ColumnProfile, DatasetProfile, Finding, RecordSample
 from src.services.tabular import ParsedDataset, is_missing
 from src.services.profiling import finite, profile_dataset, quartile
@@ -69,12 +69,12 @@ def analyze(dataset: ParsedDataset, profile: DatasetProfile, rules: RuleSet, set
                    "change_percentage": 100 * abs(new_rows - old_rows) / old_rows if old_rows else None},
          threshold={"change_percentage": settings.row_count_change_percentage, "comparison": "strictly_greater"})
 
-    numeric_columns = {rule.column for rule in rules.rules if isinstance(rule, NumericRule)}
-    declared_columns = {rule.column for rule in rules.rules}
     for name, column in current.items():
         numbers = {index: number for index, value in enumerate(dataset.column(name), 1)
                    if (number := parse_number(value)) is not None}
-        numeric = name in numeric_columns or (name not in declared_columns and types(column) == {"number"})
+        # Inspect every row of every column, including mixed columns and identifiers.
+        # Rule declarations must never exclude a column from statistical analysis.
+        numeric = bool(numbers)
         threshold: dict[str, JsonValue] = {"iqr_multiplier": settings.iqr_multiplier, "minimum_usable_values": minimum,
                                            "comparison": "strictly_outside"}
         observed: dict[str, JsonValue] = {"usable_values": len(numbers)}

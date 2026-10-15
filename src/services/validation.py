@@ -11,23 +11,27 @@ from src.rules import (
     AllowedRule, DateBoundRule, DateBetweenRule, NumericRule, PatternRule, RangeRule, MinRule, MaxRule,
     RequiredRule, RuleSet, UniqueRule,
 )
-from src.schemas import CheckResponse, Finding, RecordSample, RuleResult
+from src.schemas import CheckResponse, Finding, RecordSample, RuleResult, VersionReviewState
+from src.services.cell_review import ignored_members
 from src.services.tabular import ParsedDataset, is_missing
 from src.services.profiling import profile_dataset
 from src.services.metrics import quality_metrics
 from src.services.identifiers import identifier_column, resolved_rules
 from src.services.statistics import analyze
 from src.services.value_parsing import parse_date, parse_number
+from src.services.rule_syntax import portable_pattern
 from src.settings import Settings
 
-IMPLEMENTATION_VERSION = "tabular-validation/2.1.0"
+IMPLEMENTATION_VERSION = "tabular-validation/2.2.0"
 
 
 def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
-                  baseline: ParsedDataset | None = None, baseline_id: str | None = None) -> CheckResponse:
+                  baseline: ParsedDataset | None = None, baseline_id: str | None = None,
+                  review_state: VersionReviewState | None = None) -> CheckResponse:
     if rules.statistics:
         settings = settings.model_copy(update=rules.statistics.model_dump())
     effective, identifier_reason = resolved_rules(rules, dataset.metadata.headers)
+    ignored = ignored_members(dataset, rules, review_state or VersionReviewState())
     reference_date = settings.reference_date or date.today()
     findings: list[Finding] = []
     outcomes: list[RuleResult] = []
@@ -75,7 +79,7 @@ def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
             threshold = {"maximum_occurrences": 1}
             observed["duplicate_group_count"] = sum(count > 1 for count in counts.values())
         elif isinstance(rule, PatternRule):
-            pattern = re.compile(rule.pattern)
+            pattern = re.compile(portable_pattern(rule.pattern), re.ASCII)
             affected = [number for number, value in nonmissing.items() if not pattern.fullmatch(value)]
             threshold = {"pattern": rule.pattern}
         elif isinstance(rule, AllowedRule):
@@ -92,6 +96,8 @@ def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
             parsed_numbers = numeric_values[rule.prerequisite]
             candidates = list(parsed_numbers)
             affected = [number for number, value in parsed_numbers.items() if not rule.minimum <= value <= rule.maximum]
+            affected.extend(number for number in nonmissing if number not in parsed_numbers)
+            candidates = list(nonmissing)
             threshold = {"minimum": rule.minimum, "maximum": rule.maximum, "inclusive": True}
             reason = f"Missing values or failed prerequisite {rule.prerequisite}."
         elif isinstance(rule, (MinRule, MaxRule)):
@@ -103,6 +109,8 @@ def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
             else:
                 affected = [number for number, value in parsed_numbers.items() if value > rule.maximum]
                 threshold = {"maximum": rule.maximum, "inclusive": True}
+            affected.extend(number for number in nonmissing if number not in parsed_numbers)
+            candidates = list(nonmissing)
             reason = f"Missing values or failed prerequisite {rule.prerequisite}."
         elif isinstance(rule, (DateBoundRule, DateBetweenRule)):
             parsed_dates = {number: parsed_day for number, value in nonmissing.items()
@@ -123,6 +131,11 @@ def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
             affected.sort()
         else:
             assert_never(rule)
+        exempt = ignored.get(("violation", rule.id, rule.column), set())
+        if isinstance(rule, NumericRule) and rule.generated_for:
+            exempt = ignored.get(("violation", rule.generated_for, rule.column), set())
+        affected = sorted(number for number in affected if number not in exempt)
+        candidates = [number for number in candidates if number not in exempt]
         skipped = len(values) - len(candidates)
         outcomes.append(RuleResult(
             rule_id=rule.id, column=rule.column,
@@ -130,7 +143,7 @@ def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
             evaluated_count=len(candidates), skipped_count=skipped,
             reason=reason if skipped else None,
         ))
-        if affected:
+        if affected and not (isinstance(rule, NumericRule) and rule.generated_for):
             observed["failure_count"] = len(affected)
             findings.append(Finding(
                 rule_id=rule.id, column=rule.column, severity=rule.severity, explanation=rule.explanation,
@@ -143,10 +156,29 @@ def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
     configuration_bytes = json.dumps(rules.model_dump(mode="json"), sort_keys=True, separators=(",", ":")).encode()
     profile = profile_dataset(dataset, rules, settings.top_category_count)
     statistical_findings, analysis_results = analyze(dataset, profile, effective, settings, baseline, baseline_id)
-    findings.extend(statistical_findings)
+    for finding in statistical_findings:
+        exempt = ignored.get(("warning", finding.rule_id, finding.column or ""), set())
+        if exempt and finding.affected_record_numbers:
+            members = [number for number in finding.affected_record_numbers if number not in exempt]
+            membership = set(members)
+            ignored_count = finding.affected_count - len(members)
+            evidence = {**finding.observed_result, "ignored_count": ignored_count,
+                        "detected_outlier_count": finding.affected_count, "outlier_count": len(members)}
+            for analysis in analysis_results:
+                if analysis.check_id == finding.rule_id and analysis.column == finding.column:
+                    analysis.observed_result = evidence
+                    analysis.status = "review_required" if members else "passed"
+            finding = finding.model_copy(update={"affected_record_numbers": members, "affected_count": len(members),
+                "observed_result": evidence,
+                "record_samples": [sample for sample in finding.record_samples if sample.record_number in membership]})
+            if not members:
+                continue
+        findings.append(finding)
     return CheckResponse(
+        metric_semantics="row-based-v1",
         metadata=dataset.metadata, profile=profile, baseline_id=baseline_id, analysis_results=analysis_results,
-        metrics=quality_metrics(dataset, rules, findings),
+        metrics=quality_metrics(dataset, rules, findings,
+            {rule.id: ignored.get(("violation", rule.id, rule.column), set()) for rule in effective.rules if isinstance(rule, UniqueRule)}),
         resolved_identifier_column=identifier_column(effective, dataset.metadata.headers)[0],
         validation_status="failed" if any(f.category == "validation" and f.severity == "error" for f in findings) else "passed",
         findings=findings, rule_results=outcomes, reference_date=reference_date,
