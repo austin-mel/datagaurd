@@ -52,6 +52,9 @@ export function createDatasetRepository(primary?: DatasetRepository, fallback = 
     async getDataset(datasetId) {
       return (await selectedRepository()).getDataset(datasetId)
     },
+    async applyCellReview(datasetId, request) {
+      return (await selectedRepository()).applyCellReview(datasetId, request)
+    },
   }
   return repository
 }

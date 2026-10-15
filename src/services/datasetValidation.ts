@@ -1,14 +1,15 @@
 import { supportedDateConditions } from '../types/ruleset'
+import { groupCellFinding } from './cellReview'
 import type { DatasetRuleset, QualityRule, Dataset, DatasetRow, DatasetValue, QualityDimension, ValidationIssue, ColumnProfile } from '../types'
 
 export class RulesetValidationError extends Error {}
 export const qualityNote = 'Scores count each row once. Completeness: every cell present. Validity: no rule errors. Uniqueness: present, unique values in every enabled unique column. Overall is the mean of available scores.'
-type ValidationResult = Pick<Dataset, 'validation' | 'quality' | 'qualityDimensions' | 'qualityNote' | 'status' | 'lastValidatedAt' | 'processingStatus' | 'rulesChangedSinceRun' | 'columnProfiles'>
+type ValidationResult = Pick<Dataset, 'validation' | 'quality' | 'qualityDimensions' | 'qualityNote' | 'status' | 'lastValidatedAt' | 'processingStatus' | 'rulesChangedSinceRun' | 'columnProfiles' | 'cellReview'>
 
 function isMissing(value: DatasetValue | undefined): boolean {
   return value === null || value === undefined || (typeof value === 'string' && !value.trim())
 }
-function numericValue(value: DatasetValue): number {
+export function numericValue(value: DatasetValue): number {
   if (typeof value === 'number') return value
   if (typeof value !== 'string' || !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value.trim())) return NaN
   return Number(value)
@@ -86,7 +87,9 @@ export function assertValidRuleset(ruleset: DatasetRuleset, columns: readonly st
   }
 }
 
-export function validateDataset(input: Iterable<DatasetRow>, columns: readonly string[], ruleset: DatasetRuleset, validatedAt: Date): ValidationResult {
+export function validateDataset(input: Iterable<DatasetRow>, columns: readonly string[], ruleset: DatasetRuleset, validatedAt: Date,
+  isIgnored: (rowIndex: number, rule: QualityRule) => boolean = () => false,
+): ValidationResult {
   assertValidRuleset(ruleset, columns)
   const rows = [...input]
   const checks = ruleset.rules.filter(rule => rule.enabled).map(rule => ({
@@ -103,6 +106,7 @@ export function validateDataset(input: Iterable<DatasetRow>, columns: readonly s
   rows.forEach((row, index) => {
     if (columns.every(column => !isMissing(row[column]))) complete++
     for (const check of checks) {
+      if (isIgnored(index, check.rule)) continue
       const value = row[check.rule.column] ?? null
       const missing = isMissing(value)
       if (check.rule.type === 'unique' && (missing || check.frequencies.get(value) !== 1)) nonunique.add(index)
@@ -131,7 +135,14 @@ export function validateDataset(input: Iterable<DatasetRow>, columns: readonly s
     dimension('uniqueness', 'Uniqueness', rows.length - nonunique.size, 'rows unique in all tagged columns', checks.some(check => check.rule.type === 'unique')),
   ]
   const scores = qualityDimensions.flatMap(item => item.score === null ? [] : [item.score])
+  const identifierColumn = ruleset.rules.find(rule => rule.enabled && rule.type === 'unique')?.column
+  const cellReview = checks.flatMap(check => {
+    const issue = issues.find(item => item.id === check.rule.id)
+    return issue ? groupCellFinding({ column: issue.column, ruleId: issue.id, rule: issue.rule,
+      kind: 'violation', reason: issue.message }, rows, [...check.affected].map(index => index + 1), identifierColumn) : []
+  })
   return {
+    cellReview,
     validation: { checksRun: checks.length, issues },
     quality: scores.length ? scores.reduce((sum, score) => sum + score, 0) / scores.length : null,
     qualityDimensions, qualityNote,
@@ -164,7 +175,7 @@ export function profileDataset(rows: readonly DatasetRow[], columns: readonly st
       : observed.size === 1 && first !== undefined && last !== undefined
         ? { kind: 'date-range', minimum: new Date(first).toISOString().slice(0, 10), maximum: new Date(last).toISOString().slice(0, 10) }
         : { kind: 'top-values', values: categories }
-    return { name, observedTypes: [...observed].sort(), missingCount: rows.length - values.length, uniqueCount: frequencies.size, summary }
+    return { name, observedTypes: [...observed].sort(), missingCount: rows.length - values.length, warningCount: null, uniqueCount: frequencies.size, summary }
   })
 }
 

@@ -1,4 +1,4 @@
-import type { Dataset, DatasetDataSource, DatasetRuleset, DatasetWorkspace } from '@/types'
+import type { CellReviewRequest, Dataset, DatasetDataSource, DatasetRuleset, DatasetWorkspace } from '@/types'
 
 export interface DatasetRepository {
   readonly source: DatasetDataSource
@@ -7,6 +7,7 @@ export interface DatasetRepository {
   updateRuleset(datasetId: string, ruleset: DatasetRuleset): Promise<Dataset>
   revalidate(datasetId: string, version: string): Promise<Dataset>
   getDataset(datasetId: string): Promise<Dataset>
+  applyCellReview(datasetId: string, request: CellReviewRequest): Promise<Dataset>
 }
 
 export class BackendUnavailableError extends Error {}

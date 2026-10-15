@@ -1,4 +1,5 @@
 import type { DatasetRuleset } from './ruleset'
+import type { CellReviewGroup } from './cellReview'
 
 export type DatasetValue = string | number | boolean | null
 export type DatasetRow = Readonly<Record<string, DatasetValue>>
@@ -21,6 +22,8 @@ export interface ColumnProfile {
   name: string
   observedTypes: readonly ('text' | 'integer' | 'number' | 'date' | 'boolean')[]
   missingCount: number
+  /** Distinct cells flagged by statistical findings; null before findings are available. */
+  warningCount: number | null
   uniqueCount: number
   summary: ProfileSummary
 }
@@ -57,6 +60,7 @@ export interface Dataset {
   processingStatus: 'not_started' | 'running' | 'completed' | 'failed'
   processingError?: string
   rulesChangedSinceRun: boolean
+  reviewChangedSinceRun?: boolean
   versionId?: string
   latestRunId?: string
   quality: number | null
@@ -65,6 +69,8 @@ export interface Dataset {
   lastValidatedAt: string | null
   columns: readonly string[]
   columnProfiles: readonly ColumnProfile[] | null
+  /** Absent until the data source supplies complete cell membership and values. */
+  cellReview?: readonly CellReviewGroup[] | null
   validation: {
     checksRun: number
     issues: readonly ValidationIssue[]

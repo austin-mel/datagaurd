@@ -1,7 +1,8 @@
-import type { DatasetDetail, RuleSet, RuleSetView, Metric, ColumnProfile as BackendColumnProfile } from '../types/backend'
+import type { DatasetDetail, RuleSet, RuleSetView, Metric, Finding, ColumnProfile as BackendColumnProfile } from '../types/backend'
 import type { Dataset, DatasetRuleset, QualityRule, QualityDimension, ColumnProfile } from '../types'
 import { createDefaultRules } from '../data/qualityRules'
 import { assertValidRuleset, qualityNote, RulesetValidationError } from './datasetValidation'
+import { countStatisticalWarnings } from './statisticalWarnings'
 
 const dateConditions = {
   on_or_before_date: 'On or before selected date', before_date: 'Before selected date',
@@ -102,14 +103,15 @@ export function rulesToBackend(ruleset: DatasetRuleset, columns: readonly string
 }
 function isParser(rule: QualityRule) { return rule.type === 'numeric' }
 
-function profileFromBackend(profile: BackendColumnProfile): ColumnProfile {
+function profileFromBackend(profile: BackendColumnProfile, findings: readonly Finding[]): ColumnProfile {
   const summary: ColumnProfile['summary'] = profile.observed_types.every(type => type === 'integer' || type === 'number')
     && profile.numeric_min !== null && profile.numeric_max !== null
     ? { kind: 'number-range', minimum: profile.numeric_min, maximum: profile.numeric_max }
     : profile.observed_types.length === 1 && profile.observed_types[0] === 'date' && profile.date_min && profile.date_max
       ? { kind: 'date-range', minimum: profile.date_min, maximum: profile.date_max }
       : { kind: 'top-values', values: profile.top_categories }
-  return { name: profile.column, observedTypes: profile.observed_types, missingCount: profile.missing_count, uniqueCount: profile.distinct_count, summary }
+  return { name: profile.column, observedTypes: profile.observed_types, missingCount: profile.missing_count,
+    warningCount: countStatisticalWarnings(profile.column, findings), uniqueCount: profile.distinct_count, summary }
 }
 
 export function datasetFromBackend(detail: DatasetDetail): Dataset {
@@ -143,7 +145,7 @@ export function datasetFromBackend(detail: DatasetDetail): Dataset {
     lastValidatedAt: result?.checked_at ?? null, rulesChangedSinceRun: detail.rules_changed_since_run,
     quality: scores.length ? scores.reduce((sum, score) => sum + score, 0) / scores.length : null,
     qualityDimensions: dimensions, qualityNote: result && !metrics ? 'Re-run validation to calculate row-based quality scores.' : result ? qualityNote : 'Validation results are not available.',
-    columnProfiles: result?.profile.columns.map(profileFromBackend) ?? null,
+    columnProfiles: result?.profile.columns.map(profile => profileFromBackend(profile, findings)) ?? null,
     validation: result ? {
       checksRun: result.rule_results.filter(rule => rule.status !== 'skipped').length,
       issues: findings.map((finding, index) => ({ id: finding.rule_id + ':' + index, column: finding.column ?? 'Dataset',

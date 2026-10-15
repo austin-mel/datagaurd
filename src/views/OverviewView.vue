@@ -2,7 +2,7 @@
 import { computed, onUnmounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { ColumnProfileTable, DatasetHistoryCard, DatasetOverviewHeader, DatasetQualityCards, PageHeader, QualityRulesModal, RecentDatasets, ValidationIssuesTable } from '@/components'
+import { CellReviewFixes, ColumnProfileTable, DatasetHistoryCard, DatasetOverviewHeader, DatasetQualityCards, PageHeader, QualityRulesModal, RecentDatasets, ValidationIssuesTable } from '@/components'
 import { useRulesetEditor } from '@/composables'
 import { useDatasetStore, useRecentDatasetStore } from '@/stores'
 
@@ -144,6 +144,7 @@ void load()
           </div>
         </div>
         <ValidationIssuesTable :validation="selectedDataset.validation" :ruleset="selectedDataset.ruleset" :stale="selectedDataset.rulesChangedSinceRun" :total-rows="selectedDataset.rowCount" @edit-rules="openRules" />
+        <CellReviewFixes :dataset="selectedDataset" />
       </div>
       <p role="status" class="mt-3 text-xs text-green-text">{{ saveMessage }}</p>
       <QualityRulesModal v-if="ruleCatalog && source" v-model="isRulesOpen" :dataset="selectedDataset" :rule-catalog="ruleCatalog" :source-kind="source.kind" :saving="isSaving" :save-error="saveError" @save="saveRules" />

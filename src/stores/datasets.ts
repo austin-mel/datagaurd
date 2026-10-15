@@ -43,7 +43,7 @@ export function createDatasetState(repository: DatasetRepository) {
     if (!previous || previous.processingStatus === 'running' || !previous.rulesChangedSinceRun) return
     records.value = records.value.map(record => record.id === datasetId ? {
       ...record, processingStatus: 'running', status: 'running', quality: null,
-      lastValidatedAt: null, validation: null, columnProfiles: null,
+      lastValidatedAt: null, validation: null, columnProfiles: null, cellReview: null,
       qualityDimensions: record.qualityDimensions.map(dimension => ({ ...dimension, score: null, passed: null, total: null })),
       qualityNote: 'Validation is running. Results are not available yet.',
     } : record)

@@ -39,8 +39,8 @@ const affectedColumns = computed(() => new Set(props.validation?.issues.map(issu
         </tbody>
       </table>
     </div>
-    <footer class="ui-table-footer">
-      <span>A row can fail more than one rule.</span>
+    <footer class="ui-table-footer justify-center gap-25">
+      <a href="#cell-review" class="text-xs font-[550] text-cobalt hover:underline">Review flagged cells</a>
       <button type="button" class="cursor-pointer text-xs font-[550] text-cobalt hover:underline" aria-haspopup="dialog" aria-controls="quality-rules-dialog" @click="emit('editRules')">Edit quality rules</button>
     </footer>
   </section>
