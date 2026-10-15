@@ -4,6 +4,7 @@ import { ModalShell } from '../ModalShell'
 import type { Dataset, DatasetDataSource, DatasetRuleset, QualityRule, RuleEditorCatalog } from '@/types'
 import { cloneRuleset, createQualityRule, ruleDefaults } from '@/utils'
 import { assertValidRuleset, RulesetValidationError } from '@/services'
+import { isAutomaticIdentifierRule, resolveIdentifier } from '@/services/identifiers'
 
 const props = defineProps<{ dataset: Dataset; ruleCatalog: RuleEditorCatalog; sourceKind: DatasetDataSource['kind']; saving?: boolean; saveError?: string }>()
 const isOpen = defineModel<boolean>({ required: true })
@@ -15,6 +16,8 @@ const draft = ref(cloneRuleset(props.dataset.ruleset))
 const isCustom = computed(() => draft.value.kind === 'custom')
 const error = ref('')
 const enabledCount = computed(() => draft.value.rules.filter(rule => rule.enabled).length)
+const identifier = computed(() => resolveIdentifier(draft.value, props.dataset.columns))
+const isIdentifierRule = (rule: QualityRule) => isAutomaticIdentifierRule(draft.value, rule)
 
 watch([isOpen, () => props.dataset.id], ([open]) => {
   if (open) {
@@ -39,6 +42,7 @@ function addRule() {
 
 async function removeRule(id: string) {
   if (!isCustom.value || props.saving) return
+  if (draft.value.rules.some(rule => rule.id === id && isIdentifierRule(rule))) return
   draft.value.rules = draft.value.rules.filter(rule => rule.id !== id)
   error.value = ''
   await nextTick()
@@ -46,7 +50,7 @@ async function removeRule(id: string) {
 }
 
 function resetCondition(rule: QualityRule) {
-  if (!isCustom.value || props.saving) return
+  if (!isCustom.value || props.saving || isIdentifierRule(rule)) return
   Object.assign(rule, ruleDefaults(props.ruleCatalog, rule.type))
   error.value = ''
 }
@@ -87,6 +91,9 @@ function saveRules() {
     </div>
 
     <p v-if="draft.description" class="mb-4 text-xs text-muted">{{ draft.description }}</p>
+    <p v-if="draft.backendConfiguration?.identifier_policy === 'auto' && identifier.column" class="mb-4 text-xs text-muted">Automatic identifier checks for {{ identifier.column }} must remain enabled. Add other unique columns as separate rules.</p>
+    <p v-if="identifier.reason" class="mb-4 text-xs text-muted" role="status">{{ identifier.reason }} Cell review will show row numbers without an identifier.</p>
+    <p class="mb-4 text-xs text-muted">All rules must be complete, including disabled rules. Allowed values are comma-separated; quote values containing commas. Regex uses a plain pattern, up to 200 ASCII characters, with no flags, lookarounds or backreferences. Shorthand classes use ASCII characters.</p>
     <form :id="formId" :aria-describedby="error ? errorId : undefined" @submit.prevent="saveRules">
       <fieldset :disabled="!isCustom || saving" class="min-w-0">
         <legend class="sr-only">{{ isCustom ? 'Custom ruleset' : 'Default rules (read only)' }}</legend>
@@ -104,15 +111,15 @@ function saveRules() {
           <tbody>
             <tr v-for="(rule, index) in draft.rules" :key="rule.id" class="border-b border-line last:border-0">
               <td>
-                <input v-model="rule.enabled" type="checkbox" class="size-3.5 accent-cobalt" :aria-label="`Enable rule ${index + 1}: ${rule.column}`" />
+                <input v-model="rule.enabled" type="checkbox" :disabled="isIdentifierRule(rule)" class="size-3.5 accent-cobalt" :aria-label="`Enable rule ${index + 1}: ${rule.column}`" />
               </td>
               <td>
-                <select v-model="rule.column" class="ui-control w-[171px] font-mono" :aria-label="`Column for rule ${index + 1}`">
+                <select v-model="rule.column" :disabled="isIdentifierRule(rule)" class="ui-control w-[171px] font-mono" :aria-label="`Column for rule ${index + 1}`">
                   <option v-for="column in dataset.columns" :key="column" :value="column">{{ column }}</option>
                 </select>
               </td>
               <td>
-                <select v-model="rule.type" class="ui-control w-[135px]" :aria-label="`Type for rule ${index + 1}`" @change="resetCondition(rule)">
+                <select v-model="rule.type" :disabled="isIdentifierRule(rule)" class="ui-control w-[135px]" :aria-label="`Type for rule ${index + 1}`" @change="resetCondition(rule)">
                   <option v-for="type in ruleCatalog.ruleTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
                 </select>
               </td>
@@ -120,15 +127,15 @@ function saveRules() {
                 <div v-if="rule.type === 'range'" class="flex gap-2">
                   <label class="min-w-0 flex-1 text-[9px] text-muted">
                     Minimum
-                    <input v-model="rule.minimum" type="number" step="any" class="ui-control mt-[3px]" :required="rule.enabled" :aria-label="`Minimum for rule ${index + 1}`" />
+                    <input v-model="rule.minimum" type="number" step="any" class="ui-control mt-[3px]" required :aria-label="`Minimum for rule ${index + 1}`" />
                   </label>
                   <label class="min-w-0 flex-1 text-[9px] text-muted">
                     Maximum
-                    <input v-model="rule.maximum" type="number" step="any" class="ui-control mt-[3px]" :required="rule.enabled" :aria-label="`Maximum for rule ${index + 1}`" />
+                    <input v-model="rule.maximum" type="number" step="any" class="ui-control mt-[3px]" required :aria-label="`Maximum for rule ${index + 1}`" />
                   </label>
                 </div>
-                <input v-else-if="rule.type === 'min'" v-model="rule.minimum" type="number" step="any" class="ui-control" :required="rule.enabled" :aria-label="`Minimum for rule ${index + 1}`" />
-                <input v-else-if="rule.type === 'max'" v-model="rule.maximum" type="number" step="any" class="ui-control" :required="rule.enabled" :aria-label="`Maximum for rule ${index + 1}`" />
+                <input v-else-if="rule.type === 'min'" v-model="rule.minimum" type="number" step="any" class="ui-control" required :aria-label="`Minimum for rule ${index + 1}`" />
+                <input v-else-if="rule.type === 'max'" v-model="rule.maximum" type="number" step="any" class="ui-control" required :aria-label="`Maximum for rule ${index + 1}`" />
                 <div v-else-if="rule.type === 'date'" class="space-y-2">
                   <select v-model="rule.condition" class="ui-control" :aria-label="`Date condition for rule ${index + 1}`">
                     <option v-for="condition in ruleCatalog.dateConditions" :key="condition" :value="condition">{{ condition }}</option>
@@ -136,11 +143,11 @@ function saveRules() {
                   <div class="flex gap-2">
                     <label class="min-w-0 flex-1 text-[9px] text-muted">
                       {{ rule.condition === 'Between two selected dates' ? 'Start date (inclusive)' : 'Selected date' }}
-                      <input v-model="rule.selectedDate" type="date" min="0001-01-01" :max="rule.condition === 'Between two selected dates' && rule.endDate ? rule.endDate : '9999-12-31'" :required="rule.enabled" class="ui-control mt-[3px]" :aria-label="`Selected date for rule ${index + 1}`" />
+                      <input v-model="rule.selectedDate" type="date" min="0001-01-01" :max="rule.condition === 'Between two selected dates' && rule.endDate ? rule.endDate : '9999-12-31'" required class="ui-control mt-[3px]" :aria-label="`Selected date for rule ${index + 1}`" />
                     </label>
                     <label v-if="rule.condition === 'Between two selected dates'" class="min-w-0 flex-1 text-[9px] text-muted">
                       End date (inclusive)
-                      <input v-model="rule.endDate" type="date" :min="rule.selectedDate || '0001-01-01'" max="9999-12-31" :required="rule.enabled" class="ui-control mt-[3px]" :aria-label="`End date for rule ${index + 1}`" />
+                      <input v-model="rule.endDate" type="date" :min="rule.selectedDate || '0001-01-01'" max="9999-12-31" required class="ui-control mt-[3px]" :aria-label="`End date for rule ${index + 1}`" />
                     </label>
                   </div>
                 </div>
@@ -149,12 +156,12 @@ function saveRules() {
                   v-model="rule.condition"
                   class="ui-control"
                   :readonly="rule.type === 'required' || rule.type === 'unique' || rule.type === 'numeric'"
-                  :required="rule.enabled"
+                  required
                   :aria-label="`Condition for rule ${index + 1}`"
                 />
               </td>
               <td>
-                <button type="button" class="cursor-pointer rounded p-[5px] text-muted enabled:hover:bg-coral-soft enabled:hover:text-coral-text disabled:cursor-not-allowed disabled:opacity-40" :aria-label="`Remove rule ${index + 1}: ${rule.column}`" @click="removeRule(rule.id)">
+                <button type="button" :disabled="isIdentifierRule(rule)" class="cursor-pointer rounded p-[5px] text-muted enabled:hover:bg-coral-soft enabled:hover:text-coral-text disabled:cursor-not-allowed disabled:opacity-40" :aria-label="`Remove rule ${index + 1}: ${rule.column}`" @click="removeRule(rule.id)">
                   <svg class="ui-icon size-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" /></svg>
                 </button>
               </td>

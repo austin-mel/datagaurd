@@ -36,10 +36,12 @@ export interface ValidationIssue {
   affectedRows: number
 }
 
+export const datasetHistoryTitles = ['Dataset uploaded', 'Validation ran', 'Ruleset saved', 'Dataset edited', 'Findings ignored'] as const
+
 export interface DatasetHistoryEvent {
   id: string
   occurredAt: string
-  title: string
+  title: typeof datasetHistoryTitles[number]
   description: string
 }
 
@@ -60,7 +62,10 @@ export interface Dataset {
   processingStatus: 'not_started' | 'running' | 'completed' | 'failed'
   processingError?: string
   rulesChangedSinceRun: boolean
+  /** Includes initial checks, retries and incompatible historic score semantics. */
+  validationPending?: boolean
   reviewChangedSinceRun?: boolean
+  dataChangedSinceRun?: boolean
   versionId?: string
   latestRunId?: string
   quality: number | null

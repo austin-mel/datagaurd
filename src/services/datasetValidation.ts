@@ -1,12 +1,14 @@
 import { supportedDateConditions } from '../types/ruleset'
 import { groupCellFinding } from './cellReview'
+import { assertIdentifierRules, resolveIdentifier } from './identifiers'
+import { compilePortablePattern, parseAllowedValues } from './ruleSyntax'
 import type { DatasetRuleset, QualityRule, Dataset, DatasetRow, DatasetValue, QualityDimension, ValidationIssue, ColumnProfile } from '../types'
 
 export class RulesetValidationError extends Error {}
 export const qualityNote = 'Scores count each row once. Completeness: every cell present. Validity: no rule errors. Uniqueness: present, unique values in every enabled unique column. Overall is the mean of available scores.'
-type ValidationResult = Pick<Dataset, 'validation' | 'quality' | 'qualityDimensions' | 'qualityNote' | 'status' | 'lastValidatedAt' | 'processingStatus' | 'rulesChangedSinceRun' | 'columnProfiles' | 'cellReview'>
+type ValidationResult = Pick<Dataset, 'validation' | 'quality' | 'qualityDimensions' | 'qualityNote' | 'status' | 'lastValidatedAt' | 'processingStatus' | 'rulesChangedSinceRun' | 'validationPending' | 'columnProfiles' | 'cellReview'>
 
-function isMissing(value: DatasetValue | undefined): boolean {
+export function isMissing(value: DatasetValue | undefined): boolean {
   return value === null || value === undefined || (typeof value === 'string' && !value.trim())
 }
 export function numericValue(value: DatasetValue): number {
@@ -42,17 +44,16 @@ function prepareRule(rule: QualityRule) {
       return (value: DatasetValue) => Number.isFinite(numericValue(value)) && numericValue(value) >= minimum && numericValue(value) <= maximum
     }
     case 'allowed': {
-      const values = new Set(rule.condition.split(',').map(value => value.trim()).filter(Boolean))
-      if (!values.size) fail('enter at least one allowed value.')
+      const values = new Set(parseAllowedValues(rule.condition))
       return (value: DatasetValue) => values.has(String(value))
     }
     case 'regex': {
-      if (!rule.condition) fail('enter a regular expression.')
-      let pattern: RegExp
-      try { pattern = new RegExp('^(?:' + rule.condition + ')$(?![\\s\\S])') } catch { return fail('enter a valid regular expression.') }
+      const pattern = compilePortablePattern(rule.condition)
       return (value: DatasetValue) => pattern.test(String(value))
     }
     case 'date': {
+      if (rule.dateFormats && (!rule.dateFormats.length || new Set(rule.dateFormats).size !== rule.dateFormats.length
+        || rule.dateFormats.some(format => !['%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y'].includes(format)))) fail('select unique, supported date formats.')
       if (!supportedDateConditions.some(option => option === rule.condition)) fail('select a supported date condition.')
       const selected = dateValue(rule.selectedDate ?? '')
       const end = dateValue(rule.endDate ?? '')
@@ -77,13 +78,20 @@ function prepareRule(rule: QualityRule) {
   }
 }
 export function assertValidRuleset(ruleset: DatasetRuleset, columns: readonly string[]) {
+  if (!ruleset.name.trim()) throw new RulesetValidationError('Enter a ruleset name.')
+  try { assertIdentifierRules(ruleset, columns) }
+  catch (cause) { throw new RulesetValidationError(cause instanceof Error ? cause.message : 'Invalid identifier checks.') }
   const ids = new Set<string>()
+  const normalizedIds = new Set([ruleset.backendConfiguration?.structural_rule_id ?? 'DATASET_COLUMNS'])
   for (const rule of ruleset.rules) {
     if (!rule.id.trim() || ids.has(rule.id)) throw new RulesetValidationError('Every rule must have a unique ID.')
     ids.add(rule.id)
-    if (!rule.enabled) continue
+    const normalized = /^[A-Z][A-Z0-9_]+$/.test(rule.id) ? rule.id : 'UI_' + (ids.size - 1) + '_' + rule.id.replace(/[^A-Za-z0-9_]/g, '_').toUpperCase()
+    if (normalizedIds.has(normalized)) throw new RulesetValidationError('Rule IDs conflict after normalization.')
+    normalizedIds.add(normalized)
     if (!columns.includes(rule.column)) throw new RulesetValidationError('Unknown column: ' + rule.column)
-    prepareRule(rule)
+    try { prepareRule(rule) }
+    catch (cause) { throw new RulesetValidationError(cause instanceof Error ? cause.message : 'Invalid rule.') }
   }
 }
 
@@ -93,12 +101,12 @@ export function validateDataset(input: Iterable<DatasetRow>, columns: readonly s
   assertValidRuleset(ruleset, columns)
   const rows = [...input]
   const checks = ruleset.rules.filter(rule => rule.enabled).map(rule => ({
-    rule, passes: prepareRule(rule), affected: new Set<number>(), frequencies: new Map<DatasetValue, number>(),
+    rule, passes: prepareRule(rule), affected: new Set<number>(), frequencies: new Map<string, number>(),
   }))
   for (const check of checks) {
     if (check.rule.type === 'unique') for (const row of rows) {
       const value = row[check.rule.column] ?? null
-      if (!isMissing(value)) check.frequencies.set(value, (check.frequencies.get(value) ?? 0) + 1)
+      if (!isMissing(value)) check.frequencies.set(String(value), (check.frequencies.get(String(value)) ?? 0) + 1)
     }
   }
   const invalid = new Set<number>(), nonunique = new Set<number>()
@@ -109,9 +117,9 @@ export function validateDataset(input: Iterable<DatasetRow>, columns: readonly s
       if (isIgnored(index, check.rule)) continue
       const value = row[check.rule.column] ?? null
       const missing = isMissing(value)
-      if (check.rule.type === 'unique' && (missing || check.frequencies.get(value) !== 1)) nonunique.add(index)
+      if (check.rule.type === 'unique' && (missing || check.frequencies.get(String(value)) !== 1)) nonunique.add(index)
       if (check.rule.type !== 'required' && missing) continue
-      if (check.rule.type === 'unique' ? check.frequencies.get(value) !== 1 : !check.passes(value)) {
+      if (check.rule.type === 'unique' ? check.frequencies.get(String(value)) !== 1 : !check.passes(value)) {
         check.affected.add(index)
         if (check.rule.severity !== 'warning') invalid.add(index)
       }
@@ -135,7 +143,7 @@ export function validateDataset(input: Iterable<DatasetRow>, columns: readonly s
     dimension('uniqueness', 'Uniqueness', rows.length - nonunique.size, 'rows unique in all tagged columns', checks.some(check => check.rule.type === 'unique')),
   ]
   const scores = qualityDimensions.flatMap(item => item.score === null ? [] : [item.score])
-  const identifierColumn = ruleset.rules.find(rule => rule.enabled && rule.type === 'unique')?.column
+  const identifierColumn = resolveIdentifier(ruleset, columns).column ?? undefined
   const cellReview = checks.flatMap(check => {
     const issue = issues.find(item => item.id === check.rule.id)
     return issue ? groupCellFinding({ column: issue.column, ruleId: issue.id, rule: issue.rule,
@@ -147,7 +155,7 @@ export function validateDataset(input: Iterable<DatasetRow>, columns: readonly s
     quality: scores.length ? scores.reduce((sum, score) => sum + score, 0) / scores.length : null,
     qualityDimensions, qualityNote,
     status: !checks.length ? 'unvalidated' : issues.length ? 'needs-review' : 'healthy',
-    processingStatus: 'completed', rulesChangedSinceRun: false,
+    processingStatus: 'completed', rulesChangedSinceRun: false, validationPending: false,
     lastValidatedAt: validatedAt.toISOString(), columnProfiles: profileDataset(rows, columns, ruleset),
   }
 }
@@ -167,7 +175,7 @@ export function profileDataset(rows: readonly DatasetRow[], columns: readonly st
       else if (Number.isFinite(date)) { observed.add('date'); dates.push(date) }
       else observed.add('text')
     }
-    const categories = [...frequencies].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 5).map(([value, count]) => ({ value, count }))
+    const categories = [...frequencies].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)).slice(0, 5).map(([value, count]) => ({ value, count }))
     numbers.sort((a, b) => a - b); dates.sort((a, b) => a - b)
     const low = numbers[0], high = numbers.at(-1), first = dates[0], last = dates.at(-1)
     const summary: ColumnProfile['summary'] = observed.size === 1 && low !== undefined && high !== undefined

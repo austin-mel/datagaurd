@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, useId } from 'vue'
 import type { DatasetHistoryEvent } from '@/types'
+import { datasetHistoryTitles } from '@/types'
 import { formatPacificDate, formatPacificTime } from '@/utils'
 
 const props = defineProps<{ history?: readonly DatasetHistoryEvent[] }>()
@@ -8,6 +9,7 @@ const headingId = useId()
 const dateGroups = computed(() => {
   const groups = new Map<string, DatasetHistoryEvent[]>()
   for (const event of props.history ?? []) {
+    if (!datasetHistoryTitles.includes(event.title)) continue
     const date = formatPacificDate(event.occurredAt)
     const events = groups.get(date) ?? []
     events.push(event)
@@ -22,7 +24,7 @@ const dateGroups = computed(() => {
     <header class="ui-panel-header shrink-0 max-[540px]:px-4 max-[540px]:py-[18px]">
       <div>
         <h2 :id="headingId">Dataset history</h2>
-        <p>{{ dateGroups.length === 1 ? dateGroups[0]?.date : 'Recent activity' }} · Pacific time</p>
+        <p>{{ dateGroups.length === 1 ? dateGroups[0]?.date : 'Saved dataset activity' }} · Pacific time</p>
       </div>
     </header>
     <div class="min-h-0 overflow-y-auto overscroll-contain space-y-4 px-[22px] pb-5 [scrollbar-gutter:stable] max-[540px]:px-4" role="region" aria-label="Dataset history activity" tabindex="0">

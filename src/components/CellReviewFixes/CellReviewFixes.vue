@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, useId, watch } from 'vue'
-import type { CellReviewGroup, Dataset } from '@/types'
+import type { CellReviewGroup, CellReviewRequest, Dataset } from '@/types'
 import { formatNumber } from '@/utils'
 import { displayCellValue, summarizeCellReview } from '@/services/cellReview'
 import CellReviewDialog from './CellReviewDialog.vue'
 
-const props = defineProps<{ dataset: Dataset }>()
+const props = defineProps<{ dataset: Dataset; saving?: boolean; error?: string }>()
+const emit = defineEmits<{ save: [request: CellReviewRequest] }>()
 const headingId = useId()
 const search = ref(''), kind = ref('all'), column = ref('all'), page = ref(0)
 const cellPages = ref<Record<string, number>>({})
@@ -43,7 +44,7 @@ function findingClass(group: CellReviewGroup) {
 <template>
   <section id="cell-review" class="ui-panel" :aria-labelledby="headingId">
     <header class="ui-panel-header">
-      <div><h2 :id="headingId">Cell Review &amp; Fixes</h2><p>Review flagged values and preview a correction for one cell or all matching cells.</p></div>
+      <div><h2 :id="headingId">Cell Review &amp; Fixes</h2><p>Review flagged values and save a correction for one cell or all matching cells.</p></div>
       <span class="ui-badge bg-cobalt-soft text-cobalt">{{ dataset.name }} · {{ dataset.version }}</span>
     </header>
     <p v-if="dataset.cellReview == null" class="px-[22px] pb-5 text-xs text-muted" role="status">Cell review is not available for this version.</p>
@@ -54,6 +55,7 @@ function findingClass(group: CellReviewGroup) {
         <span class="ui-badge bg-ivory text-muted">{{ formatNumber(totals.cells) }} cells across {{ formatNumber(totals.rows) }} rows</span>
       </div>
       <p v-if="dataset.rulesChangedSinceRun" class="px-[22px] pb-4 text-xs text-muted">Findings reflect the last validation run. Re-run validation to apply the saved rules.</p>
+      <p v-if="dataset.reviewChangedSinceRun" class="px-[22px] pb-4 text-xs text-muted" role="status">Saved changes are pending validation. This table shows remaining findings from the last run; click Run Dataset Validation to refresh results.</p>
       <div class="grid gap-3 border-y border-line bg-ivory px-[22px] py-4 sm:grid-cols-[1.4fr_1fr_1fr]">
         <label class="review-label">Find a value, column, or rule<input v-model="search" type="search" class="ui-control" placeholder="Search flagged values…" /></label>
         <label class="review-label">Finding type<select v-model="kind" class="ui-control"><option value="all">All findings</option><option value="violation">Rule violations</option><option value="warning">Anomaly warnings</option></select></label>
@@ -86,14 +88,14 @@ function findingClass(group: CellReviewGroup) {
             <div class="flex gap-2"><button type="button" class="ui-button" :disabled="cellStart(group) === 0" @click="cellPages[group.id] = (cellPages[group.id] ?? 0) - 1">Previous cells</button><button type="button" class="ui-button" :disabled="cellStart(group) + pageSize >= group.cells.length" @click="cellPages[group.id] = (cellPages[group.id] ?? 0) + 1">Next cells</button></div>
           </div>
         </details>
-        <p v-if="!visible.length" class="py-8 text-center text-sm text-muted">{{ groups.length ? 'No findings match these filters.' : 'No flagged cells in this version.' }}</p>
+        <p v-if="!visible.length" class="py-8 text-center text-sm text-muted">{{ groups.length ? 'No findings match these filters.' : dataset.reviewChangedSinceRun ? 'No remaining findings from the last run. Run validation to check your changes.' : 'No flagged cells in this version.' }}</p>
       </div>
       <div class="ui-table-footer">
         <span>{{ filtered.length ? `Groups ${formatNumber(page * pageSize + 1)}–${formatNumber(Math.min((page + 1) * pageSize, filtered.length))} of ${formatNumber(filtered.length)}` : '0 groups' }}</span>
         <div class="flex gap-2"><button type="button" class="ui-button" :disabled="page === 0" @click="page--">Previous</button><button type="button" class="ui-button" :disabled="(page + 1) * pageSize >= filtered.length" @click="page++">Next 10 groups</button></div>
       </div>
     </template>
-    <CellReviewDialog v-if="selected" v-model="dialogOpen" :dataset="dataset" :group="selected.group" :initial-row="selected.row" :mode="selected.mode" />
+    <CellReviewDialog v-if="selected" v-model="dialogOpen" :dataset="dataset" :group="selected.group" :initial-row="selected.row" :mode="selected.mode" :saving="saving" :error="error" @save="emit('save', $event)" />
   </section>
 </template>
 

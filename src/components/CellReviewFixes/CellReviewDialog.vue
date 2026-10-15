@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, useId, watch } from 'vue'
-import type { CellReviewGroup, Dataset } from '@/types'
+import type { CellReviewGroup, CellReviewRequest, Dataset } from '@/types'
 import { displayCellValue } from '@/services/cellReview'
 import { formatNumber } from '@/utils'
 import { ModalShell } from '../ModalShell'
 
-const props = defineProps<{ dataset: Dataset; group: CellReviewGroup; initialRow: number; mode: 'edit' | 'ignore' }>()
+const props = defineProps<{ dataset: Dataset; group: CellReviewGroup; initialRow: number; mode: 'edit' | 'ignore'; saving?: boolean; error?: string }>()
+const emit = defineEmits<{ save: [request: CellReviewRequest] }>()
 const isOpen = defineModel<boolean>({ required: true })
 const radioName = useId()
 const row = ref(props.initialRow)
@@ -21,6 +22,16 @@ const count = computed(() => props.group.cells.length)
 const uniqueColumn = computed(() => props.dataset.ruleset.rules.some(rule => rule.enabled && rule.type === 'unique' && rule.column === props.group.column))
 const requiredColumn = computed(() => props.dataset.ruleset.rules.some(rule => rule.enabled && rule.type === 'required' && rule.column === props.group.column))
 const bulkUnavailable = computed(() => uniqueColumn.value && count.value > 1 && action.value !== 'remove')
+const unchanged = computed(() => action.value === 'null' ? props.group.currentValue === null
+  : action.value === 'custom' && props.group.currentValue !== null && replacement.value === String(props.group.currentValue))
+const cannotSave = computed(() => props.saving || unchanged.value || (action.value === 'custom' && !replacement.value.trim()))
+function save(target: 'one' | 'all') {
+  if (props.saving || (props.mode === 'edit' && (cannotSave.value || (target === 'all' && bulkUnavailable.value)))) return
+  emit('save', { version: props.dataset.version, groupId: props.group.id, rowNumber: row.value, scope: target,
+    action: props.mode === 'ignore' ? { type: 'ignore', reason: reason.value }
+      : action.value === 'remove' ? { type: 'delete-row' } : { type: 'replace', value: action.value === 'null' ? null : replacement.value },
+  })
+}
 const after = computed(() => action.value === 'remove' ? 'ROW REMOVED' : action.value === 'null' ? 'NULL (missing)' : replacement.value.trim() ? replacement.value : 'Enter a replacement')
 const affectedRows = computed(() => props.group.cells.slice(0, 6).map(cell => formatNumber(cell.rowNumber)).join(', ')
   + (count.value > 6 ? `, +${formatNumber(count.value - 6)} more` : ''))
@@ -36,7 +47,9 @@ const caution = computed(() => {
 </script>
 
 <template>
-  <ModalShell v-model="isOpen" :title="title" :eyebrow="mode === 'edit' ? 'REVIEW A CORRECTION' : 'REVIEW A FINDING'" description="Preview only. No changes will be saved to the dataset.">
+  <ModalShell v-model="isOpen" :title="title" :eyebrow="mode === 'edit' ? 'REVIEW A CORRECTION' : 'REVIEW A FINDING'" :dismissible="!saving"
+    :description="mode === 'edit' ? 'Save changes to a new dataset version. Validation runs only when you click Run Dataset Validation.' : 'Remove findings from review and exclude them from future validation errors.'">
+    <fieldset :disabled="saving" class="min-w-0 border-0 p-0">
     <div class="mb-4 flex flex-wrap items-center gap-2 text-xs">
       <strong class="font-semibold">{{ dataset.name }} · {{ dataset.version }}</strong>
       <code class="wrap-anywhere">{{ group.column }}</code>
@@ -90,17 +103,19 @@ const caution = computed(() => {
       </fieldset>
       <label class="block text-xs text-muted">Reason for ignoring<textarea v-model="reason" class="ui-control mt-1.5 min-h-24" placeholder="e.g. Verified against the original source record" /></label>
       <p class="mt-3 text-xs text-muted" role="status">{{ formatNumber(scope === 'one' ? 1 : count) }} {{ scope === 'one' || count === 1 ? 'finding would' : 'findings would' }} be ignored. Cell values would stay unchanged.</p>
-      <p class="mt-4 rounded-md bg-ivory p-3 text-[11px] leading-6 text-muted">Ignoring a finding would remove it from the review queue while retaining its audit record. It would not correct the value, make a failed rule pass, or improve the quality score.</p>
+      <p class="mt-4 rounded-md bg-ivory p-3 text-[11px] leading-6 text-muted">Ignoring removes this finding from the review table. The cell stays unchanged, and this finding will no longer be flagged or counted as an error on future validation runs. Other findings on this cell still apply.</p>
     </template>
+    </fieldset>
+    <p v-if="error" class="mt-4 text-xs text-coral-text" role="alert">{{ error }}</p>
     <template #footer>
-      <p class="w-full text-[11px] text-muted">Preview only. {{ mode === 'edit' ? 'Saving corrections and creating a new dataset version are not available yet.' : 'Saving ignore decisions is not available yet.' }}</p>
+      <p class="w-full text-[11px] text-muted">{{ mode === 'edit' ? 'The current version stays available. Run validation after saving to refresh the results.' : 'Run validation to refresh error counts and quality scores after ignoring findings.' }}</p>
       <div class="flex w-full flex-wrap justify-end gap-2">
-        <button type="button" class="ui-button" @click="isOpen = false">Cancel</button>
+        <button type="button" class="ui-button" :disabled="saving" @click="isOpen = false">Cancel</button>
         <template v-if="mode === 'edit'">
-          <button type="button" class="ui-button" disabled>{{ action === 'remove' ? 'Confirm removal · 1 row' : 'Confirm fix · this cell' }}</button>
-          <button v-if="count > 1" type="button" class="ui-button ui-button-primary" disabled>{{ bulkUnavailable ? 'Bulk replacement unavailable' : action === 'remove' ? `Remove all ${formatNumber(count)} matching rows` : `Apply fix to all ${formatNumber(count)} matching cells` }}</button>
+          <button type="button" class="ui-button ui-button-primary" :disabled="cannotSave" @click="save('one')">{{ saving ? 'Saving…' : action === 'remove' ? 'Delete row & save version' : 'Save cell to new version' }}</button>
+          <button v-if="count > 1" type="button" class="ui-button ui-button-primary" :disabled="cannotSave || bulkUnavailable" @click="save('all')">{{ bulkUnavailable ? 'Bulk replacement unavailable' : action === 'remove' ? `Delete all ${formatNumber(count)} matching rows` : `Save all ${formatNumber(count)} matching cells` }}</button>
         </template>
-        <button v-else type="button" class="ui-button ui-button-primary" disabled>Confirm ignore</button>
+        <button v-else type="button" class="ui-button ui-button-primary" :disabled="saving" @click="save(scope)">{{ saving ? 'Saving…' : 'Confirm ignore' }}</button>
       </div>
     </template>
   </ModalShell>

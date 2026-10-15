@@ -1,4 +1,4 @@
-// Generated from the backend Pydantic schemas. Do not edit by hand.
+// Contract mirror of backend Pydantic schemas; keep aligned when service schemas change.
 
 export type AllowedRule = {
   "id": string
@@ -22,6 +22,7 @@ export type AnalysisResult = {
 }
 
 export type AuditView = {
+  "description"?: string
   "sequence": number
   "dataset_id": string
   "action": string
@@ -37,6 +38,7 @@ export type CategoryCount = {
 }
 
 export type CheckResponse = {
+  "metric_semantics"?: "row-based-v1" | null
   "metadata": DatasetMetadata
   "profile": DatasetProfile
   "resolved_identifier_column"?: string | null
@@ -79,6 +81,15 @@ export type ColumnProfile = {
 }
 
 export type DatasetDetail = {
+  "source_filename"?: string | null
+  "source_format"?: "csv" | "tsv" | "xlsx" | "parquet" | null
+  "cell_review"?: CellReviewGroup[] | null
+  "review_changed_since_run"?: boolean
+  "data_changed_since_run"?: boolean
+  "validation_pending"?: boolean
+  "resolved_identifier_column"?: string | null
+  "identifier_reason"?: string | null
+  "ignored_cell_count"?: number
   "dataset": DatasetView
   "selected_version": VersionView | null
   "latest_version_id": string | null
@@ -154,7 +165,18 @@ export type Finding = {
   "affected_record_numbers": (number)[]
 }
 
-export type JsonValue = unknown
+export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue }
+
+export type CellReviewGroup = {
+  id: string
+  column: string
+  ruleId: string
+  rule: string
+  kind: 'violation' | 'warning'
+  reason: string
+  currentValue: string | null
+  cells: { rowNumber: number; identifier: string | null }[]
+}
 
 export type MaxRule = {
   "id": string
@@ -187,6 +209,7 @@ export type MinRule = {
 }
 
 export type NumericRule = {
+  "generated_for"?: string | null
   "id": string
   "column": string
   "severity"?: "error" | "warning"
@@ -310,6 +333,10 @@ export type UniqueRule = {
 }
 
 export type UploadPolicy = {
+  "max_rows"?: number
+  "max_columns"?: number
+  "max_cells"?: number
+  "max_decoded_bytes"?: number
   "extensions": (string)[]
   "max_upload_bytes": number
   "source_kind"?: "file_upload"
@@ -325,4 +352,7 @@ export type VersionView = {
   "created_at": string
 }
 
-export const defaultUploadPolicy: UploadPolicy = {"extensions":[".csv",".tsv",".xlsx",".parquet"],"max_upload_bytes":10485760,"source_kind":"file_upload"}
+export const defaultUploadPolicy: UploadPolicy = {
+  extensions: ['.csv', '.tsv', '.xlsx', '.parquet'], max_upload_bytes: 104857600, source_kind: 'file_upload',
+  max_rows: 500000, max_columns: 1000, max_cells: 2000000, max_decoded_bytes: 209715200,
+}

@@ -5,6 +5,8 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { CellReviewFixes, ColumnProfileTable, DatasetHistoryCard, DatasetOverviewHeader, DatasetQualityCards, PageHeader, QualityRulesModal, RecentDatasets, ValidationIssuesTable } from '@/components'
 import { useRulesetEditor } from '@/composables'
 import { useDatasetStore, useRecentDatasetStore } from '@/stores'
+import type { CellReviewRequest } from '@/types'
+import { hasPendingValidation } from '@/services/validationState'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,6 +17,9 @@ const isDownloading = ref(false)
 const downloadError = ref('')
 const isRevalidating = ref(false)
 const validationError = ref('')
+const isReviewSaving = ref(false)
+const reviewError = ref('')
+const reviewMessage = ref('')
 const recentStore = useRecentDatasetStore()
 const { visits, lastOpenedId } = storeToRefs(recentStore)
 const { record, reconcile } = recentStore
@@ -36,12 +41,15 @@ const selectedDataset = computed(() => {
 })
 
 const { isOpen: isRulesOpen, isSaving, error: saveError, message: saveMessage, open: openRules, save: saveRules } = useRulesetEditor(selectedDataset)
+const validationPending = computed(() => !!selectedDataset.value && hasPendingValidation(selectedDataset.value))
 
 watch(() => selectedDataset.value?.id, id => {
   isRulesOpen.value = false
   saveMessage.value = ''
   downloadError.value = ''
   validationError.value = ''
+  reviewError.value = ''
+  reviewMessage.value = ''
   if (id) record(id)
 }, { immediate: true })
 
@@ -51,14 +59,31 @@ function openDataset(datasetId: string) {
 
 async function rerunValidation() {
   const dataset = selectedDataset.value
-  if (!dataset || !dataset.rulesChangedSinceRun || isRevalidating.value || isSaving.value || dataset.processingStatus === 'running') return
+  if (!dataset || !validationPending.value || isRevalidating.value || isSaving.value || isReviewSaving.value || dataset.processingStatus === 'running') return
   isRevalidating.value = true
   validationError.value = ''
   saveMessage.value = ''
+  reviewMessage.value = ''
   try { await datasetStore.revalidate(dataset.id, dataset.version) }
   catch (cause) {
     if (selectedDataset.value?.id === dataset.id) validationError.value = cause instanceof Error ? cause.message : 'Unable to re-run validation.'
   } finally { isRevalidating.value = false }
+}
+
+async function saveCellReview(request: CellReviewRequest) {
+  const dataset = selectedDataset.value
+  if (!dataset || isReviewSaving.value || isSaving.value || isRevalidating.value || dataset.processingStatus === 'running') return
+  isReviewSaving.value = true
+  reviewError.value = ''
+  reviewMessage.value = ''
+  try {
+    await datasetStore.applyCellReview(dataset.id, request)
+    if (selectedDataset.value?.id === dataset.id) reviewMessage.value = request.action.type === 'ignore'
+      ? 'Finding ignored. Run validation to refresh error counts and scores.'
+      : 'New dataset version saved. Click Run Dataset Validation when you are ready.'
+  } catch (cause) {
+    if (selectedDataset.value?.id === dataset.id) reviewError.value = cause instanceof Error ? cause.message : 'Unable to save the changes. Please try again.'
+  } finally { isReviewSaving.value = false }
 }
 
 // Future repositories may return a persisted running attempt before it completes.
@@ -122,17 +147,18 @@ void load()
   <template v-else>
     <RecentDatasets :entries="recentDatasets" :selected-id="selectedDataset?.id" @open="openDataset" />
     <template v-if="selectedDataset">
-      <DatasetOverviewHeader :dataset="selectedDataset" :downloading="isDownloading" :saving-rules="isSaving" @download="downloadDataset" @edit-rules="openRules" />
+      <DatasetOverviewHeader :dataset="selectedDataset" :downloading="isDownloading" :saving-rules="isSaving || isReviewSaving" @download="downloadDataset" @edit-rules="openRules" />
       <p v-if="downloadError" class="mb-[18px] text-xs text-coral-text" role="alert">{{ downloadError }}</p>
       <DatasetQualityCards :dataset="selectedDataset" />
       <button type="button"
         class="mb-3 flex min-h-[76px] w-full cursor-pointer items-center justify-center rounded-xl bg-emerald-700 px-6 py-5 text-xl font-semibold text-white shadow-sm hover:bg-emerald-800 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-        :disabled="!selectedDataset.rulesChangedSinceRun || isRevalidating || isSaving || selectedDataset.processingStatus === 'running'"
-        :title="!selectedDataset.rulesChangedSinceRun ? 'The saved ruleset matches the last validation run.' : undefined"
+        :disabled="!validationPending || isRevalidating || isSaving || isReviewSaving || selectedDataset.processingStatus === 'running'"
+        :title="!validationPending ? 'The dataset and ruleset match the last validation run.' : undefined"
         :aria-busy="isRevalidating || selectedDataset.processingStatus === 'running'" @click="rerunValidation">
         {{ isRevalidating || selectedDataset.processingStatus === 'running' ? 'Running Dataset Validation…' : 'Run Dataset Validation' }}
       </button>
       <p v-if="selectedDataset.rulesChangedSinceRun" class="mb-4 text-sm text-muted" role="status">Rules have changed since the displayed results. Re-run validation to apply them.</p>
+      <p v-if="selectedDataset.reviewChangedSinceRun" class="mb-4 text-sm text-muted" role="status">{{ selectedDataset.dataChangedSinceRun ? 'Dataset edits are saved in this version. Run validation to refresh profiles, errors, and quality scores.' : 'Ignored findings have been removed from review. Run validation to refresh error counts and quality scores.' }}</p>
       <p v-if="selectedDataset.processingStatus === 'running'" class="mb-4 text-sm text-muted" role="status">Validation is running. Results are not available yet.</p>
       <p v-if="selectedDataset.processingStatus === 'failed'" class="mb-4 text-sm text-coral-text" role="alert">Validation failed. Results are not available. {{ selectedDataset.processingError }}</p>
       <p v-if="validationError" class="mb-4 text-sm text-coral-text" role="alert">{{ validationError }}</p>
@@ -143,9 +169,10 @@ void load()
             <DatasetHistoryCard :history="selectedDataset.history" class="absolute inset-0 max-[1279px]:relative max-[1279px]:max-h-[28rem]" />
           </div>
         </div>
-        <ValidationIssuesTable :validation="selectedDataset.validation" :ruleset="selectedDataset.ruleset" :stale="selectedDataset.rulesChangedSinceRun" :total-rows="selectedDataset.rowCount" @edit-rules="openRules" />
-        <CellReviewFixes :dataset="selectedDataset" />
+        <ValidationIssuesTable :validation="selectedDataset.validation" :ruleset="selectedDataset.ruleset" :stale="validationPending" :total-rows="selectedDataset.rowCount" @edit-rules="openRules" />
+        <CellReviewFixes :dataset="selectedDataset" :saving="isReviewSaving" :error="reviewError" @save="saveCellReview" />
       </div>
+      <p v-if="reviewMessage" role="status" class="mt-3 text-xs text-green-text">{{ reviewMessage }}</p>
       <p role="status" class="mt-3 text-xs text-green-text">{{ saveMessage }}</p>
       <QualityRulesModal v-if="ruleCatalog && source" v-model="isRulesOpen" :dataset="selectedDataset" :rule-catalog="ruleCatalog" :source-kind="source.kind" :saving="isSaving" :save-error="saveError" @save="saveRules" />
     </template>

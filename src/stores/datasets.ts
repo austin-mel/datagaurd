@@ -1,7 +1,8 @@
 import { ref, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
 import { datasetRepository, type DatasetRepository } from '@/services'
-import type { Dataset, DatasetDataSource, DatasetRuleset, RuleEditorCatalog } from '@/types'
+import { hasPendingValidation } from '@/services/validationState'
+import type { CellReviewRequest, Dataset, DatasetDataSource, DatasetRuleset, RuleEditorCatalog } from '@/types'
 
 export function createDatasetState(repository: DatasetRepository) {
   const records = shallowRef<Dataset[]>([])
@@ -38,9 +39,14 @@ export function createDatasetState(repository: DatasetRepository) {
     records.value = records.value.map(record => record.id === datasetId ? updated : record)
   }
 
+  async function applyCellReview(datasetId: string, request: CellReviewRequest) {
+    const updated = await repository.applyCellReview(datasetId, request)
+    records.value = records.value.map(record => record.id === datasetId ? updated : record)
+  }
+
   async function revalidate(datasetId: string, version: string) {
     const previous = records.value.find(record => record.id === datasetId)
-    if (!previous || previous.processingStatus === 'running' || !previous.rulesChangedSinceRun) return
+    if (!previous || !hasPendingValidation(previous)) return
     records.value = records.value.map(record => record.id === datasetId ? {
       ...record, processingStatus: 'running', status: 'running', quality: null,
       lastValidatedAt: null, validation: null, columnProfiles: null, cellReview: null,
@@ -54,7 +60,7 @@ export function createDatasetState(repository: DatasetRepository) {
       // A transport failure can follow a committed run. Reconcile before claiming failure.
       try { await refreshDataset(datasetId) } catch {
         records.value = records.value.map(record => record.id === datasetId ? {
-          ...record, processingStatus: 'failed', status: 'failed',
+          ...record, processingStatus: 'failed', status: 'failed', validationPending: true,
           processingError: 'Unable to confirm validation. Refresh to retrieve the latest attempt.',
           qualityNote: 'Validation results are not available.',
         } : record)
@@ -67,7 +73,7 @@ export function createDatasetState(repository: DatasetRepository) {
     return repository.download(datasetId, version)
   }
 
-  return { datasets: records, ruleCatalog, source, status, error, load, saveRuleset, download, revalidate, refreshDataset }
+  return { datasets: records, ruleCatalog, source, status, error, load, saveRuleset, download, revalidate, refreshDataset, applyCellReview }
 }
 
 export const useDatasetStore = defineStore('datasets', () => createDatasetState(datasetRepository))

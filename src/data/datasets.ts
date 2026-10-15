@@ -16,14 +16,13 @@ export const seededDatasets: readonly DatasetSeed[] = [
     uploadedBy: 'Alex Lee',
     downloadFilename: 'county_facilities_v3.csv',
     history: [
-      { id: 'facilities-v3-uploaded', occurredAt: '2026-10-07T09:12:00-07:00', title: 'Version v3 uploaded', description: 'Alex Lee · 20 rows, 6 columns' },
-      { id: 'facilities-v3-validated', occurredAt: '2026-10-07T09:12:02-07:00', title: 'Profile, validation, and scoring completed', description: 'System · 5 issues · Overall quality 89.1 / 100' },
-      { id: 'facilities-v3-suggestion', occurredAt: '2026-10-07T09:12:03-07:00', title: 'County correction suggested', description: 'System · 2 rows · Awaiting your decision' },
+      { id: 'facilities-v3-uploaded', occurredAt: '2026-10-07T09:12:00-07:00', title: 'Dataset uploaded', description: 'Alex Lee · facilities.csv · v3' },
+      { id: 'facilities-v3-validated', occurredAt: '2026-10-07T09:12:02-07:00', title: 'Validation ran', description: 'System · v3 · Validation results saved.' },
     ],
     rowCount: seededRowCounts.facilities,
     version: 'v3',
     isCurrentVersion: true,
-    lastValidatedAt: '2026-10-07T09:12:00-07:00',
+    lastValidatedAt: '2026-10-07T09:12:02-07:00',
     columns: ['facility_id', 'facility_name', 'county', 'facility_type', 'inspection_score', 'inspection_date'],
     columnProfiles: [
       { name: 'facility_id', observedTypes: ['text'], missingCount: 2, warningCount: null, uniqueCount: 17, summary: { kind: 'top-values', values: [{ value: 'FAC-004', count: 2 }] } },
@@ -54,7 +53,7 @@ export const seededDatasets: readonly DatasetSeed[] = [
     filename: 'customers.csv',
     downloadFilename: 'customer_master_v12.csv',
     history: [
-      { id: 'customers-v12-validated', occurredAt: '2026-10-07T08:54:00-07:00', title: 'Profile, validation, and scoring completed', description: 'System · 2 issues · Overall quality 97.8 / 100' },
+      { id: 'customers-v12-validated', occurredAt: '2026-10-07T08:54:00-07:00', title: 'Validation ran', description: 'System · v12 · Validation results saved.' },
     ],
     rowCount: seededRowCounts.customers,
     version: 'v12',
@@ -76,6 +75,16 @@ export const seededDatasets: readonly DatasetSeed[] = [
 ]
 
 export function createSeededDatasets(): DatasetSeed[] {
-  return seededDatasets.map(dataset => structuredClone(dataset))
+  return seededDatasets.map(dataset => {
+    const copy = structuredClone(dataset)
+    const automatic = copy.ruleset.kind === 'default'
+    copy.ruleset = { ...copy.ruleset,
+      backendConfiguration: { schema_version: 1, name: copy.ruleset.name, structural_rule_id: 'DATASET_COLUMNS',
+        required_columns: automatic ? [] : [...copy.columns], rules: [],
+        identifier_policy: automatic ? 'auto' : 'configured', identifier_column: automatic ? null : 'facility_id' },
+      rules: copy.ruleset.rules.map(rule => automatic ? { ...rule, id: rule.type === 'required' ? 'GENERIC_ID_REQUIRED' : 'GENERIC_ID_UNIQUE' } : rule),
+    }
+    return copy
+  })
 }
 

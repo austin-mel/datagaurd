@@ -1,31 +1,38 @@
 import { createSeededDatasets, getSeededDatasetRows, seededRuleCatalog } from '@/data'
-import type { CellReviewGroup, CellReviewRequest, Dataset, DatasetRow, DatasetRuleset } from '@/types'
+import type { CellReviewGroup, CellReviewRequest, Dataset, DatasetHistoryEvent, DatasetRow, DatasetRuleset } from '@/types'
 import { cloneRuleset, rulesetSignature } from '@/utils'
 import { assertValidRuleset, validateDataset } from './datasetValidation'
 import { createDatasetCsv } from './datasetCsv'
 import type { DatasetRepository } from './datasetRepositoryContract'
 import { countStatisticalWarnings } from './statisticalWarnings'
 import { groupCellFinding } from './cellReview'
-import { analyzeSeededStatistics } from './seededStatistics'
+import { analyzeSeededStatistics, type StatisticalBaseline } from './seededStatistics'
+import { resolveIdentifier } from './identifiers'
+import { hasPendingValidation } from './validationState'
 
 type SourceRow = { id: number; values: DatasetRow }
 type SessionData = { rows: readonly SourceRow[]; ignored: ReadonlySet<string> }
 
+// Default/custom is editor metadata, not a change to validation or ignore semantics.
+function validationSignature(ruleset: DatasetRuleset) {
+  return rulesetSignature({ ...ruleset, kind: 'custom' })
+}
 function ruleSignatures(ruleset: DatasetRuleset) {
-  return new Map(ruleset.rules.map(rule => [rule.id, rulesetSignature({ ...ruleset, rules: [rule] })]))
+  return new Map(ruleset.rules.map(rule => [rule.id, validationSignature({ ...ruleset, rules: [rule] })]))
 }
 function ignoreKey(row: SourceRow, column: string, kind: CellReviewGroup['kind'], ruleId: string, signature?: string) {
   return JSON.stringify([row.id, column, kind, ruleId, row.values[column] ?? null, signature ?? null])
 }
 
-function validateSeededDataset(record: Pick<Dataset, 'id' | 'columns' | 'ruleset'>, data: SessionData, validatedAt: Date) {
+function validateSeededDataset(record: Pick<Dataset, 'id' | 'columns' | 'ruleset'>, data: SessionData, validatedAt: Date, baseline?: StatisticalBaseline) {
   const rows = data.rows.map(row => row.values), signatures = ruleSignatures(record.ruleset)
   const report = validateDataset(rows, record.columns, record.ruleset, validatedAt, (index, rule) => {
+    if (!data.ignored.size) return false
     const row = data.rows[index]
     return !!row && data.ignored.has(ignoreKey(row, rule.column, 'violation', rule.id, signatures.get(rule.id)))
   })
-  const findings = analyzeSeededStatistics(record.id, rows).flatMap(finding => {
-    if (finding.column === null) return []
+  const findings = analyzeSeededStatistics(rows, record.columns, record.ruleset, report.columnProfiles ?? [], baseline).flatMap(finding => {
+    if (finding.column === null || !finding.affected_record_numbers.length) return [finding]
     const column = finding.column
     const members = finding.affected_record_numbers.filter(number => {
       const row = data.rows[number - 1]
@@ -34,7 +41,7 @@ function validateSeededDataset(record: Pick<Dataset, 'id' | 'columns' | 'ruleset
     return members.length ? [{ ...finding, affected_count: members.length, affected_record_numbers: members,
       record_samples: finding.record_samples.filter(sample => members.includes(sample.record_number)) }] : []
   })
-  const identifierColumn = record.ruleset.rules.find(rule => rule.enabled && rule.type === 'unique')?.column
+  const identifierColumn = resolveIdentifier(record.ruleset, record.columns).column ?? undefined
   report.cellReview = [...(report.cellReview ?? []), ...findings.flatMap(finding => finding.column === null ? [] :
     groupCellFinding({ column: finding.column, ruleId: finding.rule_id, rule: finding.rule_id,
       kind: 'warning', reason: finding.explanation }, rows, finding.affected_record_numbers, identifierColumn))]
@@ -42,12 +49,14 @@ function validateSeededDataset(record: Pick<Dataset, 'id' | 'columns' | 'ruleset
     ...profile, warningCount: countStatisticalWarnings(profile.name, findings),
   })) ?? null
   if (findings.length) report.status = 'needs-review'
+  const globalWarnings = findings.filter(finding => !finding.affected_record_numbers.length)
+  if (globalWarnings.length) report.qualityNote += ' Dataset warnings: ' + [...new Set(globalWarnings.map(finding => finding.explanation))].join(' ')
   if (data.ignored.size) report.qualityNote += ' Ignored rule findings are excluded from error counts; completeness still reflects actual missing cells.'
   return report
 }
 
 function nextVersion(record: Dataset) { return 'v' + (Number(record.version.replace(/^v/, '')) + 1) }
-function historyEvent(title: string, description: string) {
+function historyEvent(title: DatasetHistoryEvent['title'], description: string): DatasetHistoryEvent {
   return { id: crypto.randomUUID(), occurredAt: new Date().toISOString(), title, description }
 }
 
@@ -55,6 +64,7 @@ export function createSeededDatasetRepository(): DatasetRepository {
   let records: Dataset[] | undefined
   const versions = new Map<string, Dataset>()
   const versionRows = new Map<string, readonly SourceRow[]>()
+  const parents = new Map<string, string>()
   const sessions = new Map<string, SessionData>()
   const appliedRules = new Map<string, string>()
   function snapshot(record: Dataset, data: SessionData) {
@@ -67,7 +77,7 @@ export function createSeededDatasetRepository(): DatasetRepository {
       const data: SessionData = { rows: [...getSeededDatasetRows(record.id)].map((values, index) => ({ id: index + 1, values })), ignored: new Set() }
       sessions.set(record.id, data)
       const dataset = { ...record, ...validateSeededDataset(record, data, new Date(record.lastValidatedAt ?? Date.now())) }
-      appliedRules.set(record.id, rulesetSignature(record.ruleset))
+      appliedRules.set(record.id, validationSignature(record.ruleset))
       snapshot(dataset, data)
       return dataset
     })
@@ -104,26 +114,41 @@ export function createSeededDatasetRepository(): DatasetRepository {
     },
     async updateRuleset(datasetId, ruleset) {
       const { record } = find(datasetId)
+      assertCurrent(record, record.version)
+      if (ruleset.kind !== 'custom') throw new Error('Create a custom ruleset before saving changes.')
+      ruleset = { ...ruleset, backendConfiguration: record.ruleset.backendConfiguration }
       assertValidRuleset(ruleset, record.columns)
       const signature = rulesetSignature(ruleset)
       if (signature === rulesetSignature(record.ruleset)) return structuredClone(record)
-      Object.assign(record, { ruleset: cloneRuleset(ruleset), rulesChangedSinceRun: signature !== appliedRules.get(record.id) })
+      const changed = validationSignature(ruleset) !== appliedRules.get(record.id)
+      Object.assign(record, {
+        ruleset: cloneRuleset(ruleset), rulesChangedSinceRun: changed,
+        validationPending: changed || !!record.reviewChangedSinceRun || !!record.dataChangedSinceRun || record.processingStatus !== 'completed',
+        history: [...(record.history ?? []), historyEvent('Ruleset saved', `${ruleset.name} · ${ruleset.rules.length} rule(s) saved.`)],
+      })
       return structuredClone(record)
     },
     async revalidate(datasetId, sourceVersion) {
       const { record, data } = find(datasetId)
       assertCurrent(record, sourceVersion)
-      if (!record.rulesChangedSinceRun && !record.reviewChangedSinceRun) return structuredClone(record)
+      if (!hasPendingValidation(record)) return structuredClone(record)
       // A pending edited version already has its own immutable source snapshot.
-      const version = record.dataChangedSinceRun ? record.version : nextVersion(record)
-      const report = validateSeededDataset(record, data, new Date())
+      const reuseVersion = !!record.dataChangedSinceRun || record.processingStatus === 'failed' || record.processingStatus === 'not_started'
+      const version = reuseVersion ? record.version : nextVersion(record)
+      const currentKey = record.id + ':' + record.version
+      const parentKey = reuseVersion ? parents.get(currentKey) : currentKey
+      const baselineRecord = parentKey ? versions.get(parentKey) : undefined
+      const baselineRows = parentKey ? versionRows.get(parentKey) : undefined
+      const baseline = baselineRecord && baselineRows ? { rows: baselineRows.map(row => row.values), columns: baselineRecord.columns, version: baselineRecord.version } : undefined
+      const report = validateSeededDataset(record, data, new Date(), baseline)
+      if (!reuseVersion) parents.set(record.id + ':' + version, currentKey)
       const updated: Dataset = { ...record, ...report, version,
-        versionId: record.dataChangedSinceRun ? record.versionId : crypto.randomUUID(), latestRunId: crypto.randomUUID(),
+        versionId: reuseVersion ? record.versionId : crypto.randomUUID(), latestRunId: crypto.randomUUID(),
         downloadFilename: datasetId + '_' + version + '.csv', processingError: undefined,
         reviewChangedSinceRun: false, dataChangedSinceRun: false,
-        history: [...(record.history ?? []), historyEvent('Dataset validation completed', version + ' · Profiles, issues, and quality scores recalculated; ignored findings excluded.')],
+        history: [...(record.history ?? []), historyEvent('Validation ran', version + ' · Validation results saved.')],
       }
-      appliedRules.set(datasetId, rulesetSignature(record.ruleset))
+      appliedRules.set(datasetId, validationSignature(record.ruleset))
       return commit(updated, data)
     },
     async applyCellReview(datasetId: string, request: CellReviewRequest) {
@@ -145,12 +170,14 @@ export function createSeededDatasetRepository(): DatasetRepository {
           const remaining = item.id === group.id ? item.cells.filter(cell => !rowNumbers.has(cell.rowNumber)) : item.cells
           return remaining.length ? [{ ...item, cells: remaining }] : []
         })
-        return commit({ ...record, cellReview, reviewChangedSinceRun: true,
-          history: [...(record.history ?? []), historyEvent('Findings ignored', `${cells.length} finding(s) · ${group.column} · ${group.rule}${action.reason.trim() ? ' · ' + action.reason.trim() : ''}`)],
+        if (action.reason.length > 2000) throw new Error('Ignore reasons must be at most 2000 characters.')
+        return commit({ ...record, cellReview, reviewChangedSinceRun: true, validationPending: true,
+          history: [...(record.history ?? []), historyEvent('Findings ignored', `${record.version} · ${cells.length} finding(s) · ${group.column} · ${group.rule}${action.reason.trim() ? ' · ' + action.reason.trim() : ''}`)],
         }, { ...data, ignored })
       }
       if (action.type === 'replace') {
         if (action.value !== null && !action.value.trim()) throw new Error('Enter a replacement value, or choose Replace with NULL.')
+        if (action.value?.includes('\0')) throw new Error('Replacement values cannot contain NUL characters.')
         if (action.value === group.currentValue || (action.value !== null && group.currentValue !== null && action.value === String(group.currentValue))) throw new Error('Enter a value different from the current value.')
         if (request.scope === 'all' && cells.length > 1 && record.ruleset.rules.some(rule => rule.enabled && rule.type === 'unique' && rule.column === group.column)) throw new Error('Replace unique values one cell at a time.')
       }
@@ -159,7 +186,7 @@ export function createSeededDatasetRepository(): DatasetRepository {
         return action.type === 'delete-row' ? [] : [{ ...row, values: { ...row.values, [group.column]: action.value } }]
       })
       const newPositions = new Map(rows.map((row, index) => [row.id, index + 1]))
-      const identifierColumn = record.ruleset.rules.find(rule => rule.enabled && rule.type === 'unique')?.column
+      const identifierColumn = resolveIdentifier(record.ruleset, record.columns).column ?? undefined
       // Keep the remaining last-run queue usable without running validation.
       // Edited cells leave this queue; any new failures appear on the next run.
       const cellReview = (record.cellReview ?? []).flatMap(item => {
@@ -174,14 +201,15 @@ export function createSeededDatasetRepository(): DatasetRepository {
         return remaining.length ? [{ ...item, cells: remaining }] : []
       })
       const version = nextVersion(record)
+      parents.set(record.id + ':' + version, record.id + ':' + record.version)
       const updated: Dataset = { ...record, version, versionId: crypto.randomUUID(), latestRunId: undefined,
         rowCount: rows.length, downloadFilename: datasetId + '_' + version + '.csv', cellReview,
-        reviewChangedSinceRun: true, dataChangedSinceRun: true,
+        reviewChangedSinceRun: true, dataChangedSinceRun: true, validationPending: true,
         processingStatus: 'not_started', status: 'unvalidated', processingError: undefined,
         validation: null, columnProfiles: null, quality: null, lastValidatedAt: null,
         qualityDimensions: record.qualityDimensions.map(dimension => ({ ...dimension, score: null, passed: null, total: null })),
         qualityNote: 'Data changed. Run validation to calculate profiles, issues, and quality scores.',
-        history: [...(record.history ?? []), historyEvent(action.type === 'delete-row' ? 'Rows deleted' : 'Cell values updated', `${version} · ${cells.length} ${action.type === 'delete-row' ? 'row(s) deleted' : 'cell(s) updated in ' + group.column} · Validation pending.`)],
+        history: [...(record.history ?? []), historyEvent('Dataset edited', `${version} · ${cells.length} ${action.type === 'delete-row' ? 'row(s) deleted' : 'cell(s) updated in ' + group.column}`)],
       }
       return commit(updated, { ...data, rows })
     },

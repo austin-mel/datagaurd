@@ -14,7 +14,7 @@ const affectedColumns = computed(() => new Set(props.validation?.issues.map(issu
       <div><h2 :id="headingId">Validation issues</h2><p v-if="validation">{{ formatNumber(validation.checksRun) }} checks in the last completed run. Updated when validation is re-run.</p><p v-else>Not available. No completed validation result exists for the latest attempt.</p></div>
       <div class="flex flex-wrap items-center gap-2">
         <span class="ui-badge bg-cobalt-soft text-cobalt">{{ ruleset.name }}</span>
-        <span v-if="!validation || stale" class="ui-badge bg-ivory text-muted">{{ stale ? 'Rules changed' : 'Not available' }}</span>
+        <span v-if="!validation || stale" class="ui-badge bg-ivory text-muted">{{ !validation ? 'Not available' : 'Results out of date' }}</span>
         <span v-else-if="!validation.checksRun" class="ui-badge bg-ivory text-muted">0 enabled checks</span>
         <span v-else class="ui-badge" :class="validation.issues.length ? 'bg-coral-soft text-coral-text' : 'bg-emerald-soft text-green-text'">{{ formatNumber(validation.issues.length) }} {{ validation.issues.length === 1 ? 'issue' : 'issues' }}</span>
       </div>
@@ -35,7 +35,7 @@ const affectedColumns = computed(() => new Set(props.validation?.issues.map(issu
             <td class="text-right align-top tabular-nums">{{ formatNumber(totalRows) }}</td>
           </tr>
           <tr v-if="!validation"><td colspan="5" class="text-center text-muted">Validation results not available.</td></tr>
-          <tr v-else-if="!validation.issues.length"><td colspan="5" class="text-center" :class="validation.checksRun && !stale ? 'text-green-text' : 'text-muted'">{{ stale ? 'Saved rules have changed. Re-run validation to see their results.' : validation.checksRun ? 'No validation issues found in the last completed run.' : 'The last run had no enabled checks.' }}</td></tr>
+          <tr v-else-if="!validation.issues.length"><td colspan="5" class="text-center" :class="validation.checksRun && !stale ? 'text-green-text' : 'text-muted'">{{ stale ? 'Changes are pending. Run validation to refresh these results.' : validation.checksRun ? 'No validation issues found in the last completed run.' : 'The last run had no enabled checks.' }}</td></tr>
         </tbody>
       </table>
     </div>
