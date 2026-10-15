@@ -8,7 +8,7 @@ from typing import assert_never
 from pydantic import JsonValue
 
 from src.rules import (
-    AllowedRule, DateRule, NotFutureRule, NumericRule, PatternRule, RangeRule, MinRule, MaxRule, RelativeDateRule,
+    AllowedRule, DateBoundRule, DateBetweenRule, NumericRule, PatternRule, RangeRule, MinRule, MaxRule,
     RequiredRule, RuleSet, UniqueRule,
 )
 from src.schemas import CheckResponse, Finding, RecordSample, RuleResult
@@ -20,7 +20,7 @@ from src.services.statistics import analyze
 from src.services.value_parsing import parse_date, parse_number
 from src.settings import Settings
 
-IMPLEMENTATION_VERSION = "tabular-validation/2.0.0"
+IMPLEMENTATION_VERSION = "tabular-validation/2.1.0"
 
 
 def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
@@ -47,7 +47,6 @@ def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
         ))
 
     numeric_values: dict[str, dict[int, float]] = {}
-    date_values: dict[str, dict[int, date]] = {}
     if rules.identifier_policy == "auto" and identifier_reason:
         outcomes.extend(RuleResult(rule_id=identity, column=None, status="skipped", evaluated_count=0,
                                    skipped_count=len(dataset.records), reason=identifier_reason)
@@ -105,26 +104,23 @@ def check_dataset(dataset: ParsedDataset, rules: RuleSet, settings: Settings,
                 affected = [number for number, value in parsed_numbers.items() if value > rule.maximum]
                 threshold = {"maximum": rule.maximum, "inclusive": True}
             reason = f"Missing values or failed prerequisite {rule.prerequisite}."
-        elif isinstance(rule, DateRule):
+        elif isinstance(rule, (DateBoundRule, DateBetweenRule)):
             parsed_dates = {number: parsed_day for number, value in nonmissing.items()
                             if (parsed_day := parse_date(value, rule.formats)) is not None}
-            date_values[rule.id] = parsed_dates
             affected = [number for number in nonmissing if number not in parsed_dates]
-            threshold = {"formats": list(rule.formats)}
-        elif isinstance(rule, NotFutureRule):
-            parsed_dates = date_values[rule.prerequisite]
-            candidates = list(parsed_dates)
-            affected = [number for number, value in parsed_dates.items() if value > reference_date]
-            threshold = {"latest": reference_date.isoformat(), "inclusive": True}
-            reason = f"Missing values or failed prerequisite {rule.prerequisite}."
-        elif isinstance(rule, RelativeDateRule):
-            parsed_dates = date_values[rule.prerequisite]
-            candidates = list(parsed_dates)
-            affected = [number for number, value in parsed_dates.items()
-                        if (value >= reference_date if rule.kind == "before_today" else
-                            value <= reference_date if rule.kind == "after_today" else value < reference_date)]
-            threshold = {"reference_date": reference_date.isoformat(), "condition": rule.kind}
-            reason = f"Missing values or failed prerequisite {rule.prerequisite}."
+            if isinstance(rule, DateBetweenRule):
+                first, last = date.fromisoformat(rule.start_date), date.fromisoformat(rule.end_date)
+                affected.extend(number for number, value in parsed_dates.items() if not first <= value <= last)
+                threshold = {"start_date": rule.start_date, "end_date": rule.end_date, "inclusive": True}
+            else:
+                selected = date.fromisoformat(rule.date)
+                affected.extend(number for number, value in parsed_dates.items()
+                                if (value > selected if rule.kind == "on_or_before_date" else
+                                    value < selected if rule.kind == "on_or_after_date" else
+                                    value >= selected if rule.kind == "before_date" else value <= selected))
+                threshold = {"date": rule.date, "condition": rule.kind}
+            threshold["formats"] = list(rule.formats)
+            affected.sort()
         else:
             assert_never(rule)
         skipped = len(values) - len(candidates)

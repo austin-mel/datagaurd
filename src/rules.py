@@ -1,9 +1,10 @@
 import re
 from pathlib import Path
+from datetime import date
 from typing import Annotated, Literal, Self
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 
 class ConfigurationError(ValueError):
@@ -88,9 +89,18 @@ class MaxRule(BaseRule):
 DateFormat = Literal["%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y"]
 
 
+def valid_selected_date(value: str) -> str:
+    date.fromisoformat(value)
+    return value
+
+
+SelectedDate = Annotated[str, Field(pattern=r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$", json_schema_extra={"format": "date"}),
+                         AfterValidator(valid_selected_date)]
+
+
 class DateRule(BaseRule):
-    kind: Literal["date"]
-    formats: list[DateFormat] = Field(min_length=1)
+    """Shared parsing settings; only concrete selected-date constraints are accepted."""
+    formats: list[DateFormat] = Field(default=["%Y-%m-%d"], min_length=1)
 
     @field_validator("formats")
     @classmethod
@@ -100,20 +110,26 @@ class DateRule(BaseRule):
         return formats
 
 
-class NotFutureRule(BaseRule):
-    kind: Literal["not_future"]
-    latest: Literal["today"] = "today"
-    prerequisite: str
+class DateBoundRule(DateRule):
+    kind: Literal["on_or_before_date", "on_or_after_date", "before_date", "after_date"]
+    date: SelectedDate
 
 
-class RelativeDateRule(BaseRule):
-    kind: Literal["before_today", "after_today", "on_or_after_today"]
-    prerequisite: str
+class DateBetweenRule(DateRule):
+    kind: Literal["between_dates"]
+    start_date: SelectedDate
+    end_date: SelectedDate
+
+    @model_validator(mode="after")
+    def ordered_dates(self) -> Self:
+        if self.start_date > self.end_date:
+            raise ValueError("start_date must be on or before end_date")
+        return self
 
 
 Rule = Annotated[
     RequiredRule | UniqueRule | PatternRule | AllowedRule | NumericRule | RangeRule | MinRule | MaxRule
-    | DateRule | NotFutureRule | RelativeDateRule,
+    | DateBoundRule | DateBetweenRule,
     Field(discriminator="kind"),
 ]
 
@@ -158,9 +174,9 @@ class RuleSet(ConfigModel):
                 raise ValueError(f"duplicate rule ID: {rule.id}")
             if rule.column not in self.required_columns:
                 raise ValueError(f"{rule.id}: rule column must be declared in required_columns")
-            if isinstance(rule, (RangeRule, MinRule, MaxRule, NotFutureRule, RelativeDateRule)):
+            if isinstance(rule, (RangeRule, MinRule, MaxRule)):
                 parent = seen.get(rule.prerequisite)
-                expected_type = NumericRule if isinstance(rule, (RangeRule, MinRule, MaxRule)) else DateRule
+                expected_type = NumericRule
                 if not isinstance(parent, expected_type) or parent.column != rule.column:
                     raise ValueError(f"{rule.id}: prerequisite must be an earlier parsing rule on the same column")
                 if rule.enabled and not parent.enabled:

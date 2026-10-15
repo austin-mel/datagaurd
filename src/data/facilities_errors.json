@@ -56,7 +56,7 @@
       "column": "inspection_score"
     },
     {
-      "rule_id": "FAC_DATE_PARSE",
+      "rule_id": "FAC_DATE_NOT_FUTURE",
       "record_number": 11,
       "column": "inspection_date"
     },
@@ -96,7 +96,7 @@
       "column": "inspection_score"
     },
     {
-      "rule_id": "FAC_DATE_PARSE",
+      "rule_id": "FAC_DATE_NOT_FUTURE",
       "record_number": 18,
       "column": "inspection_date"
     },

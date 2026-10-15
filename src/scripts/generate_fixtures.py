@@ -44,7 +44,7 @@ def generate(row_count: int = 150, seed: int = DEFAULT_SEED,
     inject(8, "inspection_score", "101", "FAC_SCORE_RANGE")
     inject(9, "inspection_score", "-1", "FAC_SCORE_RANGE")
     inject(10, "inspection_score", "not-a-number", "FAC_SCORE_NUMERIC")
-    inject(11, "inspection_date", "2026-02-30", "FAC_DATE_PARSE")
+    inject(11, "inspection_date", "2026-02-30", "FAC_DATE_NOT_FUTURE")
     inject(12, "inspection_date", (reference_date + timedelta(days=1)).isoformat(), "FAC_DATE_NOT_FUTURE")
     # Intentionally overlap two distinct rules on one record.
     inject(13, "facility_id", "BAD-000013", "FAC_ID_FORMAT")
@@ -53,7 +53,7 @@ def generate(row_count: int = 150, seed: int = DEFAULT_SEED,
     inject(15, "inspection_date", "", "FAC_DATE_REQUIRED")
     inject(16, "county", "  ", "FAC_COUNTY_REQUIRED")
     inject(17, "inspection_score", "NaN", "FAC_SCORE_NUMERIC")
-    inject(18, "inspection_date", "10/07/2026", "FAC_DATE_PARSE")
+    inject(18, "inspection_date", "10/07/2026", "FAC_DATE_NOT_FUTURE")
     inject(19, "inspection_score", "Infinity", "FAC_SCORE_NUMERIC")
     inject(20, "facility_id", dirty[2][0], "FAC_ID_UNIQUE")
 

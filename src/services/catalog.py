@@ -310,7 +310,7 @@ class Catalog:
             selected_version=version_view(selected) if selected else None,
             latest_version_id=latest.id if latest else None,
             latest_run=self._run_view(session, run) if run else None, assigned_rules=self._rule_view(assignment),
-            rules_changed_since_run=run is None or run.rule_set_id != assignment.id,
+            rules_changed_since_run=run is None or json.loads(run.configuration_json) != json.loads(assignment.configuration_json),
             uploaded_at=datetime.fromisoformat(upload.created_at) if upload else None,
             uploaded_by=upload.actor if upload else None,
             recent_events=[AuditView.model_validate(event, from_attributes=True) for event in reversed(events)],

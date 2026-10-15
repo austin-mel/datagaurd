@@ -56,15 +56,9 @@ rules:
     kind: required
     column: inspection_date
     explanation: Inspection dates must be populated.
-  - id: FAC_DATE_PARSE
-    kind: date
+  - id: FAC_DATE_NOT_FUTURE
+    kind: on_or_before_date
     column: inspection_date
     formats: ['%Y-%m-%d']
-    explanation: Inspection dates must be real calendar dates in YYYY-MM-DD format.
-  - id: FAC_DATE_NOT_FUTURE
-    kind: not_future
-    column: inspection_date
-    prerequisite: FAC_DATE_PARSE
-    latest: today
-    explanation: Inspection dates must not be later than the recorded reference date.
-
+    date: '2026-10-07'
+    explanation: Inspection dates must be valid dates on or before October 7, 2026.

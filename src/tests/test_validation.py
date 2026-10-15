@@ -24,7 +24,7 @@ def test_full_manifest_exact_match(settings: Settings, rules: RuleSet) -> None:
     actual = {(finding.rule_id, number) for finding in result.findings for number in finding.affected_record_numbers}
     assert actual == expected
     assert len(actual) == 21
-    assert len(result.findings) == 12
+    assert len(result.findings) == 11
     assert result.validation_status == "failed"
     assert result.reference_date.isoformat() == manifest["reference_date"]
     clean_result = check_dataset(parse_dataset(clean, "clean.csv", settings), rules, settings)
@@ -45,7 +45,7 @@ def test_full_membership_and_prerequisites(settings: Settings, rules: RuleSet) -
     assert score.evaluated_count == 146
     assert score.reason and "FAC_SCORE_NUMERIC" in score.reason
     future = next(r for r in result.rule_results if r.rule_id == "FAC_DATE_NOT_FUTURE")
-    assert future.skipped_count == 3
+    assert future.skipped_count == 1
 
 
 def test_structure_failure_and_skips(settings: Settings, rules: RuleSet) -> None:
@@ -65,7 +65,7 @@ def test_structure_failure_and_skips(settings: Settings, rules: RuleSet) -> None
     ("pattern", {"pattern": "FAC-[0-9]{6}"}, ["FAC-000001", "FAC-1", "FAC-０００００１", ""], [2, 3]),
     ("allowed_values", {"values": ["Alder"]}, ["Alder", "alder", "Alder ", ""], [2, 3]),
     ("numeric", {}, ["0", "1.5", "1e2", "NaN", "Infinity", "1e999", "1_000", ""], [4, 5, 6, 7]),
-    ("date", {"formats": ["%Y-%m-%d"]}, ["2024-02-29", "2026-02-29", "2026-1-01", "10/07/2026", ""], [2, 3, 4]),
+    ("on_or_before_date", {"formats": ["%Y-%m-%d"], "date": "2026-10-07"}, ["2024-02-29", "2026-02-29", "2026-1-01", "10/07/2026", ""], [2, 3, 4]),
 ])
 def test_individual_rules(kind: str, options: dict[str, object], values: list[str], expected: list[int], settings: Settings) -> None:
     config = RuleSet.model_validate({
@@ -88,7 +88,7 @@ def test_numeric_and_date_boundaries(settings: Settings, rules: RuleSet) -> None
     assert {(f.rule_id, tuple(f.affected_record_numbers)) for f in result.findings} == {
         ("FAC_DATE_NOT_FUTURE", (2,)), ("FAC_SCORE_RANGE", (3,))}
     later = settings.model_copy(update={"reference_date": date(2026, 10, 8)})
-    assert len(check_dataset(parse_dataset(content, "x.csv", later), rules, later).findings) == 1
+    assert len(check_dataset(parse_dataset(content, "x.csv", later), rules, later).findings) == 2
 
 
 def test_today_resolution_and_config_snapshot(settings: Settings, rules: RuleSet) -> None:
@@ -99,7 +99,7 @@ def test_today_resolution_and_config_snapshot(settings: Settings, rules: RuleSet
     assert result.configuration == rules
     assert result.configuration is not rules
     assert len(result.configuration_sha256) == 64
-    assert result.implementation_version == "tabular-validation/2.0.0"
+    assert result.implementation_version == "tabular-validation/2.1.0"
 
 
 @pytest.mark.parametrize("endpoint", ["upload", "profile", "check"])

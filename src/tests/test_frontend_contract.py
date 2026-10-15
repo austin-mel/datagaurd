@@ -71,17 +71,31 @@ def test_numeric_boundaries_and_failed_prerequisites(settings: Settings, kind: s
     assert result.rule_results[-1].evaluated_count == 3
 
 
-@pytest.mark.parametrize(("kind", "affected"), [
-    ("not_future", [3]), ("before_today", [2, 3]), ("after_today", [1, 2]), ("on_or_after_today", [1]),
+@pytest.mark.parametrize(("kind", "extra", "affected"), [
+    ("on_or_before_date", {"date": "2026-10-07"}, [3, 4]),
+    ("before_date", {"date": "2026-10-07"}, [2, 3, 4]),
+    ("after_date", {"date": "2026-10-07"}, [1, 2, 4]),
+    ("on_or_after_date", {"date": "2026-10-07"}, [1, 4]),
+    ("between_dates", {"start_date": "2026-10-06", "end_date": "2026-10-07"}, [3, 4]),
 ])
-def test_relative_dates_include_exact_today_boundary(settings: Settings, kind: str, affected: list[int]) -> None:
-    rules = config([
-        {"id": "DATE_PARSE", "kind": "date", "column": "day", "formats": ["%Y-%m-%d"]},
-        {"id": "DATE_BOUND", "kind": kind, "column": "day", "prerequisite": "DATE_PARSE"},
-    ], ["day"])
+def test_selected_dates_include_boundaries(settings: Settings, kind: str,
+                                          extra: dict[str, str], affected: list[int]) -> None:
+    rules = config([{"id": "DATE_BOUND", "kind": kind, "column": "day", **extra}], ["day"])
     parsed = parse_dataset(b"day\n2026-10-06\n2026-10-07\n2026-10-08\nbad\n \n", "x.csv", settings)
-    result = check_dataset(parsed, rules, settings.model_copy(update={"reference_date": date(2026, 10, 7)}))
-    assert {item.rule_id: item.affected_record_numbers for item in result.findings} == {"DATE_PARSE": [4], "DATE_BOUND": affected}
+    for reference in (date(2026, 10, 7), date(2030, 1, 1)):
+        result = check_dataset(parsed, rules, settings.model_copy(update={"reference_date": reference}))
+        assert {item.rule_id: item.affected_record_numbers for item in result.findings} == {"DATE_BOUND": affected}
+
+
+@pytest.mark.parametrize("rule", [
+    {"kind": "date", "formats": ["%Y-%m-%d"]},
+    {"kind": "not_future"}, {"kind": "before_today"}, {"kind": "after_today"}, {"kind": "on_or_after_today"},
+    {"kind": "on_or_before_date"}, {"kind": "before_date", "date": "2026-02-30"},
+    {"kind": "between_dates", "start_date": "2026-10-08", "end_date": "2026-10-07"},
+])
+def test_invalid_or_legacy_date_rules_rejected(rule: dict[str, Any]) -> None:
+    with pytest.raises(ValidationError):
+        config([{"id": "DATE_BOUND", "column": "day", **rule}], ["day"])
 
 
 def test_disabled_rules_and_dependencies(settings: Settings) -> None:

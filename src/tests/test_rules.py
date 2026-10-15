@@ -62,7 +62,7 @@ def test_invalid_rule_configuration(settings: Settings, change: str) -> None:
     elif change == "extra":
         raw["rules"][0]["typo"] = True
     elif change == "bad_date_format":
-        raw["rules"][10]["formats"] = ["%x"]
+        raw["rules"][-1]["formats"] = ["%x"]
     with pytest.raises(ValidationError):
         RuleSet.model_validate(raw)
 
