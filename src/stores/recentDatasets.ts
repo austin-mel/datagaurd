@@ -1,5 +1,6 @@
 import { computed, shallowRef, watch } from 'vue'
 import { defineStore } from 'pinia'
+import { canonicalDatasetId } from '@/data/datasetIds'
 
 export interface RecentDatasetVisit {
   datasetId: string
@@ -24,7 +25,8 @@ export function createRecentDatasetHistory(storage = browserLocalStorage()) {
         typeof entry === 'object' && entry !== null
         && typeof entry.datasetId === 'string' && entry.datasetId.trim().length > 0
         && typeof entry.openedAt === 'number' && entry.openedAt >= 0 && !Number.isNaN(new Date(entry.openedAt).getTime()),
-      ).sort((a, b) => b.openedAt - a.openedAt).filter(entry => {
+      ).map(entry => ({ ...entry, datasetId: canonicalDatasetId(entry.datasetId) }))
+        .sort((a, b) => b.openedAt - a.openedAt).filter(entry => {
         if (seen.has(entry.datasetId)) return false
         seen.add(entry.datasetId)
         return true

@@ -3,6 +3,8 @@ import { defineStore } from 'pinia'
 import { datasetRepository, type DatasetRepository } from '@/services'
 import { hasPendingValidation } from '@/services/validationState'
 import type { CellReviewRequest, Dataset, DatasetDataSource, DatasetRuleset, RuleEditorCatalog } from '@/types'
+import type { UploadPolicy } from '@/types/backend'
+import type { DatasetUploadSelection } from '@/services/datasetUpload'
 
 export function createDatasetState(repository: DatasetRepository) {
   const records = shallowRef<Dataset[]>([])
@@ -10,6 +12,7 @@ export function createDatasetState(repository: DatasetRepository) {
   const source = shallowRef<DatasetDataSource | null>(null)
   const status = ref<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const error = ref('')
+  const uploadPolicy = shallowRef<UploadPolicy | null>(null)
   let pending: Promise<void> | null = null
 
   function load(): Promise<void> {
@@ -22,8 +25,8 @@ export function createDatasetState(repository: DatasetRepository) {
       ruleCatalog.value = workspace.ruleCatalog
       source.value = repository.source
       status.value = 'ready'
-    }).catch(() => {
-      error.value = 'Unable to load datasets. Please try again.'
+    }).catch(cause => {
+      error.value = cause instanceof Error ? cause.message : 'Unable to load datasets. Please try again.'
       status.value = 'error'
     }).finally(() => { pending = null })
     return pending
@@ -73,7 +76,19 @@ export function createDatasetState(repository: DatasetRepository) {
     return repository.download(datasetId, version)
   }
 
-  return { datasets: records, ruleCatalog, source, status, error, load, saveRuleset, download, revalidate, refreshDataset, applyCellReview }
+  async function loadUploadPolicy() {
+    uploadPolicy.value = null
+    if (source.value?.kind !== 'api' || !repository.getUploadPolicy) throw new Error('Uploads require a live backend connection.')
+    uploadPolicy.value = await repository.getUploadPolicy()
+  }
+  async function upload(selection: DatasetUploadSelection) {
+    if (source.value?.kind !== 'api' || !repository.upload) throw new Error('Uploads require a live backend connection.')
+    const dataset = await repository.upload(selection)
+    records.value = [dataset, ...records.value.filter(record => record.id !== dataset.id)]
+    return dataset
+  }
+
+  return { datasets: records, ruleCatalog, source, status, error, uploadPolicy, load, saveRuleset, download, revalidate, refreshDataset, applyCellReview, loadUploadPolicy, upload }
 }
 
 export const useDatasetStore = defineStore('datasets', () => createDatasetState(datasetRepository))

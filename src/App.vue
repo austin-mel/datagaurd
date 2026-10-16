@@ -5,6 +5,7 @@ import { useDatasetStore } from '@/stores'
 
 const route = useRoute()
 const datasetStore = useDatasetStore()
+function reconnect() { window.location.reload() }
 </script>
 
 <template>
@@ -12,7 +13,7 @@ const datasetStore = useDatasetStore()
     <aside class="sidebar bg-ink text-porcelain" aria-label="Workspace navigation">
       <RouterLink
         :to="{ name: 'overview' }"
-        class="brand flex items-center px-[9px]"
+        class="brand flex items-center px-2.25"
         aria-label="Dataguard overview"
       >
         <img :src="DataguardLogo" class="brand-logo" width="155" height="37" alt="Dataguard" />
@@ -20,7 +21,7 @@ const datasetStore = useDatasetStore()
       </RouterLink>
 
       <nav aria-label="Main">
-        <p class="nav-label mb-[11px] px-3.5 text-[10px] font-semibold tracking-[0.14em] text-nav-muted">
+        <p class="nav-label mb-2.75 px-3.5 text-[10px] font-semibold tracking-[0.14em] text-nav-muted">
           WORKSPACE
         </p>
         <div class="navigation flex flex-col gap-1.5">
@@ -29,7 +30,7 @@ const datasetStore = useDatasetStore()
             class="nav-link text-nav-text hover:bg-porcelain/10 aria-[current=page]:bg-cobalt aria-[current=page]:text-porcelain"
             aria-label="Overview"
           >
-            <svg class="icon size-[18px]" viewBox="0 0 24 24" aria-hidden="true">
+            <svg class="icon size-4.5" viewBox="0 0 24 24" aria-hidden="true">
               <rect x="3" y="3" width="7" height="7" rx="1.5" />
               <rect x="14" y="3" width="7" height="7" rx="1.5" />
               <rect x="3" y="14" width="7" height="7" rx="1.5" />
@@ -42,7 +43,7 @@ const datasetStore = useDatasetStore()
             class="nav-link text-nav-text hover:bg-porcelain/10 aria-[current=page]:bg-cobalt aria-[current=page]:text-porcelain"
             aria-label="Datasets"
           >
-            <svg class="icon size-[18px]" viewBox="0 0 24 24" aria-hidden="true">
+            <svg class="icon size-4.5" viewBox="0 0 24 24" aria-hidden="true">
               <ellipse cx="12" cy="5" rx="8" ry="3" />
               <path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" />
             </svg>
@@ -54,7 +55,7 @@ const datasetStore = useDatasetStore()
 
     <div class="min-w-0">
       <header class="topbar flex items-center border-b border-line">
-        <div class="flex items-center gap-[11px] text-xs text-muted">
+        <div class="flex items-center gap-2.75 text-xs text-muted">
           <span>Workspace</span>
           <svg class="icon size-3" viewBox="0 0 24 24" aria-hidden="true">
             <path d="m9 5 7 7-7 7" />
@@ -63,6 +64,11 @@ const datasetStore = useDatasetStore()
         </div>
       </header>
       <main class="page-content mx-auto max-w-[1580px]">
+        <div v-if="datasetStore.source" class="mb-5 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-porcelain px-4 py-3 text-xs" role="status">
+          <span v-if="datasetStore.source.kind === 'api'">Connected to backend · Live data</span>
+          <span v-else>Sample data · {{ datasetStore.source.reason === 'backend-unavailable' ? 'Backend unavailable.' : 'Demo mode.' }} Changes are saved only for this session.</span>
+          <button v-if="datasetStore.source.kind === 'seeded' && datasetStore.source.reason === 'backend-unavailable'" type="button" class="ui-button" @click="reconnect">Reconnect (reload samples)</button>
+        </div>
         <RouterView />
       </main>
     </div>

@@ -1,13 +1,14 @@
 import { createDefaultRules, ruleCondition } from './qualityRules'
 import type { Dataset } from '@/types'
 import { seededRowCounts } from './datasetRows'
+import { seededDatasetIds } from './datasetIds'
 
 type DatasetSeed = Omit<Dataset, 'validation' | 'quality' | 'qualityDimensions' | 'qualityNote' | 'status' | 'processingStatus' | 'rulesChangedSinceRun'>
 
 // Fictional catalog records from the visual reference. Session state is cloned below.
 export const seededDatasets: readonly DatasetSeed[] = [
   {
-    id: 'facilities',
+    id: seededDatasetIds.facilities,
     name: 'County facilities',
     source: 'CSV upload',
     sourceIcon: 'file',
@@ -46,11 +47,13 @@ export const seededDatasets: readonly DatasetSeed[] = [
     },
   },
   {
-    id: 'customers',
+    id: seededDatasetIds.customers,
     name: 'Customer master',
     source: 'CSV upload',
     sourceIcon: 'file',
     filename: 'customers.csv',
+    uploadedAt: '2026-10-07T08:53:00-07:00',
+    uploadedBy: 'Demo operator',
     downloadFilename: 'customer_master_v12.csv',
     history: [
       { id: 'customers-v12-validated', occurredAt: '2026-10-07T08:54:00-07:00', title: 'Validation ran', description: 'System · v12 · Validation results saved.' },
@@ -72,6 +75,27 @@ export const seededDatasets: readonly DatasetSeed[] = [
       kind: 'default', rules: createDefaultRules('customer_id'),
     },
   },
+  {
+    id: seededDatasetIds.inventory, name: 'Office inventory', source: 'CSV upload', sourceIcon: 'file',
+    filename: 'inventory.csv', downloadFilename: 'office_inventory_v1.csv',
+    uploadedAt: '2026-10-07T09:00:00-07:00', uploadedBy: 'Demo operator',
+    rowCount: seededRowCounts.inventory, version: 'v1', isCurrentVersion: true,
+    lastValidatedAt: '2026-10-07T09:00:02-07:00',
+    columns: ['product_id', 'product_name', 'category', 'quantity', 'unit_price'],
+    history: [
+      { id: 'inventory-upload', occurredAt: '2026-10-07T09:00:00-07:00', title: 'Dataset uploaded', description: 'Demo operator · inventory.csv · v1' },
+      { id: 'inventory-check', occurredAt: '2026-10-07T09:00:02-07:00', title: 'Validation ran', description: 'System · v1 · Validation results saved.' },
+    ],
+    columnProfiles: null,
+    ruleset: {
+      id: 'inventory-checks', name: 'Inventory checks', description: 'Product identifiers, stock levels, and prices.', kind: 'custom',
+      rules: [
+        ...createDefaultRules('product_id'),
+        { id: 'quantity-min', enabled: true, column: 'quantity', type: 'min', condition: '', minimum: 0, maximum: 100 },
+        { id: 'price-range', enabled: true, column: 'unit_price', type: 'range', condition: '', minimum: 0, maximum: 1000 },
+      ],
+    },
+  },
 ]
 
 export function createSeededDatasets(): DatasetSeed[] {
@@ -81,7 +105,7 @@ export function createSeededDatasets(): DatasetSeed[] {
     copy.ruleset = { ...copy.ruleset,
       backendConfiguration: { schema_version: 1, name: copy.ruleset.name, structural_rule_id: 'DATASET_COLUMNS',
         required_columns: automatic ? [] : [...copy.columns], rules: [],
-        identifier_policy: automatic ? 'auto' : 'configured', identifier_column: automatic ? null : 'facility_id' },
+        identifier_policy: automatic ? 'auto' : 'configured', identifier_column: automatic ? null : copy.columns[0] },
       rules: copy.ruleset.rules.map(rule => automatic ? { ...rule, id: rule.type === 'required' ? 'GENERIC_ID_REQUIRED' : 'GENERIC_ID_UNIQUE' } : rule),
     }
     return copy

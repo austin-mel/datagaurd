@@ -178,7 +178,7 @@ export function profileDataset(rows: readonly DatasetRow[], columns: readonly st
     const categories = [...frequencies].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)).slice(0, 5).map(([value, count]) => ({ value, count }))
     numbers.sort((a, b) => a - b); dates.sort((a, b) => a - b)
     const low = numbers[0], high = numbers.at(-1), first = dates[0], last = dates.at(-1)
-    const summary: ColumnProfile['summary'] = observed.size === 1 && low !== undefined && high !== undefined
+    const summary: ColumnProfile['summary'] = [...observed].every(type => type === 'integer' || type === 'number') && low !== undefined && high !== undefined
       ? { kind: 'number-range', minimum: low, maximum: high }
       : observed.size === 1 && first !== undefined && last !== undefined
         ? { kind: 'date-range', minimum: new Date(first).toISOString().slice(0, 10), maximum: new Date(last).toISOString().slice(0, 10) }

@@ -5,20 +5,20 @@ defineProps<{ dataset: Dataset }>()
 </script>
 
 <template>
-  <section class="ui-panel mb-[23px] rounded-xl" :aria-label="`${dataset.name} quality scores`">
+  <section class="ui-panel mb-5.75 rounded-xl" :aria-label="`${dataset.name} quality scores`">
     <div class="quality-grid grid grid-cols-4 max-[760px]:grid-cols-2 max-[380px]:grid-cols-1">
       <div class="quality-cell border-cobalt bg-cobalt text-porcelain">
         <p class="text-xs">Overall quality</p>
-        <p class="mt-[7px] leading-[1.3] font-semibold tracking-[-0.9px] tabular-nums" :class="dataset.quality === null ? 'text-lg' : 'text-[31px]'">{{ formatScore(dataset.quality) }}<span v-if="dataset.quality !== null" class="ml-0.5 text-[15px] font-normal tracking-normal">/ 100</span></p>
-        <p class="mt-[5px] text-[10px]">{{ dataset.name }} · {{ dataset.version }}</p>
+        <p class="mt-1.75 leading-[1.3] font-semibold tracking-[-0.9px] tabular-nums" :class="dataset.quality === null ? 'text-lg' : 'text-[31px]'">{{ formatScore(dataset.quality) }}<span v-if="dataset.quality !== null" class="ml-0.5 text-[15px] font-normal tracking-normal">/ 100</span></p>
+        <p class="mt-1.25 text-[10px]">{{ dataset.name }} · {{ dataset.version }}</p>
       </div>
       <div v-for="dimension in dataset.qualityDimensions" :key="dimension.id" class="quality-cell border-line">
         <p class="text-xs text-muted">{{ dimension.label }}</p>
-        <p class="mt-[7px] leading-[1.3] font-semibold tracking-[-0.9px] tabular-nums" :class="dimension.score === null ? 'text-lg' : 'text-[31px]'">{{ formatScore(dimension.score) }}<span v-if="dimension.score !== null" class="ml-0.5 text-[15px] font-normal tracking-normal">%</span></p>
-        <p class="mt-[5px] text-[10px] text-muted"><template v-if="dimension.passed !== null && dimension.total !== null">{{ formatNumber(dimension.passed) }} / {{ formatNumber(dimension.total) }} </template> {{ dimension.description }}</p>
+        <p class="mt-1.75 leading-[1.3] font-semibold tracking-[-0.9px] tabular-nums" :class="dimension.score === null ? 'text-lg' : 'text-[31px]'">{{ formatScore(dimension.score) }}<span v-if="dimension.score !== null" class="ml-0.5 text-[15px] font-normal tracking-normal">%</span></p>
+        <p class="mt-1.25 text-[10px] text-muted"><template v-if="dimension.passed !== null && dimension.total !== null">{{ formatNumber(dimension.passed) }} / {{ formatNumber(dimension.total) }} </template> {{ dimension.description }}</p>
       </div>
     </div>
-    <p class="border-t border-line px-[18px] py-2.5 text-[10px] leading-[1.7] text-muted">{{ dataset.qualityNote }}</p>
+    <p class="border-t border-line px-4.5 py-2.5 text-[10px] leading-[1.7] text-muted">{{ dataset.qualityNote }}</p>
   </section>
 </template>
 

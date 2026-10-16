@@ -1,4 +1,6 @@
 import type { CellReviewRequest, Dataset, DatasetDataSource, DatasetRuleset, DatasetWorkspace } from '@/types'
+import type { UploadPolicy } from '@/types/backend'
+import type { DatasetUploadSelection } from './datasetUpload'
 
 export interface DatasetRepository {
   readonly source: DatasetDataSource
@@ -8,6 +10,8 @@ export interface DatasetRepository {
   revalidate(datasetId: string, version: string): Promise<Dataset>
   getDataset(datasetId: string): Promise<Dataset>
   applyCellReview(datasetId: string, request: CellReviewRequest): Promise<Dataset>
+  getUploadPolicy?(): Promise<UploadPolicy>
+  upload?(selection: DatasetUploadSelection): Promise<Dataset>
 }
 
 export class BackendUnavailableError extends Error {}

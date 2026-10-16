@@ -21,17 +21,17 @@ const sqlTypes = {
       <span v-else class="ui-badge bg-ivory text-muted">Not available</span>
     </header>
     <div class="overflow-x-auto" role="region" aria-label="Column profile, horizontally scrollable" tabindex="0">
-      <table class="ui-data-table min-w-[680px] table-fixed">
-        <colgroup><col class="w-[20%]" /><col class="w-[5%]" /><col class="w-[5%]" /><col class="w-[5%]" /><col class="w-[5%]" /><col class="w-[60%]" /></colgroup>
+      <table class="ui-data-table min-w-200 table-fixed">
+        <colgroup><col class="w-37.5" /><col class="w-19" /><col class="w-21" /><col class="w-24" /><col class="w-21" /><col /></colgroup>
         <thead><tr><th scope="col">Column</th><th scope="col" class="text-center">Type</th><th scope="col" class="text-center">Missing</th><th scope="col" class="text-center">Warnings</th><th scope="col" class="text-center">Unique</th><th scope="col">Highlighted Values</th></tr></thead>
         <tbody>
           <tr v-for="profile in profiles" :key="profile.name">
             <th scope="row" class="font-normal wrap-anywhere"><code>{{ profile.name }}</code></th>
             <td class="text-center"><code v-for="type in profile.observedTypes" :key="type" class="block whitespace-normal text-[11px] text-muted">{{ sqlTypes[type] }}</code><span v-if="!profile.observedTypes.length" class="text-muted">Not available</span></td>
-            <td class="text-center tabular-nums"><span :class="profile.missingCount ? 'rounded bg-coral-soft px-[7px] py-0.5 font-semibold text-coral-text' : 'text-muted'">{{ formatNumber(profile.missingCount) }}</span></td>
+            <td class="text-center tabular-nums"><span :class="profile.missingCount ? 'rounded bg-coral-soft px-1.75 py-0.5 font-semibold text-coral-text' : 'text-muted'">{{ formatNumber(profile.missingCount) }}</span></td>
             <td class="text-center tabular-nums">
               <span v-if="profile.warningCount !== null"
-                :class="profile.warningCount ? 'rounded bg-yellow-100 px-[7px] py-0.5 font-semibold text-yellow-800' : 'text-muted'"
+                :class="profile.warningCount ? 'rounded bg-yellow-100 px-1.75 py-0.5 font-semibold text-yellow-800' : 'text-muted'"
                 :title="`${formatNumber(profile.warningCount)} anomalous ${profile.warningCount === 1 ? 'cell' : 'cells'} flagged by statistical findings`">
                 {{ formatNumber(profile.warningCount) }}
               </span>

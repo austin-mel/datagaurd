@@ -56,6 +56,9 @@ function validateSeededDataset(record: Pick<Dataset, 'id' | 'columns' | 'ruleset
 }
 
 function nextVersion(record: Dataset) { return 'v' + (Number(record.version.replace(/^v/, '')) + 1) }
+function downloadFilename(record: Dataset, version: string) {
+  return (record.filename ?? record.name).replace(/\.[^.]+$/, '') + '_' + version + '.csv'
+}
 function historyEvent(title: DatasetHistoryEvent['title'], description: string): DatasetHistoryEvent {
   return { id: crypto.randomUUID(), occurredAt: new Date().toISOString(), title, description }
 }
@@ -108,7 +111,7 @@ export function createSeededDatasetRepository(): DatasetRepository {
       const record = versions.get(datasetId + ':' + version), rows = versionRows.get(datasetId + ':' + version)
       if (!record || !rows) throw new Error('Dataset version not found')
       return {
-        filename: record.downloadFilename ?? record.id + '_' + record.version + '.csv',
+        filename: record.downloadFilename ?? downloadFilename(record, record.version),
         blob: createDatasetCsv(record.columns, rows.map(row => row.values)),
       }
     },
@@ -144,7 +147,7 @@ export function createSeededDatasetRepository(): DatasetRepository {
       if (!reuseVersion) parents.set(record.id + ':' + version, currentKey)
       const updated: Dataset = { ...record, ...report, version,
         versionId: reuseVersion ? record.versionId : crypto.randomUUID(), latestRunId: crypto.randomUUID(),
-        downloadFilename: datasetId + '_' + version + '.csv', processingError: undefined,
+        downloadFilename: downloadFilename(record, version), processingError: undefined,
         reviewChangedSinceRun: false, dataChangedSinceRun: false,
         history: [...(record.history ?? []), historyEvent('Validation ran', version + ' · Validation results saved.')],
       }
@@ -203,7 +206,7 @@ export function createSeededDatasetRepository(): DatasetRepository {
       const version = nextVersion(record)
       parents.set(record.id + ':' + version, record.id + ':' + record.version)
       const updated: Dataset = { ...record, version, versionId: crypto.randomUUID(), latestRunId: undefined,
-        rowCount: rows.length, downloadFilename: datasetId + '_' + version + '.csv', cellReview,
+        rowCount: rows.length, downloadFilename: downloadFilename(record, version), cellReview,
         reviewChangedSinceRun: true, dataChangedSinceRun: true, validationPending: true,
         processingStatus: 'not_started', status: 'unvalidated', processingError: undefined,
         validation: null, columnProfiles: null, quality: null, lastValidatedAt: null,

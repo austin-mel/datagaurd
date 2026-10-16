@@ -72,8 +72,8 @@ onBeforeUnmount(() => {
       @click="handleBackdropClick"
     >
       <header class="modal-header flex shrink-0 items-start justify-between gap-5 border-b border-line">
-        <div class="flex min-w-0 items-center gap-[13px]">
-          <span v-if="$slots.icon" class="grid h-11 w-[41px] shrink-0 place-items-center rounded-[10px] bg-cobalt-soft text-cobalt">
+        <div class="flex min-w-0 items-center gap-3.25">
+          <span v-if="$slots.icon" class="grid h-11 w-10.25 shrink-0 place-items-center rounded-[10px] bg-cobalt-soft text-cobalt">
             <slot name="icon" />
           </span>
           <div>
@@ -84,13 +84,13 @@ onBeforeUnmount(() => {
         </div>
         <button
           type="button"
-          class="grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-md border border-line bg-porcelain hover:bg-ivory"
+          class="grid size-7.5 shrink-0 cursor-pointer place-items-center rounded-md border border-line bg-porcelain hover:bg-ivory"
           :aria-label="`Close ${title}`"
           :disabled="!dismissible"
           autofocus
           @click="close"
         >
-          <svg class="ui-icon size-[15px]" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg>
+          <svg class="ui-icon size-3.75" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg>
         </button>
       </header>
       <div class="modal-body min-h-0 overflow-auto"><slot /></div>

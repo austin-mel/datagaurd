@@ -1,6 +1,7 @@
 import { createSeededDatasetRepository } from './seededDatasetRepository'
 import { BackendUnavailableError, type DatasetRepository } from './datasetRepositoryContract'
 import type { DatasetDataSource, DatasetWorkspace } from '@/types'
+import { createHttpDatasetRepository } from './httpDatasetRepository'
 
 export type { DatasetRepository } from './datasetRepositoryContract'
 
@@ -36,7 +37,7 @@ export function createDatasetRepository(primary?: DatasetRepository, fallback = 
   const repository: DatasetRepository = {
     get source() { return source },
     getWorkspace() {
-      if (active === fallback) return fallback.getWorkspace()
+      if (active) return active.getWorkspace()
       pending ??= selectSource().finally(() => { pending = undefined })
       return pending
     },
@@ -55,11 +56,20 @@ export function createDatasetRepository(primary?: DatasetRepository, fallback = 
     async applyCellReview(datasetId, request) {
       return (await selectedRepository()).applyCellReview(datasetId, request)
     },
+    async getUploadPolicy() {
+      const selected = await selectedRepository()
+      if (!selected.getUploadPolicy) throw new Error('Uploads are not available in this sample workspace.')
+      return selected.getUploadPolicy()
+    },
+    async upload(selection) {
+      const selected = await selectedRepository()
+      if (!selected.upload) throw new Error('Uploads are not available in this sample workspace.')
+      return selected.upload(selection)
+    },
   }
   return repository
 }
 
-// Future backend integration point: supply an implementation of DatasetRepository here.
-// No HTTP client, endpoint configuration, or network requests are implemented yet.
-const backendRepository: DatasetRepository | undefined = undefined
+const backendRepository = import.meta.env?.VITE_DATA_SOURCE === 'seeded'
+  ? undefined : createHttpDatasetRepository(import.meta.env?.VITE_API_BASE_URL || '/api/v1')
 export const datasetRepository = createDatasetRepository(backendRepository)

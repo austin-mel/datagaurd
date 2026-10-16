@@ -40,3 +40,9 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# Local integration evidence and temporary browser sessions
+output/backend-integration/
+output/uuid-integration/
+output/playwright/
+.playwright-cli/

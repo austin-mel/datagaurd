@@ -47,25 +47,25 @@ function findingClass(group: CellReviewGroup) {
       <div><h2 :id="headingId">Cell Review &amp; Fixes</h2><p>Review flagged values and save a correction for one cell or all matching cells.</p></div>
       <span class="ui-badge bg-cobalt-soft text-cobalt">{{ dataset.name }} · {{ dataset.version }}</span>
     </header>
-    <p v-if="dataset.cellReview == null" class="px-[22px] pb-5 text-xs text-muted" role="status">Cell review is not available for this version.</p>
+    <p v-if="dataset.cellReview == null" class="px-5.5 pb-5 text-xs text-muted" role="status">Cell review is not available for this version.</p>
     <template v-else>
-      <div class="flex flex-wrap gap-2 px-[22px] pb-[17px]">
+      <div class="flex flex-wrap gap-2 px-5.5 pb-4.25">
         <span class="ui-badge bg-coral-soft text-coral-text">{{ formatNumber(totals.violations) }} rule {{ totals.violations === 1 ? 'violation' : 'violations' }}</span>
         <span class="ui-badge bg-yellow-100 text-yellow-800">{{ formatNumber(totals.warnings) }} anomaly {{ totals.warnings === 1 ? 'warning' : 'warnings' }}</span>
         <span class="ui-badge bg-ivory text-muted">{{ formatNumber(totals.cells) }} cells across {{ formatNumber(totals.rows) }} rows</span>
       </div>
-      <p v-if="dataset.rulesChangedSinceRun" class="px-[22px] pb-4 text-xs text-muted">Findings reflect the last validation run. Re-run validation to apply the saved rules.</p>
-      <p v-if="dataset.reviewChangedSinceRun" class="px-[22px] pb-4 text-xs text-muted" role="status">Saved changes are pending validation. This table shows remaining findings from the last run; click Run Dataset Validation to refresh results.</p>
-      <div class="grid gap-3 border-y border-line bg-ivory px-[22px] py-4 sm:grid-cols-[1.4fr_1fr_1fr]">
+      <p v-if="dataset.rulesChangedSinceRun" class="px-5.5 pb-4 text-xs text-muted">Findings reflect the last validation run. Re-run validation to apply the saved rules.</p>
+      <p v-if="dataset.reviewChangedSinceRun" class="px-5.5 pb-4 text-xs text-muted" role="status">Saved changes are pending validation. This table shows remaining findings from the last run; click Run Dataset Validation to refresh results.</p>
+      <div class="grid gap-3 border-y border-line bg-ivory px-5.5 py-4 sm:grid-cols-[1.4fr_1fr_1fr]">
         <label class="review-label">Find a value, column, or rule<input v-model="search" type="search" class="ui-control" placeholder="Search flagged values…" /></label>
         <label class="review-label">Finding type<select v-model="kind" class="ui-control"><option value="all">All findings</option><option value="violation">Rule violations</option><option value="warning">Anomaly warnings</option></select></label>
         <label class="review-label">Column<select v-model="column" class="ui-control"><option value="all">All columns</option><option v-for="name in columns" :key="name" :value="name">{{ name }}</option></select></label>
       </div>
-      <div class="flex flex-wrap justify-between gap-2 px-[22px] py-3 text-[11px] text-muted">
+      <div class="flex flex-wrap justify-between gap-2 px-5.5 py-3 text-[11px] text-muted">
         <span><strong class="font-medium text-ink">Grouped by column, finding, and exact current value</strong> · Most repeated first</span>
         <span role="status" aria-live="polite">{{ formatNumber(filtered.length) }} groups · {{ formatNumber(filteredTotals.cells) }} flagged cells</span>
       </div>
-      <div class="px-[22px]">
+      <div class="px-5.5">
         <details v-for="(group, index) in visible" :key="`${page}:${group.id}`" class="finding-group mb-3 overflow-hidden rounded-lg border border-line" :open="index === 0">
           <summary class="group-summary">
             <span class="min-w-0"><code class="block text-xs font-medium wrap-anywhere">{{ group.column }}</code><span class="mt-1.5 flex flex-wrap items-center gap-2"><span class="ui-badge" :class="findingClass(group)">{{ group.kind === 'warning' ? 'Anomaly warning' : 'Rule violation' }}</span><span class="text-[10px] text-muted">{{ group.rule }}</span></span></span>
@@ -76,7 +76,7 @@ function findingClass(group: CellReviewGroup) {
           <ul class="px-4">
             <li v-for="cell in group.cells.slice(cellStart(group), cellStart(group) + pageSize)" :key="cell.rowNumber" class="cell-item">
               <div><strong class="block text-xs font-medium">Row {{ formatNumber(cell.rowNumber) }}</strong><small class="mt-1 block text-[10px] text-muted wrap-anywhere">{{ cell.identifier ?? 'Unassigned ID' }}</small></div>
-              <div class="min-w-0"><span class="value-caption">CURRENT VALUE</span><code class="flagged-value" :class="findingClass(group)">{{ displayCellValue(group.currentValue) }}</code></div>
+              <div class="min-w-0"><span class="value-caption">CURRENT VALUE</span><code class="flagged-value bg-cobalt-soft text-cobalt">{{ displayCellValue(group.currentValue) }}</code></div>
               <div class="flex flex-wrap gap-2">
                 <button type="button" class="ui-button ui-button-primary text-[10px]" aria-haspopup="dialog" :aria-label="`Edit row ${cell.rowNumber}, ${group.column}`" @click="openDialog(group, cell.rowNumber, 'edit')">Edit value</button>
                 <button type="button" class="ui-button border-coral-text bg-transparent text-[10px] text-coral-text hover:bg-coral-soft" aria-haspopup="dialog" :aria-label="`Ignore ${group.kind === 'warning' ? 'warning' : 'error'} for row ${cell.rowNumber}, ${group.column}`" @click="openDialog(group, cell.rowNumber, 'ignore')">Ignore {{ group.kind === 'warning' ? 'warning' : 'error' }}</button>

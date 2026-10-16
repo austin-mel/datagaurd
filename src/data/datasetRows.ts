@@ -1,4 +1,5 @@
 import type { DatasetRow } from '@/types'
+import { seededDatasetIds } from './datasetIds'
 
 // Fictional source values for the local repository, including the reference's defects.
 const facilityScores = [85, 92, 74, 88, 96, 90, 78, 84, 91, 87, 93, 89, 80, 86, 95, 92, 88, -8, 108, 105]
@@ -47,10 +48,19 @@ function* customers(): Generator<DatasetRow> {
   }
 }
 
-export const seededRowCounts = { facilities: facilities.length, customers: customerRowCount }
+const inventory: readonly DatasetRow[] = Array.from({ length: 12 }, (_, index) => ({
+  product_id: `PRD-${String(index + 1).padStart(3, '0')}`,
+  product_name: `Office supply ${index + 1}`,
+  category: index % 2 ? 'Paper' : 'Equipment',
+  quantity: index === 10 ? -3 : (index + 1) * 5,
+  unit_price: index === 11 ? 9999 : (index + 1) * 2.5,
+}))
+
+export const seededRowCounts = { facilities: facilities.length, inventory: inventory.length, customers: customerRowCount }
 
 export function getSeededDatasetRows(datasetId: string): Iterable<DatasetRow> {
-  if (datasetId === 'facilities') return facilities
-  if (datasetId === 'customers') return customers()
+  if (datasetId === seededDatasetIds.facilities) return facilities
+  if (datasetId === seededDatasetIds.customers) return customers()
+  if (datasetId === seededDatasetIds.inventory) return inventory
   throw new Error(`No seeded rows for dataset ${datasetId}`)
 }

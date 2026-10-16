@@ -54,7 +54,7 @@ function submit() {
     <p v-if="!uploadAvailable" class="mt-3 text-xs text-muted">Uploads are not available in this sample workspace.</p>
     <template #footer="{ close }">
       <p class="text-[10px] text-muted">Your original source files will be preserved.</p>
-      <div class="ml-auto flex gap-[9px]">
+      <div class="ml-auto flex gap-2.25">
         <button type="button" class="ui-button" :disabled="uploading" @click="close">Cancel</button>
         <button type="button" class="ui-button ui-button-primary" :disabled="!selected || !!error || !uploadAvailable || uploading" @click="submit">
           {{ uploading ? 'Uploading…' : 'Upload & validate' }}

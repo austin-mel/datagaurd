@@ -137,7 +137,7 @@ void load()
   <PageHeader
     title="Overview"
     subtitle="Pick up where you left off. See what needs attention."
-    class="mb-[26px]"
+    class="mb-6.5"
   />
   <p v-if="status === 'idle' || status === 'loading'" class="text-sm text-muted" role="status">Loading datasets…</p>
   <div v-else-if="status === 'error'" class="ui-panel p-5" role="alert">
@@ -148,10 +148,10 @@ void load()
     <RecentDatasets :entries="recentDatasets" :selected-id="selectedDataset?.id" @open="openDataset" />
     <template v-if="selectedDataset">
       <DatasetOverviewHeader :dataset="selectedDataset" :downloading="isDownloading" :saving-rules="isSaving || isReviewSaving" @download="downloadDataset" @edit-rules="openRules" />
-      <p v-if="downloadError" class="mb-[18px] text-xs text-coral-text" role="alert">{{ downloadError }}</p>
+      <p v-if="downloadError" class="mb-4.5 text-xs text-coral-text" role="alert">{{ downloadError }}</p>
       <DatasetQualityCards :dataset="selectedDataset" />
       <button type="button"
-        class="mb-3 flex min-h-[76px] w-full cursor-pointer items-center justify-center rounded-xl bg-emerald-700 px-6 py-5 text-xl font-semibold text-white shadow-sm hover:bg-emerald-800 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+        class="mb-3 flex min-h-19 w-full cursor-pointer items-center justify-center rounded-xl bg-emerald-700 px-6 py-5 text-xl font-semibold text-white shadow-sm hover:bg-emerald-800 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
         :disabled="!validationPending || isRevalidating || isSaving || isReviewSaving || selectedDataset.processingStatus === 'running'"
         :title="!validationPending ? 'The dataset and ruleset match the last validation run.' : undefined"
         :aria-busy="isRevalidating || selectedDataset.processingStatus === 'running'" @click="rerunValidation">
@@ -162,11 +162,11 @@ void load()
       <p v-if="selectedDataset.processingStatus === 'running'" class="mb-4 text-sm text-muted" role="status">Validation is running. Results are not available yet.</p>
       <p v-if="selectedDataset.processingStatus === 'failed'" class="mb-4 text-sm text-coral-text" role="alert">Validation failed. Results are not available. {{ selectedDataset.processingError }}</p>
       <p v-if="validationError" class="mb-4 text-sm text-coral-text" role="alert">{{ validationError }}</p>
-      <div class="grid min-w-0 gap-[22px]">
-        <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_300px] gap-[22px] max-[1279px]:grid-cols-1">
+      <div class="grid min-w-0 gap-5.5">
+        <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_300px] gap-5.5 max-[1279px]:grid-cols-1">
           <ColumnProfileTable :profiles="selectedDataset.columnProfiles" :version="selectedDataset.version" />
           <div class="relative min-w-0">
-            <DatasetHistoryCard :history="selectedDataset.history" class="absolute inset-0 max-[1279px]:relative max-[1279px]:max-h-[28rem]" />
+            <DatasetHistoryCard :history="selectedDataset.history" class="absolute inset-0 max-[1279px]:relative max-[1279px]:max-h-112" />
           </div>
         </div>
         <ValidationIssuesTable :validation="selectedDataset.validation" :ruleset="selectedDataset.ruleset" :stale="validationPending" :total-rows="selectedDataset.rowCount" @edit-rules="openRules" />

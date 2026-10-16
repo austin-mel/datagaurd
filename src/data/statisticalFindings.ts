@@ -1,10 +1,11 @@
 import type { Finding } from '@/types/backend'
+import { seededDatasetIds } from './datasetIds'
 
 // Simulated output from backend services/statistics.py using the seeded rows.
 // Defaults: 20 usable values, interpolated quartiles, and fences at 1.5 × IQR.
 // Comparative checks have no cell members; only explicit affected records count.
 const seededStatisticalFindings: Readonly<Record<string, readonly Finding[]>> = {
-  facilities: [{
+  [seededDatasetIds.facilities]: [{
     rule_id: 'STAT_IQR', column: 'inspection_score', category: 'statistical',
     severity: 'warning', baseline_id: null,
     explanation: 'Values lie outside the configured interquartile fences; review their validity.',
@@ -21,7 +22,8 @@ const seededStatisticalFindings: Readonly<Record<string, readonly Finding[]>> = 
     ],
   }],
   // Text columns have no numeric outliers; no comparative findings are seeded.
-  customers: [],
+  [seededDatasetIds.customers]: [],
+  [seededDatasetIds.inventory]: [],
 }
 
 export function getSeededStatisticalFindings(datasetId: string): readonly Finding[] {

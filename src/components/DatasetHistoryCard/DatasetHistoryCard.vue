@@ -21,13 +21,13 @@ const dateGroups = computed(() => {
 
 <template>
   <section class="ui-panel flex min-h-0 flex-col" :aria-labelledby="headingId">
-    <header class="ui-panel-header shrink-0 max-[540px]:px-4 max-[540px]:py-[18px]">
+    <header class="ui-panel-header shrink-0 max-[540px]:px-4 max-[540px]:py-4.5">
       <div>
         <h2 :id="headingId">Dataset history</h2>
         <p>{{ dateGroups.length === 1 ? dateGroups[0]?.date : 'Saved dataset activity' }} · Pacific time</p>
       </div>
     </header>
-    <div class="min-h-0 overflow-y-auto overscroll-contain space-y-4 px-[22px] pb-5 [scrollbar-gutter:stable] max-[540px]:px-4" role="region" aria-label="Dataset history activity" tabindex="0">
+    <div class="min-h-0 overflow-y-auto overscroll-contain space-y-4 px-5.5 pb-5 scrollbar-gutter-stable max-[540px]:px-4" role="region" aria-label="Dataset history activity" tabindex="0">
       <div v-for="group in dateGroups" :key="group.date">
         <h3 v-if="dateGroups.length > 1" class="mb-3 text-[11px] font-[550] text-muted">{{ group.date }}</h3>
         <ol class="flex flex-col gap-4">

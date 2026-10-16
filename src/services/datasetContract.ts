@@ -105,7 +105,7 @@ export function rulesToBackend(ruleset: DatasetRuleset, columns: readonly string
 }
 
 function profileFromBackend(profile: BackendColumnProfile, findings: readonly Finding[]): ColumnProfile {
-  const summary: ColumnProfile['summary'] = profile.observed_types.length === 1
+  const summary: ColumnProfile['summary'] = profile.observed_types.length > 0 && profile.observed_types.every(type => type === 'integer' || type === 'number')
     && profile.numeric_min !== null && profile.numeric_max !== null
     ? { kind: 'number-range', minimum: profile.numeric_min, maximum: profile.numeric_max }
     : profile.observed_types.length === 1 && profile.observed_types[0] === 'date' && profile.date_min && profile.date_max
