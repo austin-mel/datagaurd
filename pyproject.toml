@@ -21,6 +21,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8,<10",
+    "pytest-cov>=6,<8",
     "httpx>=0.28,<1",
     "mypy>=1.15,<2",
     "pandas-stubs>=2.2,<4",
@@ -34,7 +35,23 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["src/tests"]
 pythonpath = ["."]
-addopts = "-q --basetemp=.pytest_tmp"
+addopts = "-q --strict-markers --basetemp=.pytest_tmp"
+markers = ["unit: isolated service and model tests without a running API or database"]
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+omit = ["src/tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+
+[tool.coverage.html]
+directory = "output/coverage"
+
+[tool.coverage.xml]
+output = "output/coverage.xml"
 
 [tool.mypy]
 python_version = "3.12"

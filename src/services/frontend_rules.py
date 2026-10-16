@@ -125,7 +125,7 @@ def backend_ruleset(editor: EditorRuleset, assigned: RuleSet, headers: list[str]
                 values = allowed_values(rule.condition)
             except ValueError as exc:
                 raise InputError("invalid_rules", str(exc)) from exc
-            result.append({**common, "kind": "allowed_values", "values": values,
+            result.append({**common, "kind": "allowed_values", "values": [value for value in values],
                            "explanation": f"{rule.column} must be one of: {', '.join(values)}."})
         elif rule.type in {"min", "max", "range"}:
             parser_id = identity + "_PARSE"
@@ -147,7 +147,7 @@ def backend_ruleset(editor: EditorRuleset, assigned: RuleSet, headers: list[str]
             if date_kind is None:
                 raise InputError("invalid_rules", "Select a supported date condition.")
             constraint: dict[str, JsonValue] = {**common, "kind": date_kind,
-                "formats": rule.dateFormats if rule.dateFormats is not None else ["%Y-%m-%d"],
+                "formats": [value for value in (rule.dateFormats or ["%Y-%m-%d"])],
                 "explanation": f"{rule.column} must satisfy {rule.condition}: {rule.selectedDate}"
                     + (f" through {rule.endDate} (inclusive)." if date_kind == "between_dates" else ".")}
             if date_kind == "between_dates":

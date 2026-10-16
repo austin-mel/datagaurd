@@ -12,6 +12,8 @@ class Settings(BaseSettings):
         env_prefix="DATAGUARD_", env_file=PROJECT_ROOT / "environment" / "back-end.env", extra="ignore"
     )
 
+    cors_origins: list[str] = ['http://127.0.0.1:5173', 'http://localhost:5173']
+
     max_upload_bytes: int = Field(default=100 * 1024 * 1024, gt=0)
     max_rows: int = Field(default=500_000, gt=0)
     max_columns: int = Field(default=1000, gt=0)

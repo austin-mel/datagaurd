@@ -2,6 +2,8 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from src.frontend_routes import frontend_router
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
@@ -42,11 +44,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                       {"name": "Review", "description": "Append-only human decisions; evidence and metrics stay unchanged."},
                       {"name": "Corrections", "description": "Preview, approve, execute and compare exact replacements."}],
     )
+    application.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
+                               allow_methods=['GET', 'POST', 'PUT', 'OPTIONS'],
+                               allow_headers=['Content-Type', 'Authorization'],
+                               expose_headers=['Content-Disposition'])
     application.state.catalog = catalog
+    application.include_router(frontend_router(catalog))
     application.include_router(dataset_router(settings, catalog))
     application.include_router(rule_router(catalog))
     application.include_router(persistence_router(catalog))
     application.include_router(remediation_router(catalog))
+
+    @application.exception_handler(Exception)
+    async def unexpected_error_handler(request: Request, exc: Exception) -> JSONResponse:
+        # Keep backend errors distinguishable from a disconnected development proxy.
+        # Uvicorn still records the exception; do not leak storage paths or tracebacks.
+        return JSONResponse(status_code=500, content=ErrorResponse(error=ErrorDetail(
+            code="internal_error", message="The backend could not load this data. Check the server logs."
+        )).model_dump(mode="json"))
 
     @application.exception_handler(SQLAlchemyError)
     async def database_error_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:

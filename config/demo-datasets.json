@@ -1,0 +1,448 @@
+[
+  {
+    "id": "3be295a2-aad7-4724-9853-44729e762066",
+    "name": "County facilities",
+    "filename": "facilities.csv",
+    "columns": [
+      "facility_id",
+      "facility_name",
+      "county",
+      "facility_type",
+      "inspection_score",
+      "inspection_date"
+    ],
+    "row_count": 20,
+    "rules": {
+      "schema_version": 1,
+      "name": "Facilities checks",
+      "structural_rule_id": "DATASET_COLUMNS",
+      "required_columns": [
+        "facility_id",
+        "facility_name",
+        "county",
+        "facility_type",
+        "inspection_score",
+        "inspection_date"
+      ],
+      "rules": [
+        {
+          "id": "UI_0_FACILITY_ID_REQUIRED",
+          "column": "facility_id",
+          "enabled": true,
+          "severity": "error",
+          "explanation": "facility_id must satisfy required.",
+          "kind": "required"
+        },
+        {
+          "id": "UI_1_FACILITY_ID_UNIQUE",
+          "column": "facility_id",
+          "enabled": true,
+          "severity": "error",
+          "explanation": "facility_id must satisfy unique.",
+          "kind": "unique"
+        },
+        {
+          "id": "UI_2_SCORE_RANGE_PARSE",
+          "column": "inspection_score",
+          "enabled": true,
+          "severity": "error",
+          "explanation": "inspection_score must satisfy range.",
+          "kind": "numeric",
+          "generated_for": "UI_2_SCORE_RANGE"
+        },
+        {
+          "id": "UI_2_SCORE_RANGE",
+          "column": "inspection_score",
+          "enabled": true,
+          "severity": "error",
+          "explanation": "inspection_score must satisfy range: 0 through 100.",
+          "kind": "range",
+          "minimum": 0,
+          "maximum": 100,
+          "prerequisite": "UI_2_SCORE_RANGE_PARSE"
+        },
+        {
+          "id": "UI_3_INSPECTION_DATE",
+          "column": "inspection_date",
+          "enabled": true,
+          "severity": "error",
+          "explanation": "inspection_date must satisfy On or before selected date: 2026-10-07.",
+          "kind": "on_or_before_date",
+          "formats": [
+            "%Y-%m-%d"
+          ],
+          "date": "2026-10-07"
+        },
+        {
+          "id": "UI_4_COUNTY_ALLOWED",
+          "column": "county",
+          "enabled": true,
+          "severity": "error",
+          "explanation": "county must be one of: Alameda, Contra Costa, Sacramento.",
+          "kind": "allowed_values",
+          "values": [
+            "Alameda",
+            "Contra Costa",
+            "Sacramento"
+          ]
+        }
+      ],
+      "identifier_policy": "configured",
+      "identifier_column": "facility_id"
+    },
+    "rows": [
+      {
+        "facility_id": null,
+        "facility_name": "Bayview Clinic",
+        "county": "Sacramento",
+        "facility_type": "Clinic",
+        "inspection_score": 85,
+        "inspection_date": "2026-09-01"
+      },
+      {
+        "facility_id": null,
+        "facility_name": "County facility 2",
+        "county": "Sacramento",
+        "facility_type": "Clinic",
+        "inspection_score": 92,
+        "inspection_date": "2026-09-02"
+      },
+      {
+        "facility_id": "FAC-003",
+        "facility_name": "County facility 3",
+        "county": "Sacramento",
+        "facility_type": "Clinic",
+        "inspection_score": 74,
+        "inspection_date": "2026-09-03"
+      },
+      {
+        "facility_id": "FAC-004",
+        "facility_name": "County facility 4",
+        "county": "Sacramento",
+        "facility_type": "Clinic",
+        "inspection_score": 88,
+        "inspection_date": "2026-09-04"
+      },
+      {
+        "facility_id": "FAC-004",
+        "facility_name": "County facility 5",
+        "county": "Sacramento",
+        "facility_type": "Clinic",
+        "inspection_score": 96,
+        "inspection_date": "2026-09-05"
+      },
+      {
+        "facility_id": "FAC-006",
+        "facility_name": "County facility 6",
+        "county": "Sacramento",
+        "facility_type": "Clinic",
+        "inspection_score": 90,
+        "inspection_date": "2026-09-06"
+      },
+      {
+        "facility_id": "FAC-007",
+        "facility_name": "County facility 7",
+        "county": "Sacramento",
+        "facility_type": "Clinic",
+        "inspection_score": 78,
+        "inspection_date": "2026-09-07"
+      },
+      {
+        "facility_id": "FAC-008",
+        "facility_name": "County facility 8",
+        "county": "Sacramento",
+        "facility_type": "Clinic",
+        "inspection_score": 84,
+        "inspection_date": "2026-09-08"
+      },
+      {
+        "facility_id": "FAC-009",
+        "facility_name": "County facility 9",
+        "county": "Alameda",
+        "facility_type": "Clinic",
+        "inspection_score": 91,
+        "inspection_date": "2026-09-09"
+      },
+      {
+        "facility_id": "FAC-010",
+        "facility_name": "County facility 10",
+        "county": "Alameda",
+        "facility_type": "Clinic",
+        "inspection_score": 87,
+        "inspection_date": "2026-09-10"
+      },
+      {
+        "facility_id": "FAC-011",
+        "facility_name": "County facility 11",
+        "county": "Alameda",
+        "facility_type": "School",
+        "inspection_score": 93,
+        "inspection_date": "2026-09-11"
+      },
+      {
+        "facility_id": "FAC-012",
+        "facility_name": "County facility 12",
+        "county": "Alameda",
+        "facility_type": "School",
+        "inspection_score": 89,
+        "inspection_date": "2026-09-12"
+      },
+      {
+        "facility_id": "FAC-013",
+        "facility_name": "County facility 13",
+        "county": "Alameda",
+        "facility_type": "School",
+        "inspection_score": 80,
+        "inspection_date": "2026-09-13"
+      },
+      {
+        "facility_id": "FAC-014",
+        "facility_name": "County facility 14",
+        "county": "Alameda",
+        "facility_type": "School",
+        "inspection_score": 86,
+        "inspection_date": "2026-09-14"
+      },
+      {
+        "facility_id": "FAC-015",
+        "facility_name": "County facility 15",
+        "county": "Contra Costa",
+        "facility_type": "School",
+        "inspection_score": 95,
+        "inspection_date": "2026-09-02"
+      },
+      {
+        "facility_id": "FAC-016",
+        "facility_name": "County facility 16",
+        "county": "Contra Costa",
+        "facility_type": "School",
+        "inspection_score": 92,
+        "inspection_date": "2026-09-03"
+      },
+      {
+        "facility_id": "FAC-017",
+        "facility_name": "County facility 17",
+        "county": "Contra Costa",
+        "facility_type": "Hospital",
+        "inspection_score": 88,
+        "inspection_date": "2026-09-04"
+      },
+      {
+        "facility_id": "FAC-018",
+        "facility_name": "County facility 18",
+        "county": "Contra Costa",
+        "facility_type": "Hospital",
+        "inspection_score": -8,
+        "inspection_date": "2026-09-05"
+      },
+      {
+        "facility_id": "FAC-019",
+        "facility_name": "County facility 19",
+        "county": "San Francisco",
+        "facility_type": "Hospital",
+        "inspection_score": 108,
+        "inspection_date": "2026-10-09"
+      },
+      {
+        "facility_id": "FAC-020",
+        "facility_name": "County facility 20",
+        "county": "San Francisco",
+        "facility_type": "Hospital",
+        "inspection_score": 105,
+        "inspection_date": "2026-10-12"
+      }
+    ]
+  },
+  {
+    "id": "9e716851-5f95-4433-b771-d336b0d00d20",
+    "name": "Customer master",
+    "filename": "customers.csv",
+    "columns": [
+      "customer_id",
+      "customer_name",
+      "email",
+      "country"
+    ],
+    "row_count": 248512,
+    "rules": {
+      "schema_version": 1,
+      "name": "Customer ID checks",
+      "structural_rule_id": "DATASET_COLUMNS",
+      "required_columns": [],
+      "rules": [],
+      "identifier_policy": "auto",
+      "identifier_column": null
+    },
+    "generator": "customers-v1"
+  },
+  {
+    "id": "8e6483be-d006-4ab9-84c8-e86eac26b997",
+    "name": "Office inventory",
+    "filename": "inventory.csv",
+    "columns": [
+      "product_id",
+      "product_name",
+      "category",
+      "quantity",
+      "unit_price"
+    ],
+    "row_count": 12,
+    "rules": {
+      "schema_version": 1,
+      "name": "Inventory checks",
+      "structural_rule_id": "DATASET_COLUMNS",
+      "required_columns": [
+        "product_id",
+        "product_name",
+        "category",
+        "quantity",
+        "unit_price"
+      ],
+      "rules": [
+        {
+          "id": "UI_0_PRODUCT_ID_REQUIRED",
+          "column": "product_id",
+          "enabled": true,
+          "severity": "error",
+          "explanation": "product_id must satisfy required.",
+          "kind": "required"
+        },
+        {
+          "id": "UI_1_PRODUCT_ID_UNIQUE",
+          "column": "product_id",
+          "enabled": true,
+          "severity": "error",
+          "explanation": "product_id must satisfy unique.",
+          "kind": "unique"
+        },
+        {
+          "id": "UI_2_QUANTITY_MIN_PARSE",
+          "column": "quantity",
+          "enabled": true,
+          "severity": "error",
+          "explanation": "quantity must satisfy min.",
+          "kind": "numeric",
+          "generated_for": "UI_2_QUANTITY_MIN"
+        },
+        {
+          "id": "UI_2_QUANTITY_MIN",
+          "column": "quantity",
+          "enabled": true,
+          "severity": "error",
+          "explanation": "quantity must satisfy min: 0.",
+          "kind": "min",
+          "minimum": 0,
+          "prerequisite": "UI_2_QUANTITY_MIN_PARSE"
+        },
+        {
+          "id": "UI_3_PRICE_RANGE_PARSE",
+          "column": "unit_price",
+          "enabled": true,
+          "severity": "error",
+          "explanation": "unit_price must satisfy range.",
+          "kind": "numeric",
+          "generated_for": "UI_3_PRICE_RANGE"
+        },
+        {
+          "id": "UI_3_PRICE_RANGE",
+          "column": "unit_price",
+          "enabled": true,
+          "severity": "error",
+          "explanation": "unit_price must satisfy range: 0 through 1000.",
+          "kind": "range",
+          "minimum": 0,
+          "maximum": 1000,
+          "prerequisite": "UI_3_PRICE_RANGE_PARSE"
+        }
+      ],
+      "identifier_policy": "configured",
+      "identifier_column": "product_id"
+    },
+    "rows": [
+      {
+        "product_id": "PRD-001",
+        "product_name": "Office supply 1",
+        "category": "Equipment",
+        "quantity": 5,
+        "unit_price": 2.5
+      },
+      {
+        "product_id": "PRD-002",
+        "product_name": "Office supply 2",
+        "category": "Paper",
+        "quantity": 10,
+        "unit_price": 5
+      },
+      {
+        "product_id": "PRD-003",
+        "product_name": "Office supply 3",
+        "category": "Equipment",
+        "quantity": 15,
+        "unit_price": 7.5
+      },
+      {
+        "product_id": "PRD-004",
+        "product_name": "Office supply 4",
+        "category": "Paper",
+        "quantity": 20,
+        "unit_price": 10
+      },
+      {
+        "product_id": "PRD-005",
+        "product_name": "Office supply 5",
+        "category": "Equipment",
+        "quantity": 25,
+        "unit_price": 12.5
+      },
+      {
+        "product_id": "PRD-006",
+        "product_name": "Office supply 6",
+        "category": "Paper",
+        "quantity": 30,
+        "unit_price": 15
+      },
+      {
+        "product_id": "PRD-007",
+        "product_name": "Office supply 7",
+        "category": "Equipment",
+        "quantity": 35,
+        "unit_price": 17.5
+      },
+      {
+        "product_id": "PRD-008",
+        "product_name": "Office supply 8",
+        "category": "Paper",
+        "quantity": 40,
+        "unit_price": 20
+      },
+      {
+        "product_id": "PRD-009",
+        "product_name": "Office supply 9",
+        "category": "Equipment",
+        "quantity": 45,
+        "unit_price": 22.5
+      },
+      {
+        "product_id": "PRD-010",
+        "product_name": "Office supply 10",
+        "category": "Paper",
+        "quantity": 50,
+        "unit_price": 25
+      },
+      {
+        "product_id": "PRD-011",
+        "product_name": "Office supply 11",
+        "category": "Equipment",
+        "quantity": -3,
+        "unit_price": 27.5
+      },
+      {
+        "product_id": "PRD-012",
+        "product_name": "Office supply 12",
+        "category": "Paper",
+        "quantity": 60,
+        "unit_price": 9999
+      }
+    ]
+  }
+]

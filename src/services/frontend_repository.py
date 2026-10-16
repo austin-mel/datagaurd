@@ -1,11 +1,13 @@
-"""In-process counterpart of the frontend DatasetRepository. No HTTP routes or client wiring."""
+"""Workspace projection used by the versioned REST adapter and service callers."""
 from dataclasses import dataclass
+from pathlib import PurePosixPath
+import re
 
 from pydantic import JsonValue, ValidationError
 from sqlalchemy import select
 
 from src.errors import InputError
-from src.models import Dataset, RuleSetRecord
+from src.models import Dataset, DatasetVersion, RuleSetRecord
 from src.schemas import CellReviewRequest, DatasetDetail, DatasetMetadata, Metric
 from src.rules import NumericRule, RuleSet
 from src.services.catalog import Catalog, require
@@ -18,6 +20,12 @@ QUALITY_NOTE = ("Scores count each row once. Completeness: every cell present. V
                 "Uniqueness: present, unique values in every enabled unique column. Overall is the mean of available scores.")
 HISTORY_TITLES = {"version_uploaded": "Dataset uploaded", "check_completed": "Validation ran",
                   "rule_set_assigned": "Ruleset saved", "version_corrected": "Dataset edited", "findings_ignored": "Findings ignored"}
+
+
+def download_filename(original: str, number: int, extension: str) -> str:
+    stem = PurePosixPath(original.replace('\\', '/')).stem
+    safe_stem = re.sub(r'[^A-Za-z0-9._-]', '_', stem).strip('.') or 'dataset'
+    return f'{safe_stem}_v{number}.{extension}'
 
 
 def dataset_to_frontend(detail: DatasetDetail) -> dict[str, JsonValue]:
@@ -66,7 +74,7 @@ def dataset_to_frontend(detail: DatasetDetail) -> dict[str, JsonValue]:
             warnings = {number for finding in findings if finding.category == "statistical" and finding.column == profile.column
                         for number in finding.affected_record_numbers}
             summary: dict[str, JsonValue]
-            if len(profile.observed_types) == 1 and profile.numeric_min is not None and profile.numeric_max is not None:
+            if profile.observed_types and all(kind in {"integer", "number"} for kind in profile.observed_types) and profile.numeric_min is not None and profile.numeric_max is not None:
                 summary = {"kind": "number-range", "minimum": profile.numeric_min, "maximum": profile.numeric_max}
             elif profile.observed_types == ["date"] and profile.date_min and profile.date_max:
                 summary = {"kind": "date-range", "minimum": profile.date_min.isoformat(), "maximum": profile.date_max.isoformat()}
@@ -110,7 +118,7 @@ def dataset_to_frontend(detail: DatasetDetail) -> dict[str, JsonValue]:
     }
     if version:
         document.update(versionId=version.id, filename=detail.source_filename or version.metadata.original_filename,
-                        downloadFilename=f"{detail.dataset.id}_v{version.number}.{version.metadata.format}")
+                        downloadFilename=download_filename(detail.source_filename or detail.dataset.name, version.number, version.metadata.format))
     if run:
         document["latestRunId"] = run.id
         if run.error_code:
@@ -130,7 +138,7 @@ class DatasetDownload:
 
 
 class FrontendRepository:
-    """Synchronous service boundary, ready for a future transport adapter.
+    """Synchronous service boundary for the REST transport adapter.
 
     Reads return the frontend's camelCase Dataset/Workspace shape. No list is silently
     truncated. Version arguments accept the UI's vN labels as well as backend UUIDs.
@@ -169,7 +177,10 @@ class FrontendRepository:
                 raise InputError("not_found", "Dataset version not found.", 404)
             metadata = DatasetMetadata.model_validate_json(selected.metadata_json)
             content = self.catalog.files.read(selected.file_id, selected.content_sha256)
-            return DatasetDownload(f"{datasetId}_v{selected.number}.{metadata.format}", content, MEDIA_TYPES[metadata.format])
+            original = session.scalar(select(DatasetVersion).where(DatasetVersion.dataset_id == datasetId)
+                                      .order_by(DatasetVersion.number))
+            filename = original.original_filename if original else metadata.original_filename
+            return DatasetDownload(download_filename(filename, selected.number, metadata.format), content, MEDIA_TYPES[metadata.format])
 
     def updateRuleset(self, datasetId: str, ruleset: EditorRuleset | dict[str, JsonValue]) -> dict[str, JsonValue]:
         try:
