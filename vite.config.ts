@@ -17,6 +17,7 @@ export default defineConfig(() => {
   }
 
   return {
+    base: "/datagaurd/",
     envDir: false,
     define: Object.fromEntries(
       Object.entries(env)
