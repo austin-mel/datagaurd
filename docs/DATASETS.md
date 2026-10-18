@@ -61,7 +61,7 @@ Run validation after saving replacements or deletions: each save creates an immu
 
 Enter up to 2,000 characters to explain your decision, or leave the reason empty. The application removes ignored cells from review immediately and excludes matching ignored rule errors on the next check. Continue interpreting completeness as actual missing data. If you change a value or rule, review any finding that reappears: ignores match row identity, column, value, finding, and rule signature where applicable.
 
-Use the backend's finding-level `accepted_as_is` or `dismissed` decisions when you want to annotate evidence without changing findings or metrics. Follow [Review and corrections](../../datagaurd.back-end/docs/REVIEW.md) for that workflow.
+Use the backend's finding-level `accepted_as_is` or `dismissed` decisions when you want to annotate evidence without changing findings or metrics. Follow [Review and corrections](../../datagaurd.back-end/docs/REVIEW_DATASETS.md) for that workflow.
 
 ## Conflicts and limitations
 

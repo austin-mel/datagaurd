@@ -190,13 +190,11 @@ Use the samples to explore missing values, duplicates, invalid values, and stati
 | Unit and browser suites | `pnpm test:all` |
 | Read-only live demo parity | `pnpm test:live` |
 
-Configure your deployed site's API routing as described in [Configuration](docs/CONFIGURATION.md#production-hosting).
-
 ## Data and Privacy
 
 Use synthetic samples to explore the workspace. Reloading clears your sample edits; the browser saves only your three most recent dataset visits in local storage. Connect to the backend to persist files, rules, results, and audit history.
 
-Before using sensitive or shared data, configure the access controls described in [backend Operations](../datagaurd.back-end/docs/OPERATIONS.md#production-readiness). The application does not authenticate users, authorize dataset access, or isolate tenants. Treat `local_operator` as a configured audit label, not a verified identity.
+The application does not authenticate users, authorize dataset access, or isolate tenants. Treat `local_operator` as a configured audit label, not a verified identity.
 
 ## Documentation
 
@@ -212,7 +210,7 @@ Before using sensitive or shared data, configure the access controls described i
 
 | Reference | Use it to |
 | --- | --- |
-| [Frontend Configuration and Hosting](docs/CONFIGURATION.md) | Configure environments, API routing, hosting, and troubleshooting |
+| [Frontend Configuration and Troubleshooting](docs/CONFIGURATION.md) | Configure local environments, API connections, and troubleshooting |
 | [DataGuard Frontend Architecture](docs/ARCHITECTURE.md) | Trace navigation, stores, repositories, and source selection |
 | [Workspace Types and API Projections](docs/DATA_DICTIONARY.md) | Look up fields, state values, identifiers, and request shapes |
 | [Frontend Testing and API Integration](docs/TESTING.md) | Run unit, component, browser, and live parity checks |

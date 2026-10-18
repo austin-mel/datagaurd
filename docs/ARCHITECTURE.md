@@ -12,7 +12,7 @@ Trace your workspace actions through Vue views, Pinia stores, and the live or sa
 - [REST boundary](#rest-boundary)
 - [Validation lifecycle](#validation-lifecycle)
 - [Source map](#source-map)
-- [Extension and operational boundaries](#extension-and-operational-boundaries)
+- [Extend the application](#extend-the-application)
 
 ## Application flow
 
@@ -47,7 +47,7 @@ Use [router.module.ts](../src/router/router.module.ts) to configure these routes
 | `/?dataset=<uuid>` | Opens a specific dataset; an unknown ID shows an unavailable state |
 | `/datasets` | Searchable catalog and upload entry point |
 
-Configure your static host to serve `/datagaurd/index.html` for history-mode routes beneath `/datagaurd/`. Keep `/api/v1` at the API origin root; the frontend base path does not prefix API requests. Identify datasets by UUID because names and filenames can repeat. Dataset query parameters use the stored ID directly; sample names are not aliases. The router sets the page title to `Dataguard | Overview` or `Dataguard | Datasets`.
+Keep `/api/v1` at the API origin root; the frontend base path does not prefix API requests. Identify datasets by UUID because names and filenames can repeat. Dataset query parameters use the stored ID directly; sample names are not aliases. The router sets the page title to `Dataguard | Overview` or `Dataguard | Datasets`.
 
 Use the recent-dataset store to preserve navigation history. It stores at most three `{ datasetId, openedAt }` entries under `dataguard.recentDatasets.v1` and removes entries absent from the selected workspace. Stored IDs are used as-is. Malformed or unavailable local storage does not prevent navigation.
 
@@ -117,10 +117,8 @@ Use this map to locate the implementation you need to change:
 | [src/assets/main.css](../src/assets/main.css) | Shared styles and Tailwind CSS `@theme` design tokens |
 | [scripts/export-demo-manifest.mjs](../scripts/export-demo-manifest.mjs) | Export backend seed contract |
 
-## Extension and operational boundaries
+## Extend the application
 
 To add a rule type, update the editor catalog/types, frontend validation and syntax, backend rule models/conversion/validation, and contract/parity fixtures together. To add a new data source, implement the repository contract and retain single-source selection and response validation.
 
-Account for the full workspace payload when sizing your deployment: each response includes all datasets, histories, and review groups. Browser-table pagination does not reduce that payload, and sample calculations run in the browser. To support larger workspaces, add server pagination, cached projections, background jobs, or worker-based sample computation as your workload requires.
-
-Before supporting shared or sensitive data, implement authentication, authorization, tenant ownership, and conditional ruleset writes. Follow [backend Operations](../../datagaurd.back-end/docs/OPERATIONS.md) to plan persistence and deployment.
+Each workspace response includes all datasets, histories, and review groups. Browser-table pagination does not reduce that payload, and sample calculations run in the browser.

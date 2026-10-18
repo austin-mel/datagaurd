@@ -20,7 +20,7 @@ Return to Overview to resume your most recent available dataset. The application
 
 ## Live and sample data
 
-Read the banner before working. Use `VITE_DATA_SOURCE=api` to connect to the backend and persist your work, or set `VITE_DATA_SOURCE=seeded` to explore synthetic samples in browser memory. Follow [Frontend Configuration and Hosting](CONFIGURATION.md) to set the data source; the banner identifies the selected mode. You can download, edit rules, review cells, and validate samples; connect to the backend to upload files. Reloading or selecting Reconnect discards sample edits. If your live catalog is empty, upload a dataset or seed examples.
+Read the banner before working. Use `VITE_DATA_SOURCE=api` to connect to the backend and persist your work, or set `VITE_DATA_SOURCE=seeded` to explore synthetic samples in browser memory. Follow [Frontend Configuration and Troubleshooting](CONFIGURATION.md) to set the data source; the banner identifies the selected mode. You can download, edit rules, review cells, and validate samples; connect to the backend to upload files. Reloading or selecting Reconnect discards sample edits. If your live catalog is empty, upload a dataset or seed examples.
 
 ## Read quality scores
 
