@@ -1,12 +1,25 @@
 from collections.abc import Iterator
 from datetime import date
 from pathlib import Path
+import os
 
 import pytest
 from fastapi.testclient import TestClient
 
 from src.main import create_app
 from src.settings import PROJECT_ROOT, Settings
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line("markers", "unit: isolated service and model tests without a running API or database")
+
+
+@pytest.fixture(autouse=True)
+def isolated_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests must not inherit a developer's upload limits, actor, or storage path."""
+    for name in os.environ:
+        if name.upper().startswith("DATAGUARD_"):
+            monkeypatch.delenv(name, raising=False)
 
 
 @pytest.fixture

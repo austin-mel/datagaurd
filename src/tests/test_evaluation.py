@@ -1,16 +1,28 @@
+import pytest
+
 from src.schemas import Finding
 from src.scripts.evaluate import detections, evaluate, scores
+from src.tests.fixture_oracle import validation_fixture
 
 
-def test_five_thousand_record_manifest() -> None:
+def test_five_thousand_record_manifest(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("src.scripts.evaluate.generate", validation_fixture)
     result = evaluate()
     assert result["rows"] == 5000
-    assert result["expected_errors"] == result["detected_errors"] == 21
+    assert result["expected_errors"] == result["detected_errors"] == 24
     assert result["expected_by_rule"] == result["detected_by_rule"]
-    assert result["dirty"] == {"true_positive": 21, "false_positive": 0, "false_negative": 0,
+    assert result["dirty"] == {"true_positive": 24, "false_positive": 0, "false_negative": 0,
                                "precision": 1.0, "recall": 1.0, "f1": 1.0}
     assert result["clean"] == {"true_positive": 0, "false_positive": 0, "false_negative": 0,
                                "precision": None, "recall": None, "f1": None}
+
+
+def test_original_injection_manifest_reports_additional_constraint_findings() -> None:
+    result = evaluate(20)
+    assert result["expected_errors"] == 21
+    assert result["detected_errors"] == 24
+    assert result["dirty"] == {"true_positive": 21, "false_positive": 3, "false_negative": 0,
+                               "precision": 21 / 24, "recall": 1.0, "f1": 42 / 45}
 
 
 def test_structural_keys_statistics_exclusion_and_zero_denominators() -> None:

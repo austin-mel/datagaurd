@@ -103,11 +103,13 @@ def test_explicit_primary_key_and_missing_column(client: TestClient, settings: S
     assert response.json()["findings"][0]["observed_result"]["missing_columns"] == ["order_id"]
 
 
-def test_identifiers_are_not_numeric_outlier_candidates(settings: Settings) -> None:
+def test_numeric_identifiers_are_profiled_without_failing_validation(settings: Settings) -> None:
     content = encode("csv", ["id"], [[str(number)] for number in [*range(1, 20), 100000]])
     result = check_dataset(parse_dataset(content, "x.csv", settings), load_rules(settings.rules_path), settings)
-    assert not result.findings
-    assert next(item for item in result.analysis_results if item.check_id == "STAT_IQR").status == "not_evaluated"
+    assert result.validation_status == "passed"
+    assert [(finding.rule_id, finding.column, finding.severity, finding.affected_record_numbers)
+            for finding in result.findings] == [("STAT_IQR", "id", "warning", [20])]
+    assert next(item for item in result.analysis_results if item.check_id == "STAT_IQR").status == "review_required"
 
 
 def test_generic_revision_resolves_each_dataset_and_survives_restart(settings: Settings) -> None:

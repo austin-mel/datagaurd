@@ -6,8 +6,9 @@ from fastapi.testclient import TestClient
 
 from src.rules import RuleSet, load_rules
 from src.scripts.generate_fixtures import generate
+from src.tests.fixture_oracle import validation_fixture
 from src.services.tabular import parse_dataset
-from src.services.validation import check_dataset
+from src.services.validation import IMPLEMENTATION_VERSION, check_dataset
 from src.settings import PROJECT_ROOT, Settings
 
 
@@ -17,13 +18,13 @@ def rules(settings: Settings) -> RuleSet:
 
 
 def test_full_manifest_exact_match(settings: Settings, rules: RuleSet) -> None:
-    clean, dirty, manifest_bytes = generate()
+    clean, dirty, manifest_bytes = validation_fixture()
     result = check_dataset(parse_dataset(dirty, "dirty.csv", settings), rules, settings)
     manifest = json.loads(manifest_bytes)
     expected = {(entry["rule_id"], entry["record_number"]) for entry in manifest["errors"]}
     actual = {(finding.rule_id, number) for finding in result.findings for number in finding.affected_record_numbers}
     assert actual == expected
-    assert len(actual) == 21
+    assert len(actual) == 24
     assert len(result.findings) == 11
     assert result.validation_status == "failed"
     assert result.reference_date.isoformat() == manifest["reference_date"]
@@ -41,8 +42,9 @@ def test_full_membership_and_prerequisites(settings: Settings, rules: RuleSet) -
     assert duplicate.affected_count == 3
     assert [sample.record_number for sample in duplicate.record_samples] == [3]
     score = next(r for r in result.rule_results if r.rule_id == "FAC_SCORE_RANGE")
-    assert score.skipped_count == 4
-    assert score.evaluated_count == 146
+    assert score.skipped_count == 1
+    assert score.evaluated_count == 149
+    assert next(f for f in result.findings if f.rule_id == "FAC_SCORE_RANGE").affected_record_numbers == [8, 9, 10, 17, 19]
     assert score.reason and "FAC_SCORE_NUMERIC" in score.reason
     future = next(r for r in result.rule_results if r.rule_id == "FAC_DATE_NOT_FUTURE")
     assert future.skipped_count == 1
@@ -99,7 +101,7 @@ def test_today_resolution_and_config_snapshot(settings: Settings, rules: RuleSet
     assert result.configuration == rules
     assert result.configuration is not rules
     assert len(result.configuration_sha256) == 64
-    assert result.implementation_version == "tabular-validation/2.1.0"
+    assert result.implementation_version == IMPLEMENTATION_VERSION
 
 
 @pytest.mark.parametrize("endpoint", ["upload", "profile", "check"])

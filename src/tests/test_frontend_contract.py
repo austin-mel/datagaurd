@@ -55,9 +55,9 @@ def test_row_scores_count_each_row_once_and_all_unique_tags(settings: Settings) 
 
 
 @pytest.mark.parametrize(("kind", "extra", "bad_rows"), [
-    ("min", {"minimum": 5}, [1]),
-    ("max", {"maximum": 5}, [3]),
-    ("range", {"minimum": 4, "maximum": 5}, [3]),
+    ("min", {"minimum": 5}, [1, 4]),
+    ("max", {"maximum": 5}, [3, 4]),
+    ("range", {"minimum": 4, "maximum": 5}, [3, 4]),
 ])
 def test_numeric_boundaries_and_failed_prerequisites(settings: Settings, kind: str,
                                                     extra: dict[str, int], bad_rows: list[int]) -> None:
@@ -68,7 +68,7 @@ def test_numeric_boundaries_and_failed_prerequisites(settings: Settings, kind: s
     result = check_dataset(parse_dataset(b"amount\n4\n5\n6\nbad\n \n", "x.csv", settings), rules, settings)
     findings = {item.rule_id: item.affected_record_numbers for item in result.findings}
     assert findings == {"NUMBER": [4], "BOUND": bad_rows}
-    assert result.rule_results[-1].evaluated_count == 3
+    assert result.rule_results[-1].evaluated_count == 4
 
 
 @pytest.mark.parametrize(("kind", "extra", "affected"), [
@@ -140,12 +140,14 @@ def test_detail_selects_latest_beyond_first_page_and_tied_timestamps(catalog: Ca
     content = b"id\n1\n"
     saved = catalog.upload(content, parse_dataset(content, "x.csv", catalog.settings))
     for _ in range(22):
-        newest = catalog.revalidate(saved.dataset.id, catalog.detail(saved.dataset.id).latest_version_id or "")
+        catalog.upload(content, parse_dataset(content, "x.csv", catalog.settings), saved.dataset.id)
+    newest = catalog.detail(saved.dataset.id)
     assert newest.selected_version and newest.selected_version.number == 23
     version_id = newest.selected_version.id
-    for _ in range(22):
-        with catalog.database.write() as session:
-            last_run = catalog.start_check(session, require(session, DatasetVersion, version_id))
+    for _ in range(21):
+        catalog.check(version_id)
+    with catalog.database.write() as session:
+        last_run = catalog.start_check(session, require(session, DatasetVersion, version_id))
     detail = catalog.detail(saved.dataset.id)
     assert detail.latest_run and detail.latest_run.id == last_run.id
     assert detail.latest_run.processing_status == "running" and detail.latest_run.result is None
@@ -157,7 +159,8 @@ def test_detail_selects_latest_beyond_first_page_and_tied_timestamps(catalog: Ca
     assert detail.latest_run and detail.latest_run.id == last_run.id
     assert detail.latest_run.validation_status == "not_available"
     assert detail.latest_run.result is None
-    assert len(detail.recent_events) == 20
+    assert len(detail.recent_events) == 67  # Complete upload/check history, beyond the old first page.
+    assert [event.sequence for event in detail.recent_events] == sorted(event.sequence for event in detail.recent_events)
 
 
 def test_failed_revalidation_and_cross_dataset_selection(catalog: Catalog, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -168,7 +171,10 @@ def test_failed_revalidation_and_cross_dataset_selection(catalog: Catalog, monke
         catalog.detail(saved.dataset.id, other.version.id)
     def fail(*args: Any, **kwargs: Any) -> None:
         raise ValueError("Invalid parser input")
-    monkeypatch.setattr(catalog, "parsed_version", fail)
+    changed_rules = catalog.create_rule_set(config([{"id": "ID_REQUIRED", "kind": "required", "column": "id"}], ["id"]))
+    catalog.assign_rules(saved.dataset.id, changed_rules.id)
+    # Fail the analysis itself; the source must remain readable for its review projection.
+    monkeypatch.setattr("src.services.catalog.check_dataset", fail)
     detail = catalog.revalidate(saved.dataset.id, saved.version.id)
     assert detail.selected_version and detail.selected_version.number == 2
     assert detail.latest_run and detail.latest_run.processing_status == "failed"

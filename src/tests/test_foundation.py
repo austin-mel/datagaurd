@@ -14,7 +14,7 @@ def test_health_and_openapi(client: TestClient) -> None:
 def test_settings_defaults_and_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DATAGUARD_MAX_ROWS", "7")
     assert Settings(_env_file=None).max_rows == 7
-    assert Settings(_env_file=None).max_upload_bytes == 10 * 1024 * 1024
+    assert Settings(_env_file=None).max_upload_bytes == 100 * 1024 * 1024
     monkeypatch.setenv("DATAGUARD_MAX_ROWS", "0")
     with pytest.raises(ValidationError):
         Settings(_env_file=None)

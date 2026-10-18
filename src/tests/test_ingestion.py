@@ -14,7 +14,12 @@ def test_reproducible_fixtures() -> None:
     expected = generate()
     assert expected == generate()
     for name, data in zip(["facilities_clean.csv", "facilities_dirty.csv", "facilities_errors.json"], expected, strict=True):
-        assert (PROJECT_ROOT / "src" / "data" / name).read_bytes() == data
+        stored = (PROJECT_ROOT / "src" / "data" / name).read_bytes()
+        if name.endswith(".json"):
+            # Git may check out JSON with CRLF on Windows; its document is unchanged.
+            assert json.loads(stored) == json.loads(data)
+        else:
+            assert stored == data
     assert len(json.loads(generate(200)[2])["errors"]) == 21
     with pytest.raises(ValueError):
         generate(19)

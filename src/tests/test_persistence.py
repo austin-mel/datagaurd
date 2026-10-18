@@ -41,7 +41,9 @@ def test_restart_preserves_versions_runs_findings_and_bytes(settings: Settings) 
         assert restarted.get(f"/versions/{second['version']['id']}/file").content == clean
         assert restarted.get(f"/datasets/{dataset_id}/versions").json()["total"] == 2
         findings = restarted.get(f"/check-runs/{run_id}/findings").json()
-        assert findings["total"] == 12
+        assert findings["total"] == 11
+        assert {finding["rule_id"] for finding in findings["items"]} == {
+            finding["rule_id"] for finding in saved["check_run"]["result"]["findings"]}
         duplicate = next(f for f in findings["items"] if f["rule_id"] == "FAC_ID_UNIQUE")
         first = restarted.get(f"/findings/{duplicate['id']}/records?limit=2").json()
         last = restarted.get(f"/findings/{duplicate['id']}/records?limit=2&offset=2").json()

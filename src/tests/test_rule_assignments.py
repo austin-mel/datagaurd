@@ -158,7 +158,11 @@ def test_legacy_database_upgrade_preserves_dataset_rules(settings: Settings) -> 
         connection.commit()
     catalog.initialize()
     try:
-        assigned = catalog.rule_set(catalog.dataset("dataset").rule_set_id)
+        migrated = catalog.datasets(10, 0)
+        assert migrated.total == 1
+        assert migrated.items[0].id != "dataset"  # Migration 0006 replaces legacy IDs with UUIDs.
+        assert catalog.version("version").dataset_id == migrated.items[0].id
+        assigned = catalog.rule_set(migrated.items[0].rule_set_id)
         assert assigned.name == "Orders"
         assert assigned.configuration.statistics is not None
         assert assigned.configuration.statistics.row_count_change_percentage == 50
