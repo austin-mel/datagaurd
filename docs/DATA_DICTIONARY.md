@@ -1,8 +1,25 @@
-# Data dictionary
+# API Models and Stored Records
 
 [README](../README.md) · [API reference](API.md) · [Rules](RULES.md)
 
 Use [schemas.py](../src/schemas.py) for public models, [rules.py](../src/rules.py) for rule configuration, and [models.py](../src/models.py) for persistence. Submit only declared fields; API models reject unknown fields. Read dates and datetimes as strings and unavailable optional results as null. Use camelCase for workspace projections and snake_case for resource API models.
+
+## Table of Contents
+
+- [Identity and storage records](#identity-and-storage-records)
+- [Dataset and version models](#dataset-and-version-models)
+  - [DatasetMetadata](#datasetmetadata)
+- [Profiles](#profiles)
+- [Checks and evidence](#checks-and-evidence)
+  - [CheckResponse](#checkresponse)
+  - [RunView](#runview)
+  - [Findings and analysis](#findings-and-analysis)
+- [Metrics](#metrics)
+- [Rule revisions](#rule-revisions)
+- [Reviews and audit](#reviews-and-audit)
+  - [Workspace review state](#workspace-review-state)
+- [Remediations](#remediations)
+- [Shared response envelopes](#shared-response-envelopes)
 
 ## Identity and storage records
 
@@ -44,7 +61,7 @@ Find source files under `files/<32-lowercase-hex>.<format>` within your storage 
 
 ## Profiles
 
-`ProfileResponse` contains `metadata` and `profile`. `DatasetProfile` contains `row_count`, `column_count`, and `columns: ColumnProfile[]`.
+Read `metadata` and `profile` from `ProfileResponse`. Use `DatasetProfile.row_count`, `column_count`, and `columns: ColumnProfile[]` to inspect your dataset dimensions and column summaries.
 
 | ColumnProfile field | Meaning |
 | --- | --- |
@@ -56,7 +73,7 @@ Find source files under `files/<32-lowercase-hex>.<format>` within your storage 
 | `date_count`, `date_min`, `date_max` | Parsed date population and range |
 | `top_categories`, `category_frequencies` | CategoryCount arrays; settings limit the top list |
 
-`CategoryCount` contains `value`, `count`, and optional/nullable `percentage`. A profile's distinct count differs from the row-based uniqueness metric.
+Read `value`, `count`, and optional/nullable `percentage` from each `CategoryCount`. Distinguish a profile's distinct-value count from the row-based uniqueness metric.
 
 ## Checks and evidence
 
@@ -149,7 +166,7 @@ Use `DatasetDetail` in service integrations to access the dataset, selected/late
 
 Track remediation progress with `proposed`, `approved`, `rejected`, `executing`, `executed`, and `failed`.
 
-`RemediationComparison` contains `remediation`, `before_version`, `after_version`, nullable `before_check_run`, `after_check_run`, `checks_comparable`, nullable `comparison_reason`, `metric_change_percentage_points`, and paginated `changes`. MetricChanges contains nullable completeness, validity, and duplicate-ID-rate differences; it does not currently include uniqueness.
+`RemediationComparison` contains `remediation`, `before_version`, `after_version`, nullable `before_check_run`, `after_check_run`, `checks_comparable`, nullable `comparison_reason`, `metric_change_percentage_points`, and paginated `changes`. Read nullable completeness, validity, and duplicate-ID-rate differences from `MetricChanges`; retrieve uniqueness from the individual check results.
 
 ## Shared response envelopes
 

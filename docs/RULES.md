@@ -1,6 +1,19 @@
-# Rules, metrics, and statistical analysis
+# Validation Rules and Quality Metrics
 
 [README](../README.md) · [Configuration](CONFIGURATION.md) · [Data dictionary](DATA_DICTIONARY.md)
+
+Define the checks your datasets need and interpret their quality scores and statistical findings.
+
+## Table of Contents
+
+- [Rule configuration](#rule-configuration)
+- [Rule kinds](#rule-kinds)
+- [Complete YAML example](#complete-yaml-example)
+- [Identifier resolution](#identifier-resolution)
+- [Number, date, and pattern syntax](#number-date-and-pattern-syntax)
+- [Editor contract](#editor-contract)
+- [Quality metrics](#quality-metrics)
+- [Statistical analysis](#statistical-analysis)
 
 ## Rule configuration
 
@@ -94,7 +107,7 @@ Distinguish the identifier column inside your data from the UUID that identifies
 
 ## Number, date, and pattern syntax
 
-Enter numbers with an optional sign, decimal notation, or exponent; the parser trims surrounding whitespace. Avoid NaN, infinity, currency symbols, grouping commas, and nonnumeric suffixes. Use real, zero-padded calendar dates in `%Y-%m-%d`, `%m/%d/%Y`, or `%d/%m/%Y` format; the default is ISO. Supply selected bounds as `YYYY-MM-DD`. Migrate retired `date`/`not_future` kinds before submitting those configurations.
+Enter numbers with an optional sign, decimal notation, or exponent; the parser trims surrounding whitespace. Avoid NaN, infinity, currency symbols, grouping commas, and nonnumeric suffixes. Use real, zero-padded calendar dates in `%Y-%m-%d`, `%m/%d/%Y`, or `%d/%m/%Y` format; the default is ISO. Supply selected bounds as `YYYY-MM-DD`. Choose one of the five date kinds in the rule table when defining a date constraint.
 
 Write portable regex patterns with 1–200 ASCII characters, no slash delimiters or flags, and a full-value match. Use ordinary/noncapturing groups, alternation, character classes, quantifiers, and ASCII shorthand classes. Avoid lookarounds, backreferences, inline flags, possessive quantifiers, nested classes, and set operations. Limit repetitions to 1,000,000. When extending syntax, keep Python's `rule_syntax.py` and the frontend's `ruleSyntax.ts` grammars aligned.
 

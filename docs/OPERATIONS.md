@@ -1,6 +1,19 @@
-# Operations
+# Run, Back Up, and Recover DataGuard
 
 [README](../README.md) · [Configuration](CONFIGURATION.md) · [Architecture](ARCHITECTURE.md)
+
+Manage your API service, schema migrations, demo datasets, backups, and recovery procedures.
+
+## Table of Contents
+
+- [Storage layout](#storage-layout)
+- [Start and stop](#start-and-stop)
+- [Migrations](#migrations)
+- [Backup and restore](#backup-and-restore)
+  - [Create a consistent backup](#create-a-consistent-backup)
+  - [Restore and verify](#restore-and-verify)
+- [Demo maintenance](#demo-maintenance)
+- [Failure recovery](#failure-recovery)
 
 ## Storage layout
 
@@ -26,13 +39,11 @@ Start a development server with:
 uv run uvicorn src.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-For a managed single-process service, omit `--reload`, use an absolute storage path, and bind behind the intended reverse proxy. Configure process supervision to capture Uvicorn/application logs and perform orderly shutdown. Startup applies migrations and file reconciliation, so deploy against a backed-up, consistent storage snapshot.
-
-Use a single service process unless you implement coordination for shared-storage reconciliation and long-running checks. SQLite's write lock does not supply a job queue or multi-worker recovery protocol.
+Keep the terminal running while you use the API. Press Ctrl+C to stop the server.
 
 ## Migrations
 
-Apply migrations during a controlled deployment with these commands. The service also upgrades to Alembic head at startup:
+Inspect and apply schema migrations with these commands. The service also upgrades to Alembic head at startup:
 
 ```powershell
 uv run alembic current
@@ -46,7 +57,7 @@ Stop writers and back up storage before migration. Configure Settings for [migra
 | --- | --- |
 | `0001_current` | Complete current schema: datasets, versions, checks, findings, audit, reviews, remediations, rulesets, and cell-review state |
 
-The current baseline creates a new workspace directly, with required dataset and check-run rule assignments. Dataset IDs are UUIDs at creation. Only the current rule definitions and analysis payloads are supported.
+Use `0001_current` to initialize a new workspace with dataset and check-run rule assignments. Keep the database on the migration revision supported by your application checkout.
 
 For development storage created with the previous migration chain, stop the API and set `DATAGUARD_STORAGE_DIR` to a new, empty directory before starting or seeding. The old revisions are no longer upgrade targets; do not stamp an old database with the new baseline. Keep any source files you want to upload into the new workspace. The application does not convert or delete the old storage directory.
 
@@ -57,7 +68,7 @@ For development storage created with the previous migration chain, stop the API 
 1. Stop the API and any administrative writers.
 2. Determine the actual resolved storage directory from configuration.
 3. Copy the **entire directory** to a fresh backup location, including source files and any SQLite sidecars.
-4. Record the application revision, environment configuration, rule files, and migration revision alongside the snapshot. Store configuration appropriately if it contains private deployment details.
+4. Record the application revision, environment configuration, rule files, and migration revision alongside the snapshot.
 5. Verify a restore using a separate directory before relying on the backup.
 
 From the backend root, stop the service and back up the default storage location with:
@@ -89,7 +100,14 @@ uv run python -m src.scripts.seed_demo
 
 Run the seed command to add missing examples from `config/demo-datasets.json` using stable UUIDs and the deterministic customer generator. Reruns preserve existing versions and edits and can retry failed demo checks. To start with clean demos, use an unused storage directory as described in [Configuration](CONFIGURATION.md#isolated-development-storage); the seed command has no reset option.
 
-Export the manifest with the frontend's `scripts/export-demo-manifest.mjs`, then copy its JSON into backend `config/demo-datasets.json` after updating samples and rules in both projects. Use fresh storage to check the revised examples because a manifest update preserves existing persisted versions.
+Update the sample definitions and rules in both projects, then run these commands from the sibling frontend checkout:
+
+```powershell
+node --import ./scripts/register.mjs scripts/export-demo-manifest.mjs
+Copy-Item output/backend-integration/demo-datasets.json ../datagaurd.back-end/config/demo-datasets.json
+```
+
+Follow [Frontend Testing and API Integration](../../datagaurd.front-end/docs/TESTING.md#maintain-fixtures-and-contracts) to verify the shared demo contract. Use fresh storage to check the revised examples because a manifest update preserves existing persisted versions.
 
 ## Failure recovery
 
@@ -107,20 +125,3 @@ Export the manifest with the frontend's `scripts/export-demo-manifest.mjs`, then
 | Running check remains after process interruption | Inspect run and service logs; there is no automatic startup requeue or public generic resume route |
 
 To resume an interrupted ordinary run, stop competing processing, back up storage, and call `Catalog.process_check(run_id)` with its recorded ID. The method resumes only a running attempt and checks the recorded implementation version. For an executed remediation, repeat execution to resume its check through the API. Preserve the attempt history and let validation determine the result.
-
-## Production readiness
-
-Complete the work below for your deployment before accepting shared or sensitive data:
-
-| Area | Required deployment work |
-| --- | --- |
-| Identity and access | Authenticate requests, authorize dataset/workspace access, enforce ownership, derive audit actor from verified identity |
-| Network | Terminate HTTPS, restrict exposure, configure exact origins, preserve API paths, align proxy body/time limits with application limits |
-| Persistence | Provision durable storage with hard-link support, access controls, capacity monitoring, tested backups, and restore procedures |
-| Concurrency | Coordinate migration/reconciliation, define process topology, add conditional ruleset writes and broader write idempotency |
-| Scale | Replace eager workspace loading with paginated summaries/details, cache immutable analysis, design asynchronous job execution |
-| Contract evolution | Define supported evidence schemas and strengthen explicit workspace response models |
-| Observability | Collect request/error logs, monitor storage health and failed/stuck runs, and set recovery objectives |
-| Data lifecycle | Define retention/export/deletion policies; no dataset-delete API or automated retention process currently exists |
-
-Size and operate your deployment around synchronous analysis and SQLite/local-file storage. Verify access controls, backup recovery, and concurrency behavior independently of frontend builds and process-health checks.

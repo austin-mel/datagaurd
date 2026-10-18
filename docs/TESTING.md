@@ -1,6 +1,17 @@
-# Testing
+# Backend Testing and Validation
 
 [README](../README.md) · [Rules](RULES.md) · [Frontend testing](../../datagaurd.front-end/docs/TESTING.md)
+
+Verify your API, persistence, parsing, rules, and analytical results with the backend test suites.
+
+## Table of Contents
+
+- [Environment and commands](#environment-and-commands)
+- [Test coverage map](#test-coverage-map)
+- [Deterministic fixtures](#deterministic-fixtures)
+- [Validation evaluation](#validation-evaluation)
+- [Frontend integration](#frontend-integration)
+- [Continuous verification](#continuous-verification)
 
 ## Environment and commands
 
@@ -77,4 +88,4 @@ Frontend Playwright workflows use mocked HTTP fixtures and do not verify the run
 
 ## Continuous verification
 
-Configure your backend CI to install locked dependencies and run `uv run mypy src` and `uv run pytest`. Publish coverage artifacts when you generate them. Add a backend workflow separately from the sibling frontend workflow, which tests only the frontend. Investigate failures against the behavior and contracts in these guides.
+Configure your backend CI to install locked dependencies and run `uv run mypy src` and `uv run pytest`. Publish coverage artifacts when you generate them. Add a workflow for your CI provider; neither checkout includes a `.github/workflows/` directory. Run frontend checks from the sibling checkout using [Frontend Testing and API Integration](../../datagaurd.front-end/docs/TESTING.md). Investigate failures against the API and data contracts.

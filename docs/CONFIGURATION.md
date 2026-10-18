@@ -1,6 +1,17 @@
-# Configuration
+# Backend Configuration
 
 [README](../README.md) · [Rules](RULES.md) · [Operations](OPERATIONS.md)
+
+Configure your storage, upload limits, default rules, and analysis settings before starting the API.
+
+## Table of Contents
+
+- [Loading and precedence](#loading-and-precedence)
+- [Service settings](#service-settings)
+- [Resource limits](#resource-limits)
+- [Statistical and evidence settings](#statistical-and-evidence-settings)
+- [Example configuration](#example-configuration)
+- [Isolated development storage](#isolated-development-storage)
 
 ## Loading and precedence
 
@@ -18,7 +29,7 @@ Use the default absolute paths beneath the project root, or supply your own path
 | `DATAGUARD_REFERENCE_DATE` | Unset | ISO date; when unset, resolve the server's local calendar date per check |
 | `DATAGUARD_CORS_ORIGINS` | `["http://127.0.0.1:5173","http://localhost:5173"]` | JSON list of permitted browser origins |
 
-Set the reference date when you need reproducible check context; each run records it. Configure explicit date bounds in selected-date rules because they do not substitute this setting. Use GET, POST, PUT, and OPTIONS with CORS, send Content-Type and Authorization headers as needed, and read Content-Disposition for downloads. Implement authentication separately; permitting the Authorization header does not validate it.
+Set the reference date when you need reproducible check context; each run records it. Configure explicit date bounds in selected-date rules because they do not substitute this setting. Use GET, POST, PUT, and OPTIONS with CORS, send Content-Type and Authorization headers as needed, and read Content-Disposition for downloads. Use frontend origins such as `http://127.0.0.1:5173` without the `/datagaurd/` path. The browser application uses that path, while workspace endpoints remain at `/api/v1`. Permitting the Authorization header does not authenticate requests.
 
 ## Resource limits
 

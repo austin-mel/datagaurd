@@ -1,6 +1,17 @@
-# Ingestion and analysis guide
+# Upload, Analyze, and Version Datasets
 
 [README](../README.md) · [API reference](API.md) · [Rules](RULES.md)
+
+Prepare your files, submit them for analysis, and retrieve saved versions and check results.
+
+## Table of Contents
+
+- [Supported files](#supported-files)
+- [Analyze without saving a dataset](#analyze-without-saving-a-dataset)
+- [Upload and persist](#upload-and-persist)
+- [Append a version](#append-a-version)
+- [Check, inspect, and download](#check-inspect-and-download)
+- [Interpret results](#interpret-results)
 
 ## Supported files
 
@@ -13,7 +24,7 @@ Prepare your file using the requirements below. Consult [tabular.py](../src/serv
 | Excel | `.xlsx` | Text headers and scalar values; select a sheet when multiple exist; formulas/errors unsupported |
 | Parquet | `.parquet` | Flat supported scalar columns; nested and binary columns unsupported |
 
-Use unique, nonblank headers and give each record the same number of fields as the header. Remove NUL characters and include at least one data row in an upload. After deleting all rows through cell review, you can retain an empty internal snapshot. Supply a MIME type that matches the extension, a supported alias, or generic octet-stream.
+Use unique, nonblank headers and give each record the same number of fields as the header. Remove NUL characters and include at least one data row in an upload. After deleting all rows through cell review, you can retain an empty dataset version. Supply a MIME type that matches the extension, a supported alias, or generic octet-stream.
 
 Expect the parser to normalize scalar values into text for analysis while the backend preserves your uploaded bytes separately. Use blank or whitespace-only cells to represent missing values; literal `null` remains text. Number records from 1 at the first data record, regardless of line breaks inside quoted CSV fields.
 
@@ -76,4 +87,4 @@ Use a filename extension matching `version.metadata.format`. Original downloads 
 
 Read profiles for dimensions, missingness, observed types, distinct values, numeric/date summaries, and categories. Inspect findings for rule IDs, evidence, thresholds, severity, samples, and complete affected row numbers. When an analysis reports `not_evaluated`, read its reason: you may need a baseline, more usable values, compatible types, or supported numeric bounds.
 
-Review the [rule and metric semantics](RULES.md) before comparing datasets. A missing metric is not zero, and statistical warnings do not establish an incorrect value. Use [Review and corrections](REVIEW.md) to record a decision or modify a verified source value.
+Review the [rule and metric semantics](RULES.md) before comparing datasets. A missing metric is not zero, and statistical warnings do not establish an incorrect value. Use [Review and corrections](REVIEW_DATASETS.md) to record a decision or modify a verified source value.

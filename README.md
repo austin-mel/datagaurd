@@ -1,28 +1,31 @@
-# DataGuard backend
+# DataGuard API and Backend Setup
 
 ## Table of Contents
 
-- [Project Summary](#project-summary)
-- [Technologies Used](#technologies-used)
-- [Necessary Tools](#necessary-tools)
-- [Application Setup](#application-setup)
-  - [Set Up the Development Environment](#set-up-the-development-environment)
-  - [Back-end Setup](#back-end-setup)
-  - [Front-end Setup](#front-end-setup)
-  - [Project Root Setup](#project-root-setup)
+- [Data Quality API](#data-quality-api)
+- [Technology Stack](#technology-stack)
+- [Requirements](#requirements)
+- [Local Setup](#local-setup)
+  - [Check Your Development Tools](#check-your-development-tools)
+  - [Start the Backend](#start-the-backend)
+  - [Start the Frontend](#start-the-frontend)
   - [Verify the Setup](#verify-the-setup)
-- [Demo walkthrough](#demo-walkthrough)
-- [Development commands](#development-commands)
-- [Data and privacy](#data-and-privacy)
+- [Repository Layout](#repository-layout)
+- [Explore the Demo Datasets](#explore-the-demo-datasets)
+- [Development Commands](#development-commands)
+- [Data and Privacy](#data-and-privacy)
 - [Documentation](#documentation)
+  - [Configure and Operate the API](#configure-and-operate-the-api)
+  - [Work with Your Data](#work-with-your-data)
+  - [Integrate and Develop](#integrate-and-develop)
 
-## Project Summary
+## Data Quality API
 
 Use DataGuard's API to assess CSV, TSV, Excel, and Parquet datasets. Profile columns, define dataset-specific rules, calculate row-based quality metrics, identify statistical changes, and record review decisions and corrections.
 
 Preserve your original files and trace each version, rule revision, check attempt, finding, and audit event. Connect the Vue frontend through the versioned workspace API, or use the lower-level endpoints to build ingestion, analysis, history, and approved-remediation workflows.
 
-## Technologies Used
+## Technology Stack
 
 | Technology | Responsibility |
 | --- | --- |
@@ -37,7 +40,7 @@ Preserve your original files and trace each version, rule revision, check attemp
 
 Find dependency ranges in [pyproject.toml](pyproject.toml) and exact resolved versions in [uv.lock](uv.lock).
 
-## Necessary Tools
+## Requirements
 
 | Tool | Purpose |
 | --- | --- |
@@ -48,9 +51,9 @@ Find dependency ranges in [pyproject.toml](pyproject.toml) and exact resolved ve
 
 Use the embedded SQLite database without installing a separate database server.
 
-## Application Setup
+## Local Setup
 
-### Set Up the Development Environment
+### Check Your Development Tools
 
 Open the backend checkout and verify the tools:
 
@@ -61,7 +64,7 @@ uv --version
 
 If you have not installed uv, run `python -m pip install uv`, then reopen your terminal if necessary to refresh PATH.
 
-### Back-end Setup
+### Start the Backend
 
 1. Install the locked dependencies, including the development group:
 
@@ -97,11 +100,11 @@ If you have not installed uv, run `python -m pip install uv`, then reopen your t
 
 When you start the backend, it initializes SQLite, applies migrations, registers default rules, and reconciles managed files. Use a new, empty storage directory for the current schema baseline if you previously ran an earlier development version; see [Operations](docs/OPERATIONS.md#migrations). Run the seed command to add examples without replacing existing demo datasets. Keep the server terminal running; use Ctrl+C to stop it.
 
-Run these commands from the backend root. Use an absolute storage path for managed deployments; relative paths resolve from your process working directory. Consult [Configuration](docs/CONFIGURATION.md) for every setting.
+Run these commands from the backend root. Relative storage paths resolve from your process working directory. Consult [Configuration](docs/CONFIGURATION.md) for every setting.
 
 For an existing Windows virtual environment, use `.\.venv\Scripts\python.exe -m uvicorn src.main:app --host 127.0.0.1 --port 8000 --reload`. On macOS/Linux, the equivalent interpreter is `.venv/bin/python`; use `cp` instead of `Copy-Item` when copying configuration.
 
-### Front-end Setup
+### Start the Frontend
 
 In a second terminal:
 
@@ -111,17 +114,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open [DataGuard](http://127.0.0.1:5173) and confirm **Connected to backend · Live data**. The default Vite proxy sends `/api` to port 8000. For overrides, use the frontend's `environment/front-end.env`; see the [frontend README](../datagaurd.front-end/README.md).
-
-### Project Root Setup
-
-```text
-datagaurd/
-  datagaurd.front-end/   # Vue application and browser tests
-  datagaurd.back-end/    # API, migrations, source files, and metadata
-```
-
-Install dependencies and configure environment files independently in each project. The parent directory requires no dependency installation or shared environment file.
+Open [DataGuard](http://127.0.0.1:5173/datagaurd/) and confirm **Connected to backend · Live data**. The frontend uses `/datagaurd/` as its application base path. The default Vite proxy sends `/api` to port 8000; workspace API requests still use `/api/v1`. For overrides, use the frontend's `environment/front-end.env`; see the [frontend README](../datagaurd.front-end/README.md).
 
 ### Verify the Setup
 
@@ -134,7 +127,30 @@ uv run mypy src
 
 Confirm that the health endpoint returns `{ "status": "ok" }`. Browse the API using [Swagger UI](http://127.0.0.1:8000/docs), [ReDoc](http://127.0.0.1:8000/redoc), or [OpenAPI JSON](http://127.0.0.1:8000/openapi.json).
 
-## Demo walkthrough
+## Repository Layout
+
+```text
+datagaurd/
+  datagaurd.front-end/   # Vue application and browser tests
+  datagaurd.back-end/    # API, migrations, source files, and metadata
+```
+
+Install dependencies and configure environment files independently in each project. Run backend commands from `datagaurd.back-end/`; the parent directory has no shared package or environment file.
+
+| Backend path | Use it for |
+| --- | --- |
+| `src/main.py`, `src/*routes.py` | Application startup and HTTP routes |
+| `src/services/` | Ingestion, analysis, persistence, reviews, and workspace projections |
+| `src/models.py`, `src/schemas.py`, `src/rules.py` | Database records, API models, and rule definitions |
+| `src/migrations/` | Alembic schema migrations |
+| `src/scripts/`, `src/data/` | Administration commands and synthetic fixtures |
+| `src/tests/` | API, integration, and unit tests |
+| `config/` | Default rules and the shared demo manifest |
+| `environment/` | Example and local backend configuration |
+| `storage/` | Default SQLite database and immutable source files |
+| `docs/` | API references and workflow guides |
+
+## Explore the Demo Datasets
 
 1. Seed the examples and start the API and frontend.
 2. Open **County facilities** and inspect its profile, validation findings, and quality scores.
@@ -142,7 +158,7 @@ Confirm that the health endpoint returns `{ "status": "ok" }`. Browse the API us
 4. Correct a flagged cell, save the new version, and run validation again.
 5. Download a version and inspect the dataset history.
 6. Upload a synthetic dataset through the frontend or [ingestion API](docs/INGESTION.md).
-7. Use the [review and correction endpoints](docs/REVIEW.md) to annotate findings or preview, approve, and execute an exact replacement.
+7. Use the [review and correction endpoints](docs/REVIEW_DATASETS.md) to annotate findings or preview, approve, and execute an exact replacement.
 
 | Dataset | Rows | Columns | Stable ID |
 | --- | ---: | ---: | --- |
@@ -152,7 +168,7 @@ Confirm that the health endpoint returns `{ "status": "ok" }`. Browse the API us
 
 Use the examples to explore intentional errors and statistical anomalies. You can repeat the seed command without replacing existing source versions or edits. Treat each ordinary upload as a new dataset: the backend assigns a fresh UUID even when the name and content match an earlier upload.
 
-## Development commands
+## Development Commands
 
 | Task | Command |
 | --- | --- |
@@ -168,28 +184,34 @@ Use the examples to explore intentional errors and statistical anomalies. You ca
 
 Follow [Operations](docs/OPERATIONS.md) for administration, migrations, and backups, and [Testing](docs/TESTING.md) for fixture commands.
 
-## Data and privacy
+## Data and Privacy
 
-Explore the API with synthetic examples. Protect your configured storage directory: the backend saves uploaded source bytes, analysis evidence, reviews, and audit events there. Treat the configured actor as an audit label, not a verified identity. Before handling shared or sensitive data, implement authentication, dataset authorization, and tenant isolation as described in [Operations](docs/OPERATIONS.md); the API does not provide those controls through CORS or actor labels.
+Explore the API with synthetic examples. Protect your configured storage directory: the backend saves uploaded source bytes, analysis evidence, reviews, and audit events there. Treat the configured actor as an audit label, not a verified identity.
 
 ## Documentation
 
-### Developer references
+### Configure and Operate the API
 
 | Document | Use it to |
 | --- | --- |
-| [Architecture](docs/ARCHITECTURE.md) | Trace startup, requests, persistence, and source ownership |
-| [API reference](docs/API.md) | Find every route, request shape, response, and error convention |
-| [Data dictionary](docs/DATA_DICTIONARY.md) | Understand records, schemas, identifiers, and state values |
-| [Configuration](docs/CONFIGURATION.md) | Configure limits, storage, CORS, and statistical settings |
-| [Rules and metrics](docs/RULES.md) | Define rule revisions and interpret validation and statistical results |
-| [Testing](docs/TESTING.md) | Run API, unit, persistence, and analytical verification |
-| [Operations](docs/OPERATIONS.md) | Manage migrations, backups, recovery, and deployment |
+| [Backend Configuration](docs/CONFIGURATION.md) | Set storage paths, origins, upload limits, and statistical thresholds |
+| [Run, Back Up, and Recover DataGuard](docs/OPERATIONS.md) | Manage service startup, migrations, backups, and recovery |
 
-### Workflow guides
+### Work with Your Data
 
 | Guide | Use it to |
 | --- | --- |
-| [Ingestion and analysis](docs/INGESTION.md) | Upload, profile, validate, version, and download datasets |
-| [Review and corrections](docs/REVIEW.md) | Record decisions, edit cells, and execute approved remediations |
-| [Frontend workspace](../datagaurd.front-end/docs/WORKSPACE.md) | Use the browser interface and interpret its scores |
+| [Upload, Analyze, and Version Datasets](docs/INGESTION.md) | Upload files, inspect checks, append versions, and download source data |
+| [Validation Rules and Quality Metrics](docs/RULES.md) | Define rule revisions and interpret scores and statistical findings |
+| [Review Findings and Correct Data](docs/REVIEW_DATASETS.md) | Record decisions, edit cells, and execute approved replacements |
+| [Explore Your Data Quality Workspace](../datagaurd.front-end/docs/WORKSPACE.md) | Work with the browser interface |
+
+### Integrate and Develop
+
+| Reference | Use it to |
+| --- | --- |
+| [DataGuard API Reference](docs/API.md) | Find routes, request shapes, responses, and error conventions |
+| [API Models and Stored Records](docs/DATA_DICTIONARY.md) | Look up records, identifiers, fields, and state values |
+| [DataGuard API Architecture](docs/ARCHITECTURE.md) | Trace requests, transactions, and source modules |
+| [Backend Testing and Validation](docs/TESTING.md) | Run API, unit, persistence, and analytical checks |
+| [Frontend Setup](../datagaurd.front-end/README.md) | Run the companion Vue application |

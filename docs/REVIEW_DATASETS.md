@@ -1,6 +1,17 @@
-# Review and corrections guide
+# Review Findings and Correct Data
 
 [README](../README.md) · [API reference](API.md) · [Data dictionary](DATA_DICTIONARY.md)
+
+Record your review decisions, correct flagged cells, or approve exact replacements while preserving dataset history.
+
+## Table of Contents
+
+- [Choose a workflow](#choose-a-workflow)
+- [Record a finding decision](#record-a-finding-decision)
+- [Apply a workspace cell action](#apply-a-workspace-cell-action)
+- [Propose an approved remediation](#propose-an-approved-remediation)
+- [Lifecycle and retries](#lifecycle-and-retries)
+- [Compare results](#compare-results)
 
 ## Choose a workflow
 
@@ -47,7 +58,7 @@ Use `value: null` to create missing data, `{ "type": "delete-row" }` to remove t
 
 Set `scope: "all"` to select every member of the exact version/column/rule/value group, including rows outside your UI filters. Replace values individually in a unique column; the backend rejects shared replacements. Refresh your selection after a stale-version/group or changed-value conflict, and wait for active validation to finish before editing.
 
-After a replacement or deletion, download the new BOM-prefixed UTF-8 CSV snapshot with quoted fields and CRLF line endings. You can still retrieve the original source version. Use current displayed row positions after deletion; internal row IDs preserve ignore associations. To change review state without changing bytes, ignore a cell with an optional reason. Inspect older checks to retrieve their earlier review-state snapshots.
+After a replacement or deletion, download the new BOM-prefixed UTF-8 CSV snapshot with quoted fields and CRLF line endings. You can still retrieve the original source version. Use current displayed row positions after deletion; stable row IDs preserve your ignore associations. To change review state without changing bytes, ignore a cell with an optional reason. Inspect older checks to retrieve their earlier review-state snapshots.
 
 Run `/api/v1/datasets/{dataset_id}/validation` with the returned version label when ready. The backend checks edited versions in place and can append identical-byte versions for rule-only or ignore-only changes. Expect an unchanged response when the dataset needs no new check.
 
@@ -95,4 +106,4 @@ If you lose an execution response, retrieve the proposal before retrying. Repeat
 
 Read the comparison response for source/result versions, before/after checks, paginated changes, comparability, and metric differences in percentage points. Compare the before check captured at execution with the latest check for the corrected version, including retries. Interpret a missing delta as unavailable: the service calculates differences only for completed checks with matching analytical configurations.
 
-Treat review and approval actors as configured service labels. If your process requires different authenticated proposers and approvers, implement that identity enforcement before relying on the workflow for separation of duties.
+Treat review and approval actors as configured service labels.

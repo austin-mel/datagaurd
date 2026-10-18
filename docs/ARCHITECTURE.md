@@ -1,6 +1,18 @@
-# Architecture
+# DataGuard API Architecture
 
 [README](../README.md) · [API reference](API.md) · [Data dictionary](DATA_DICTIONARY.md)
+
+Trace your API requests from routing and validation through metadata storage and immutable dataset files.
+
+## Table of Contents
+
+- [Runtime structure](#runtime-structure)
+- [Startup and shutdown](#startup-and-shutdown)
+- [Request layers](#request-layers)
+- [Upload and validation lifecycle](#upload-and-validation-lifecycle)
+- [Persistence and concurrency](#persistence-and-concurrency)
+- [Workspace projection](#workspace-projection)
+- [Source map](#source-map)
 
 ## Runtime structure
 
@@ -104,7 +116,3 @@ Locate the implementation for your change in these files:
 | [src/scripts/](../src/scripts/) | Seeding, fixtures, evaluation |
 | [config/](../config/) | Generic/facilities rules and demo manifest |
 | [src/tests/](../src/tests/) | Unit, integration, migration, and API tests |
-
-## Deployment boundaries
-
-Plan your deployment around full-workspace reads, synchronous validation, and local SQLite/file storage. Add authentication, per-dataset authorization, and tenant ownership before handling shared or sensitive data; the API currently derives the audit actor from configuration. Follow [Operations](OPERATIONS.md) for backup, recovery, and deployment requirements.

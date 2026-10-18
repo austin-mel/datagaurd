@@ -1,6 +1,21 @@
-# API reference
+# DataGuard API Reference
 
-[README](../README.md) · [Data dictionary](DATA_DICTIONARY.md) · [Ingestion](INGESTION.md) · [Review](REVIEW.md)
+[README](../README.md) · [Data dictionary](DATA_DICTIONARY.md) · [Ingestion](INGESTION.md) · [Review](REVIEW_DATASETS.md)
+
+Use the workspace endpoints for your frontend integration and the resource endpoints for ingestion, analysis, history, and approved corrections.
+
+## Table of Contents
+
+- [Connection and conventions](#connection-and-conventions)
+- [Health and documentation](#health-and-documentation)
+- [Workspace adapter](#workspace-adapter)
+- [Ingestion and stateless analysis](#ingestion-and-stateless-analysis)
+- [Rules and assignments](#rules-and-assignments)
+- [Datasets, versions, and runs](#datasets-versions-and-runs)
+- [Findings and human decisions](#findings-and-human-decisions)
+- [Approved remediations](#approved-remediations)
+- [Pagination](#pagination)
+- [Errors and retry behavior](#errors-and-retry-behavior)
 
 ## Connection and conventions
 
@@ -128,7 +143,7 @@ Build your proposal with this payload shape:
 }
 ```
 
-Replace placeholders with response values. To change proposal input, create another proposal and repeat preview and approval. Use the newest preview token because each preview replaces the previous token. You can repeat execution of a completed proposal to retrieve its original result. Follow [Review and corrections](REVIEW.md) to recover from failures and interpret comparisons.
+Replace placeholders with response values. To change proposal input, create another proposal and repeat preview and approval. Use the newest preview token because each preview replaces the previous token. You can repeat execution of a completed proposal to retrieve its original result. Follow [Review and corrections](REVIEW_DATASETS.md) to recover from failures and interpret comparisons.
 
 ## Pagination
 
