@@ -31,11 +31,7 @@ Connect the Vue application to its FastAPI backend to save your work, or select 
 [![Pinia](https://img.shields.io/badge/Pinia-F7D336?style=for-the-badge&logo=pinia&logoColor=black)](https://pinia.vuejs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)](https://playwright.dev/)
-![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![Pydantic](https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white)
-![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white)
-![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+[![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/guide/)
 
 Find dependency ranges in [package.json](package.json) and exact resolved versions in [pnpm-lock.yaml](pnpm-lock.yaml).
 
@@ -48,9 +44,7 @@ Install the required tools before setting up the application.
 | [Git](https://git-scm.com/downloads)                              | Clone the project branches.                                                                         |
 | [Node.js](https://nodejs.org/)                                    | Run the application and build tools. Use `^22.18.0` or `>=24.12.0`, as specified in `package.json`. |
 | [pnpm 10](https://pnpm.io/10.x/installation)                      | Install dependencies and run project commands.                                                      |
-| [Python](https://www.python.org/downloads/)                       |`3.12` or newer, for the backend only                                                                |
 | [Visual Studio Code](https://code.visualstudio.com/)   | Edit source and environment files, or use your preferred editor.                                               |
-| [uv](https://docs.astral.sh/uv/getting-started/installation/) | Backend dependency synchronization using uv.lock                                    |
 
 Open the frontend checkout in your editor before beginning setup.
 
