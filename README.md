@@ -24,27 +24,29 @@ Preserve your original files and trace each version, rule revision, check attemp
 
 ## Technologies Used
 
-| Technology | Responsibility |
-| --- | --- |
-| Python 3.12+ | Application and analytical services |
-| FastAPI and Uvicorn | HTTP endpoints, OpenAPI documentation, and ASGI server |
-| Pydantic and pydantic-settings | Request schemas, configuration, and validation |
-| SQLAlchemy, SQLite, and Alembic | Persistent metadata and schema migrations |
-| pandas, openpyxl, and PyArrow | Tabular processing and format support |
-| PyYAML and defusedxml | Rule configuration and XML parsing support |
-| pytest, pytest-cov, HTTPX, and mypy | Automated tests, coverage, API tests, and type checks |
-| uv | Dependency management and reproducible environments |
+![Python](https://img.shields.io/badge/Python_3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Pydantic](https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white)
+![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![Alembic](https://img.shields.io/badge/Alembic-6BA81E?style=for-the-badge&logo=alembic&logoColor=white)
+![pandas](https://img.shields.io/badge/pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
+![PyArrow](https://img.shields.io/badge/PyArrow-E34F26?style=for-the-badge&logo=apachearrow&logoColor=white)
+![pytest](https://img.shields.io/badge/pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)
+![uv](https://img.shields.io/badge/uv-DE5FE9?style=for-the-badge&logo=uv&logoColor=white)
 
 Find dependency ranges in [pyproject.toml](pyproject.toml) and exact resolved versions in [uv.lock](uv.lock).
 
 ## Necessary Tools
 
-| Tool | Purpose |
-| --- | --- |
-| Python 3.12 or newer | Run the API, tests, and administration scripts |
-| uv | Install dependencies from the lockfile |
-| Git and an editor | Manage source and configuration |
-| Node.js and pnpm | Required only for the companion frontend |
+Install the required tools before setting up the application.
+
+| Tool                                                              | Purpose                                                                                             |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| [Python](https://www.python.org/downloads/)                       |`3.12` or newer. Run the API, tests, and administration scripts                                      |
+| [uv](https://docs.astral.sh/uv/getting-started/installation/)     | Install backend dependencies from the lockfile `uv.lock`                                            |
+| [Git](https://git-scm.com/downloads)                              | Clone the project branches.                                                                         |
+| [Visual Studio Code](https://code.visualstudio.com/)   | Edit source and environment files, or use your preferred editor.                                    |
 
 Use the embedded SQLite database without installing a separate database server.
 
