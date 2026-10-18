@@ -23,27 +23,34 @@ Connect the Vue application to its FastAPI backend to save your work, or select 
 
 ## Technologies Used
 
-| Technology | Responsibility |
-| --- | --- |
-| Vue 3 and TypeScript | Single-file components and typed application logic |
-| Vue Router and Pinia | Navigation and workspace state |
-| Vite and Tailwind CSS | Development server, production bundle, and styles |
-| Vitest and Vue Test Utils | Unit, component, store, and repository tests |
-| Playwright | Desktop and mobile browser workflows |
-| FastAPI, Pydantic, SQLAlchemy, SQLite | Companion API, validation, and persistent metadata |
+[![Vue.js](https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D)](https://vuejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
+[![Pinia](https://img.shields.io/badge/Pinia-F7D336?style=for-the-badge&logo=pinia&logoColor=black)](https://pinia.vuejs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)](https://playwright.dev/)
+![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Pydantic](https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white)
+![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
 
 Find dependency ranges in [package.json](package.json) and exact resolved versions in [pnpm-lock.yaml](pnpm-lock.yaml).
 
 ## Necessary Tools
 
-| Tool | Requirement |
-| --- | --- |
-| Node.js | Install `^22.18.0` or `>=24.12.0` to satisfy `package.json` |
-| pnpm | CI uses 9.12.3; use the same version for reproducible installs |
-| Python | 3.12 or newer, for the backend only |
-| uv | Backend dependency synchronization using uv.lock |
-| Git and an editor | Source control and editing |
-| Playwright browsers | Install the browsers before running browser tests |
+Install the required tools before setting up the application.
+
+| Tool                                                              | Purpose                                                                                             |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| [Git](https://git-scm.com/downloads)                              | Clone the project branches.                                                                         |
+| [Node.js](https://nodejs.org/)                                    | Run the application and build tools. Use `^22.18.0` or `>=24.12.0`, as specified in `package.json`. |
+| [pnpm 10](https://pnpm.io/10.x/installation)                      | Install dependencies and run project commands.                                                      |
+| [Python](https://www.python.org/downloads/)                       |`3.12` or newer, for the backend only                                                                |
+| [Visual Studio Code](https://code.visualstudio.com/)   | Edit source and environment files, or use your preferred editor.                                               |
+| [uv](https://docs.astral.sh/uv/getting-started/installation/) | Backend dependency synchronization using uv.lock                                    |
 
 Open the frontend checkout in your editor before beginning setup.
 
