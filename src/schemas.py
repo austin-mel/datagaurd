@@ -31,9 +31,9 @@ class DatasetMetadata(ApiModel):
     original_filename: str = Field(examples=["dataset.csv"])
     content_sha256: str
     size_bytes: int
-    encoding: str | None = "utf-8"
-    format: DataFormat = "csv"
-    sheet_name: str | None = None
+    encoding: str | None
+    format: DataFormat
+    sheet_name: str | None
     row_count: int
     column_count: int
     headers: list[str]
@@ -134,7 +134,7 @@ class AnalysisResult(ApiModel):
 
 
 class CheckResponse(ProfileResponse):
-    metric_semantics: Literal["row-based-v1"] | None = None
+    metric_semantics: Literal["row-based-v1"]
     resolved_identifier_column: str | None = None
     processing_status: Literal["completed"] = "completed"
     validation_status: Literal["passed", "failed"]
@@ -148,8 +148,8 @@ class CheckResponse(ProfileResponse):
     configuration_sha256: str
     settings_snapshot: dict[str, JsonValue]
     baseline_id: str | None = None
-    metrics: QualityMetrics = Field(default_factory=QualityMetrics)
-    analysis_results: list[AnalysisResult] = Field(default_factory=list)
+    metrics: QualityMetrics
+    analysis_results: list[AnalysisResult]
 
 
 Item = TypeVar("Item")
@@ -215,7 +215,7 @@ class RunView(ApiModel):
     completed_at: datetime | None
     error_code: str | None
     result: CheckResponse | None
-    rule_set_id: str | None = None
+    rule_set_id: str
 
 
 class UploadResponse(ApiModel):

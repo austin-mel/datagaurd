@@ -12,7 +12,7 @@ class Dataset(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     name: Mapped[str] = mapped_column(Text)
     created_at: Mapped[str] = mapped_column(String)
-    rule_set_id: Mapped[str | None] = mapped_column(ForeignKey("rule_sets.id"), index=True)
+    rule_set_id: Mapped[str] = mapped_column(ForeignKey("rule_sets.id"), index=True)
 
 
 class RuleSetRecord(Base):
@@ -61,7 +61,7 @@ class CheckRun(Base):
     actor: Mapped[str] = mapped_column(String)
     created_at: Mapped[str] = mapped_column(String)
     completed_at: Mapped[str | None] = mapped_column(String)
-    rule_set_id: Mapped[str | None] = mapped_column(ForeignKey("rule_sets.id"), index=True)
+    rule_set_id: Mapped[str] = mapped_column(ForeignKey("rule_sets.id"), index=True)
     review_state_json: Mapped[str] = mapped_column(Text, default="{}", server_default="{}")
 
 

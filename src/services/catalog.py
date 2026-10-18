@@ -82,25 +82,13 @@ class Catalog:
         self.database.initialize()
         with self.database.write() as session:
             self.default_rule_set_id = self._register_rules(session, self.rules, reuse=True).id
-            for dataset in session.scalars(select(Dataset).where(Dataset.rule_set_id.is_(None))):
-                previous = session.scalar(select(CheckRun).join(DatasetVersion, CheckRun.version_id == DatasetVersion.id).where(
-                    DatasetVersion.dataset_id == dataset.id).order_by(CheckRun.created_at.desc(), CheckRun.id.desc()).limit(1))
-                if previous:
-                    rules = RuleSet.model_validate_json(previous.configuration_json)
-                    settings = self.settings.model_copy(update=json.loads(previous.settings_json))
-                    dataset.rule_set_id = self._register_rules(session, rules, reuse=True, settings=settings).id
-                else:
-                    dataset.rule_set_id = self.default_rule_set_id
-                self.audit(session, dataset.id, "rule_set_assigned", dataset.rule_set_id)
         self.reconcile()
 
-    def _register_rules(self, session: Session, rules: RuleSet, *, reuse: bool = False,
-                        settings: Settings | None = None) -> RuleSetRecord:
+    def _register_rules(self, session: Session, rules: RuleSet, *, reuse: bool = False) -> RuleSetRecord:
         # Revalidate even model instances: model_copy/update can otherwise bypass schema validation.
         rules = RuleSet.model_validate(rules.model_dump())
-        defaults = settings or self.settings
         statistics = rules.statistics or StatisticalSettings.model_validate(
-            {name: getattr(defaults, name) for name in StatisticalSettings.model_fields})
+            {name: getattr(self.settings, name) for name in StatisticalSettings.model_fields})
         rules = rules.model_copy(update={"name": rules.name.strip(), "statistics": statistics}, deep=True)
         document = json.dumps(rules.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
         digest = hashlib.sha256(document.encode()).hexdigest()
@@ -215,7 +203,7 @@ class Catalog:
         if current and current.processing_status == "running":
             raise InputError("validation_running", "Wait for validation to finish before starting another run.", 409)
         dataset = require(session, Dataset, version.dataset_id)
-        assignment = require(session, RuleSetRecord, dataset.rule_set_id or self.default_rule_set_id)
+        assignment = require(session, RuleSetRecord, dataset.rule_set_id)
         rules = RuleSet.model_validate_json(assignment.configuration_json)
         reference_date = self.settings.reference_date or date.today()
         run_settings = self.settings.model_copy(update={"reference_date": reference_date,
@@ -345,7 +333,7 @@ class Catalog:
         if selected and selected.dataset_id != dataset.id:
             raise InputError("not_found", "The selected version does not belong to this dataset.", 404)
         run = self._latest_run(session, selected.id) if selected else None
-        assignment = require(session, RuleSetRecord, dataset.rule_set_id or self.default_rule_set_id)
+        assignment = require(session, RuleSetRecord, dataset.rule_set_id)
         upload = session.scalar(select(AuditEvent).join(DatasetVersion, AuditEvent.entity_id == DatasetVersion.id)
                                 .where(AuditEvent.dataset_id == dataset.id, AuditEvent.action == "version_uploaded",
                                        DatasetVersion.number <= selected.number)
@@ -360,8 +348,6 @@ class Catalog:
         headers = DatasetMetadata.model_validate_json(selected.metadata_json).headers if selected else []
         identifier, identifier_reason = identifier_column(rules, headers)
         changed = run is None or json.loads(run.configuration_json) != json.loads(assignment.configuration_json)
-        old_scores = bool(run_view and run_view.result and not run_view.result.metric_semantics
-                          and run_view.result.implementation_version not in {"tabular-validation/2.0.0", "tabular-validation/2.1.0"})
         uploaded_version = require(session, DatasetVersion, upload.entity_id) if upload else None
         uploaded_metadata = DatasetMetadata.model_validate_json(uploaded_version.metadata_json) if uploaded_version else None
         return DatasetDetail(
@@ -377,7 +363,7 @@ class Catalog:
             recent_events=[AuditView.model_validate(event, from_attributes=True) for event in events],
             cell_review=self._cell_groups(selected, run_view, state) if selected else None,
             review_changed_since_run=state.review_changed, data_changed_since_run=state.data_changed,
-            validation_pending=changed or state.review_changed or state.data_changed or old_scores or bool(run and run.processing_status == "failed"),
+            validation_pending=changed or state.review_changed or state.data_changed or bool(run and run.processing_status == "failed"),
             resolved_identifier_column=identifier, identifier_reason=identifier_reason, ignored_cell_count=len(state.ignored),
         )
 
@@ -459,7 +445,7 @@ class Catalog:
                 column = parsed.metadata.headers.index(group.column)
                 if any(cell_value(parsed.records[number - 1][column]) != group.currentValue for number in numbers):
                     raise InputError("stale_finding", "The flagged value has changed. Refresh the review.", 409)
-                assignment = require(session, RuleSetRecord, dataset.rule_set_id or self.default_rule_set_id)
+                assignment = require(session, RuleSetRecord, dataset.rule_set_id)
                 rules, _ = resolved_rules(RuleSet.model_validate_json(assignment.configuration_json), parsed.metadata.headers)
                 signatures = {rule.id: rule_signature(rule) for rule in rules.rules}
                 action = request.action

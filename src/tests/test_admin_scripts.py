@@ -1,17 +1,15 @@
 """Administrative helpers always operate on disposable files and databases here."""
 import json
-import sqlite3
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
-from uuid import UUID
 
 import pytest
 
-from src.models import CheckRun, RuleSetRecord
+from src.models import CheckRun
 from src.rules import load_rules
 from src.scripts import evaluate, generate_fixtures, generate_format_fixtures, generate_statistical_fixtures
-from src.scripts import migrate_dataset_ids, migrate_legacy_rules, seed_demo
+from src.scripts import seed_demo
 from src.services.catalog import Catalog, require
 from src.services.tabular import parse_dataset
 from src.settings import Settings
@@ -109,53 +107,3 @@ def test_demo_seeding_retries_failed_analysis(admin_catalog: Catalog, demo_manif
     result = admin_catalog.detail(identity)
     assert result.latest_run and result.latest_run.processing_status == "completed"
     assert admin_catalog.runs(detail.selected_version.id, 10, 0).total == 2
-
-
-def test_legacy_rule_migration_appends_revision_and_keeps_evidence(admin_catalog: Catalog) -> None:
-    content = b"day\n2026-10-07\n"
-    uploaded = admin_catalog.upload(content, parse_dataset(content, "dates.csv", admin_catalog.settings))
-    legacy = {"schema_version": 1, "name": "Legacy", "structural_rule_id": "COLUMNS", "required_columns": ["day"], "rules": [
-        {"id": "DATE_PARSE", "column": "day", "kind": "date", "formats": ["%Y-%m-%d"], "explanation": "Date"},
-        {"id": "DATE_BOUND", "column": "day", "kind": "not_future", "prerequisite": "DATE_PARSE",
-         "latest": "today", "explanation": "Past date"}]}
-    with admin_catalog.database.write() as session:
-        assigned = require(session, RuleSetRecord, uploaded.dataset.rule_set_id)
-        assigned.configuration_json = json.dumps(legacy)
-        previous_run = require(session, CheckRun, uploaded.check_run.id)
-        original_result = previous_run.result_json
-    assert migrate_legacy_rules.migrate(admin_catalog) == [uploaded.dataset.id]
-    detail = admin_catalog.detail(uploaded.dataset.id)
-    assert detail.assigned_rules.id != uploaded.dataset.rule_set_id
-    assert detail.latest_run and detail.latest_run.validation_status == "passed"
-    assert detail.selected_version and detail.selected_version.id == uploaded.version.id
-    assert admin_catalog.version_content(uploaded.version.id)[0] == content
-    with admin_catalog.database.read() as session:
-        assert require(session, RuleSetRecord, uploaded.dataset.rule_set_id).configuration_json == json.dumps(legacy)
-        assert require(session, CheckRun, uploaded.check_run.id).result_json == original_result
-    assert migrate_legacy_rules.migrate(admin_catalog) == []
-
-
-@pytest.mark.parametrize("existing", [False, True])
-def test_uuid_migration_command_backs_up_existing_database(settings: Settings, monkeypatch: pytest.MonkeyPatch,
-                                                         capsys: pytest.CaptureFixture[str], existing: bool) -> None:
-    if existing:
-        catalog = Catalog(settings, load_rules(settings.rules_path))
-        try:
-            catalog.initialize()
-            content = b"id\n1\n"
-            saved = catalog.upload(content, parse_dataset(content, "data.csv", settings))
-        finally:
-            catalog.database.close()
-    monkeypatch.setattr(migrate_dataset_ids, "Settings", lambda: settings)
-    migrate_dataset_ids.main()
-    report = json.loads(capsys.readouterr().out)
-    if existing:
-        assert report["dataset_ids"] == [saved.dataset.id]
-        assert str(UUID(report["dataset_ids"][0])) == saved.dataset.id
-        backup = Path(report["backup"])
-        assert backup.parent == settings.storage_dir.resolve() and backup.exists()
-        with sqlite3.connect(backup) as connection:
-            assert connection.execute("SELECT id FROM datasets").fetchone()[0] == saved.dataset.id
-        assert report["record_counts_preserved"]["datasets"] == 1
-    else:
-        assert report == {"backup": None, "dataset_ids": [], "record_counts_preserved": {}}

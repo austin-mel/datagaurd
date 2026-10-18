@@ -1,15 +1,12 @@
-import json
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from src.main import create_app
-from src.models import CheckRun
 from src.rules import load_rules
 from src.schemas import ReviewRequest
 from src.scripts.generate_fixtures import generate
@@ -156,25 +153,3 @@ def test_concurrent_reviews_do_not_lose_history(settings: Settings) -> None:
         assert len([a for a in catalog.audit_events(saved.dataset.id, 100, 0).items if a.action == "review_added"]) == 3
     finally:
         catalog.database.close()
-
-
-def test_old_and_failed_runs_have_unavailable_metrics(settings: Settings) -> None:
-    catalog = Catalog(settings, load_rules(settings.rules_path))
-    catalog.initialize()
-    try:
-        content = generate()[0]
-        saved = catalog.upload(content, parse_dataset(content, "x.csv", settings))
-        with catalog.database.write() as session:
-            run = session.scalar(select(CheckRun).where(CheckRun.id == saved.check_run.id))
-            assert run and run.result_json
-            result = json.loads(run.result_json)
-            result.pop("metrics")
-            run.result_json = json.dumps(result)
-        assert catalog.metrics(saved.check_run.id).completeness.status == "not_available"
-        catalog.files.path(saved.version.file_id).unlink()
-        failed = catalog.check(saved.version.id)
-        assert failed.processing_status == "failed"
-        assert catalog.metrics(failed.id).valid_row_rate.status == "not_available"
-    finally:
-        catalog.database.close()
-

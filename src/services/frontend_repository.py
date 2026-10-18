@@ -32,9 +32,7 @@ def dataset_to_frontend(detail: DatasetDetail) -> dict[str, JsonValue]:
     version, run = detail.selected_version, detail.latest_run
     result = run.result if run and run.processing_status == "completed" else None
     headers = version.metadata.headers if version else []
-    score_compatible = bool(result and (result.metric_semantics == "row-based-v1"
-        or result.implementation_version in {"tabular-validation/2.0.0", "tabular-validation/2.1.0"}))
-    metrics = result.metrics if result and score_compatible else None
+    metrics = result.metrics if result else None
     dimensions: list[JsonValue] = []
     scores: list[float] = []
     for identity, label, attribute, description in (
@@ -86,8 +84,6 @@ def dataset_to_frontend(detail: DatasetDetail) -> dict[str, JsonValue]:
     status = (run.processing_status if run and run.processing_status in {"running", "failed"} else
               "unvalidated" if result is None else "needs-review" if findings else "healthy" if check_count else "unvalidated")
     quality_note = QUALITY_NOTE if result else "Validation results are not available."
-    if result and not score_compatible:
-        quality_note = "Run validation to calculate row-based quality scores."
     if detail.data_changed_since_run:
         quality_note = "Data changed. Run validation to calculate profiles, issues, and quality scores."
     elif detail.ignored_cell_count:
@@ -194,7 +190,7 @@ class FrontendRepository:
                 if run and run.processing_status == "running":
                     raise InputError("validation_running", "Wait for validation to finish before saving rules.", 409)
                 headers = DatasetMetadata.model_validate_json(version.metadata_json).headers
-                assignment = require(session, RuleSetRecord, dataset.rule_set_id or self.catalog.default_rule_set_id)
+                assignment = require(session, RuleSetRecord, dataset.rule_set_id)
                 assigned_rules = RuleSet.model_validate_json(assignment.configuration_json)
                 rules = backend_ruleset(editor, assigned_rules, headers)
                 # Creating a custom copy must not deduplicate back to the read-only default.

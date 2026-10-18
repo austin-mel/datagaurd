@@ -1,19 +1,14 @@
-import hashlib
-import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
 import yaml
-from alembic import command
-from alembic.config import Config
 from fastapi.testclient import TestClient
 
 from src.main import create_app
 from src.rules import RuleSet, load_rules
 from src.services.catalog import Catalog
-from src.services.tabular import parse_dataset
-from src.settings import PROJECT_ROOT, Settings
+from src.settings import Settings
 
 
 def configuration(name: str = "Orders", allowed: str = "open") -> dict[str, Any]:
@@ -130,44 +125,5 @@ def test_restart_pins_existing_datasets_and_concurrent_revisions(settings: Setti
         with ThreadPoolExecutor(max_workers=3) as workers:
             revisions = list(workers.map(lambda _: catalog.create_rule_set(RuleSet.model_validate(configuration())), range(3)))
         assert sorted(row.revision for row in revisions) == [3, 4, 5]
-    finally:
-        catalog.database.close()
-
-
-def test_legacy_database_upgrade_preserves_dataset_rules(settings: Settings) -> None:
-    catalog = Catalog(settings, load_rules(settings.rules_path))
-    settings.storage_dir.mkdir(parents=True)
-    content = b"order_id,status\n001,open\n"
-    metadata = parse_dataset(content, "orders.csv", settings).metadata.model_dump()
-    for field in ("format", "sheet_name"):
-        metadata.pop(field)
-    file_id = "a" * 32 + ".csv"
-    catalog.files.publish(file_id, content)
-    with catalog.database.engine.connect() as connection:
-        config = Config(str(PROJECT_ROOT / "alembic.ini"))
-        config.attributes["connection"] = connection
-        command.upgrade(config, "0003")
-        connection.exec_driver_sql("INSERT INTO datasets VALUES (?, ?, ?)", ("dataset", "Orders", "2026-10-07T00:00:00+00:00"))
-        connection.exec_driver_sql("INSERT INTO dataset_versions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            ("version", "dataset", 1, None, file_id, hashlib.sha256(content).hexdigest(), "orders.csv",
-             json.dumps(metadata), "2026-10-07T00:00:00+00:00"))
-        connection.exec_driver_sql("INSERT INTO check_runs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            ("run", "version", "failed", json.dumps(configuration()), '{"row_count_change_percentage": 50}',
-             "2026-10-07", "facilities-validation/1.1.0", None, None, "processing_failed", "operator",
-             "2026-10-07T00:00:00+00:00", "2026-10-07T00:00:00+00:00"))
-        connection.commit()
-    catalog.initialize()
-    try:
-        migrated = catalog.datasets(10, 0)
-        assert migrated.total == 1
-        assert migrated.items[0].id != "dataset"  # Migration 0006 replaces legacy IDs with UUIDs.
-        assert catalog.version("version").dataset_id == migrated.items[0].id
-        assigned = catalog.rule_set(migrated.items[0].rule_set_id)
-        assert assigned.name == "Orders"
-        assert assigned.configuration.statistics is not None
-        assert assigned.configuration.statistics.row_count_change_percentage == 50
-        assert catalog.version_content("version")[0] == content
-        assert catalog.check("version").validation_status == "passed"
-        assert catalog.run("run").implementation_version == "facilities-validation/1.1.0"
     finally:
         catalog.database.close()

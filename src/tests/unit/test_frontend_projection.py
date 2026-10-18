@@ -82,15 +82,6 @@ def test_overall_quality_averages_only_available_dimensions(detail: DatasetDetai
     assert dataset_to_frontend(detail)["quality"] == 62.5
 
 
-def test_unknown_metric_semantics_requires_revalidation(detail: DatasetDetail) -> None:
-    assert detail.latest_run and detail.latest_run.result
-    detail.latest_run.result.metric_semantics = None
-    detail.latest_run.result.implementation_version = "facilities-validation/1.0.0"
-    document = dataset_to_frontend(detail)
-    assert document["quality"] is None
-    assert document["qualityNote"] == "Run validation to calculate row-based quality scores."
-
-
 def test_edited_data_note_takes_priority_over_ignore_note(detail: DatasetDetail) -> None:
     detail.data_changed_since_run = True
     detail.ignored_cell_count = 2
