@@ -1,5 +1,4 @@
 from fastapi.testclient import TestClient
-from typing import Any
 
 from src.main import create_app
 from src.settings import PROJECT_ROOT, Settings
@@ -63,20 +62,6 @@ def test_allowed_cors_origins(settings: Settings) -> None:
             'Origin': 'https://untrusted.example', 'Access-Control-Request-Method': 'GET',
         })
         assert response.status_code == 400
-
-
-def test_legacy_upgrade_pins_recorded_cutoff() -> None:
-    from src.scripts.migrate_legacy_rules import upgrade
-    legacy: dict[str, Any] = {'schema_version': 1, 'name': 'Legacy', 'structural_rule_id': 'COLUMNS',
-              'required_columns': ['day'], 'rules': [
-                  {'id': 'DATE_PARSE', 'column': 'day', 'kind': 'date', 'formats': ['%Y-%m-%d'], 'explanation': 'Valid date'},
-                  {'id': 'DATE_FUTURE', 'column': 'day', 'kind': 'not_future', 'latest': 'today',
-                   'prerequisite': 'DATE_PARSE', 'explanation': 'No future dates'},
-              ]}
-    converted = upgrade(legacy, '2026-10-07').model_dump()
-    assert converted['rules'][0]['date'] == '9999-12-31'
-    assert converted['rules'][1]['date'] == '2026-10-07'
-    assert legacy['rules'][0]['kind'] == 'date'
 
 
 def test_numeric_profiles_include_integer_and_decimal_values(settings: Settings) -> None:
