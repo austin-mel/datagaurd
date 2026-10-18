@@ -43,7 +43,7 @@
 
 @layer components {
   .ui-badge {
-    @apply inline-flex items-center gap-[5px] rounded-[5px] px-[7px] py-1 text-[10px] font-semibold whitespace-nowrap;
+    @apply inline-flex items-center gap-1.25 rounded-[5px] px-1.75 py-1 text-[10px] font-semibold whitespace-nowrap;
   }
 
   .ui-panel {
@@ -51,7 +51,7 @@
   }
 
   .ui-panel-header {
-    @apply flex flex-wrap items-center justify-between gap-[15px] px-[22px] py-5;
+    @apply flex flex-wrap items-center justify-between gap-3.75 px-5.5 py-5;
   }
 
   .ui-panel-header h2 { @apply text-base font-semibold tracking-[-0.2px]; }
@@ -60,9 +60,9 @@
   .ui-data-table thead th { @apply border-y border-line bg-table-header px-4 py-2.5 text-[10px] font-[550] whitespace-nowrap text-muted; }
   .ui-data-table tbody th, .ui-data-table td { @apply border-b border-line px-4 py-3.5 text-xs; }
   .ui-data-table tbody tr:last-child :is(th, td) { @apply border-b-0; }
-  .ui-data-table :is(th, td):first-child { @apply pl-[22px]; }
-  .ui-data-table :is(th, td):last-child { @apply pr-[22px]; }
-  .ui-table-footer { @apply flex flex-wrap items-center justify-between gap-[9px] border-t border-line px-[22px] py-[11px] text-[10px] text-muted; }
+  .ui-data-table :is(th, td):first-child { @apply pl-5.5; }
+  .ui-data-table :is(th, td):last-child { @apply pr-5.5; }
+  .ui-table-footer { @apply flex flex-wrap items-center justify-between gap-2.25 border-t border-line px-5.5 py-2.75 text-[10px] text-muted; }
 
   .ui-icon {
     width: 19px;
@@ -76,7 +76,7 @@
   }
 
   .ui-button {
-    @apply inline-flex cursor-pointer items-center justify-center gap-[7px] rounded-[7px] border border-line bg-porcelain px-[13px] py-2.5 text-xs font-[550] whitespace-nowrap text-ink;
+    @apply inline-flex cursor-pointer items-center justify-center gap-1.75 rounded-[7px] border border-line bg-porcelain px-3.25 py-2.5 text-xs font-[550] whitespace-nowrap text-ink;
     @apply hover:bg-ivory disabled:cursor-not-allowed disabled:opacity-50;
   }
 
