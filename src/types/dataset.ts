@@ -15,7 +15,7 @@ export interface QualityDimension {
 
 export type ProfileSummary =
   | { kind: 'top-values'; values: readonly { value: string; count: number }[] }
-  | { kind: 'number-range'; minimum: number; maximum: number; minimumInvalid?: boolean; maximumInvalid?: boolean }
+  | { kind: 'number-range'; minimum: number; maximum: number }
   | { kind: 'date-range'; minimum: string; maximum: string }
 
 export interface ColumnProfile {
@@ -58,11 +58,11 @@ export interface Dataset {
   rowCount: number
   version: string
   isCurrentVersion: boolean
-  status: 'needs-review' | 'healthy' | 'blocked' | 'unvalidated' | 'running' | 'failed'
+  status: 'needs-review' | 'healthy' | 'unvalidated' | 'running' | 'failed'
   processingStatus: 'not_started' | 'running' | 'completed' | 'failed'
   processingError?: string
   rulesChangedSinceRun: boolean
-  /** Includes initial checks, retries and incompatible historic score semantics. */
+  /** Whether initial validation or a check after edits is required. */
   validationPending?: boolean
   reviewChangedSinceRun?: boolean
   dataChangedSinceRun?: boolean

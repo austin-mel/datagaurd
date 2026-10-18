@@ -69,7 +69,3 @@ export function parseAllowedValues(text: string): string[] {
     index++
   }
 }
-
-export function formatAllowedValues(values: readonly string[]): string {
-  return values.map(value => /[,"]/.test(value) || value !== value.trim() ? '"' + value.replaceAll('"', '""') + '"' : value).join(', ')
-}

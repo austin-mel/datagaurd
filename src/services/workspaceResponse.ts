@@ -27,7 +27,7 @@ const summary: Check = value => object({ kind: choice('top-values'), values: arr
   || object({ kind: choice('date-range'), minimum: date, maximum: date })(value)
 const dataset = object({
   id: text, name: text, source: text, sourceIcon: choice('file'), rowCount: count, columns: array(text),
-  version: text, isCurrentVersion: bool, status: choice('needs-review', 'healthy', 'blocked', 'unvalidated', 'running', 'failed'),
+  version: text, isCurrentVersion: bool, status: choice('needs-review', 'healthy', 'unvalidated', 'running', 'failed'),
   processingStatus: choice('not_started', 'running', 'completed', 'failed'), rulesChangedSinceRun: bool,
   quality: nullable(number), qualityNote: text, lastValidatedAt: nullable(date),
   qualityDimensions: array(object({ id: text, label: text, score: nullable(number), passed: nullable(count), total: nullable(count), description: text })),

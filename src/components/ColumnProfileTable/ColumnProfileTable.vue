@@ -46,7 +46,7 @@ const sqlTypes = {
                 </template>
               </template>
               <template v-else-if="profile.summary.kind === 'number-range'">
-                Min <strong class="font-[550]" :class="profile.summary.minimumInvalid ? 'text-coral-text' : 'text-ink'">{{ formatNumber(profile.summary.minimum) }}</strong><span class="mx-2">/</span>Max <strong class="font-[550]" :class="profile.summary.maximumInvalid ? 'text-coral-text' : 'text-ink'">{{ formatNumber(profile.summary.maximum) }}</strong>
+                Min <strong class="font-[550] text-ink">{{ formatNumber(profile.summary.minimum) }}</strong><span class="mx-2">/</span>Max <strong class="font-[550] text-ink">{{ formatNumber(profile.summary.maximum) }}</strong>
               </template>
               <template v-else>{{ formatDate(profile.summary.minimum) }} – {{ formatDate(profile.summary.maximum) }}</template>
               </div>

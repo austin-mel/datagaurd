@@ -5,10 +5,3 @@ export const seededDatasetIds = {
   customers: '9e716851-5f95-4433-b771-d336b0d00d20',
   inventory: '8e6483be-d006-4ab9-84c8-e86eac26b997',
 } as const
-
-const legacyIds: Readonly<Record<string, string>> = Object.fromEntries(
-  Object.entries(seededDatasetIds).flatMap(([key, id]) => [[key, id], ['demo-' + key, id]]),
-)
-
-// Compatibility for old sample bookmarks and persisted recent visits only.
-export function canonicalDatasetId(id: string): string { return legacyIds[id] ?? id }

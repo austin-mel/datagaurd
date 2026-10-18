@@ -6,7 +6,6 @@ const emit = defineEmits<{ download: []; 'edit-rules': [] }>()
 const statuses = {
   'needs-review': { label: 'Needs review', classes: 'bg-coral-soft text-coral-text' },
   healthy: { label: 'Healthy', classes: 'bg-emerald-soft text-green-text' },
-  blocked: { label: 'Blocked', classes: 'bg-ink text-porcelain' },
   unvalidated: { label: 'Not evaluated', classes: 'bg-ivory text-muted' },
   running: { label: 'Running', classes: 'bg-cobalt-soft text-cobalt' },
   failed: { label: 'Validation failed', classes: 'bg-coral-soft text-coral-text' },

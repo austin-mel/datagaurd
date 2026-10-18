@@ -1,4 +1,4 @@
-// Contract mirror of backend Pydantic schemas; keep aligned when service schemas change.
+// Backend rule, finding, and upload types used by the current frontend and sample exporter.
 
 export type AllowedRule = {
   "id": string
@@ -8,124 +8,6 @@ export type AllowedRule = {
   "enabled"?: boolean
   "kind": "allowed_values"
   "values": (string)[]
-}
-
-export type AnalysisResult = {
-  "check_id": string
-  "column": string | null
-  "category": "schema" | "statistical"
-  "status": "passed" | "review_required" | "not_evaluated"
-  "reason"?: string | null
-  "observed_result": Record<string, JsonValue>
-  "threshold": Record<string, JsonValue>
-  "baseline_id"?: string | null
-}
-
-export type AuditView = {
-  "description"?: string
-  "sequence": number
-  "dataset_id": string
-  "action": string
-  "entity_id": string
-  "actor": string
-  "created_at": string
-}
-
-export type CategoryCount = {
-  "value": string
-  "count": number
-  "percentage"?: number | null
-}
-
-export type CheckResponse = {
-  "metric_semantics"?: "row-based-v1" | null
-  "metadata": DatasetMetadata
-  "profile": DatasetProfile
-  "resolved_identifier_column"?: string | null
-  "processing_status"?: "completed"
-  "validation_status": "passed" | "failed"
-  "findings": (Finding)[]
-  "rule_results": (RuleResult)[]
-  "reference_date": string
-  "checked_at": string
-  "actor": string
-  "implementation_version": string
-  "configuration": RuleSet
-  "configuration_sha256": string
-  "settings_snapshot": Record<string, JsonValue>
-  "baseline_id"?: string | null
-  "metrics"?: QualityMetrics
-  "analysis_results"?: (AnalysisResult)[]
-}
-
-export type ColumnProfile = {
-  "column": string
-  "observed_types": ("integer" | "number" | "date" | "text")[]
-  "missing_count": number
-  "nonmissing_count": number
-  "distinct_count": number
-  "numeric_count": number
-  "numeric_min": number | null
-  "numeric_max": number | null
-  "top_categories": (CategoryCount)[]
-  "missing_percentage"?: number | null
-  "numeric_mean"?: number | null
-  "numeric_median"?: number | null
-  "numeric_stddev"?: number | null
-  "numeric_q1"?: number | null
-  "numeric_q3"?: number | null
-  "date_count"?: number
-  "date_min"?: string | null
-  "date_max"?: string | null
-  "category_frequencies"?: (CategoryCount)[]
-}
-
-export type DatasetDetail = {
-  "source_filename"?: string | null
-  "source_format"?: "csv" | "tsv" | "xlsx" | "parquet" | null
-  "cell_review"?: CellReviewGroup[] | null
-  "review_changed_since_run"?: boolean
-  "data_changed_since_run"?: boolean
-  "validation_pending"?: boolean
-  "resolved_identifier_column"?: string | null
-  "identifier_reason"?: string | null
-  "ignored_cell_count"?: number
-  "dataset": DatasetView
-  "selected_version": VersionView | null
-  "latest_version_id": string | null
-  "latest_run": RunView | null
-  "assigned_rules": RuleSetView
-  "rules_changed_since_run": boolean
-  "source_kind"?: "file_upload"
-  "uploaded_at": string | null
-  "uploaded_by": string | null
-  "recent_events": (AuditView)[]
-}
-
-export type DatasetMetadata = {
-  "original_filename": string
-  "content_sha256": string
-  "size_bytes": number
-  "encoding"?: string | null
-  "format"?: "csv" | "tsv" | "xlsx" | "parquet"
-  "sheet_name"?: string | null
-  "row_count": number
-  "column_count": number
-  "headers": (string)[]
-  "record_number_base"?: number
-}
-
-export type DatasetProfile = {
-  "row_count": number
-  "column_count": number
-  "columns": (ColumnProfile)[]
-}
-
-export type DatasetView = {
-  "id": string
-  "name": string
-  "created_at": string
-  "rule_set_id": string
 }
 
 export type DateBetweenRule = {
@@ -167,17 +49,6 @@ export type Finding = {
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue }
 
-export type CellReviewGroup = {
-  id: string
-  column: string
-  ruleId: string
-  rule: string
-  kind: 'violation' | 'warning'
-  reason: string
-  currentValue: string | null
-  cells: { rowNumber: number; identifier: string | null }[]
-}
-
 export type MaxRule = {
   "id": string
   "column": string
@@ -187,14 +58,6 @@ export type MaxRule = {
   "kind": "max"
   "maximum": number
   "prerequisite": string
-}
-
-export type Metric = {
-  "status"?: "available" | "not_available"
-  "numerator"?: number | null
-  "denominator"?: number | null
-  "percentage"?: number | null
-  "reason"?: string | null
 }
 
 export type MinRule = {
@@ -228,13 +91,6 @@ export type PatternRule = {
   "pattern": string
 }
 
-export type QualityMetrics = {
-  "completeness"?: Metric
-  "valid_row_rate"?: Metric
-  "duplicate_id_rate"?: Metric
-  "uniqueness"?: Metric
-}
-
 export type RangeRule = {
   "id": string
   "column": string
@@ -261,19 +117,6 @@ export type RequiredRule = {
   "kind": "required"
 }
 
-export type RevalidateRequest = {
-  "source_version_id": string
-}
-
-export type RuleResult = {
-  "rule_id": string
-  "column": string | null
-  "status": "passed" | "failed" | "skipped"
-  "evaluated_count": number
-  "skipped_count": number
-  "reason"?: string | null
-}
-
 export type RuleSet = {
   "schema_version": 1
   "name": string
@@ -283,36 +126,6 @@ export type RuleSet = {
   "identifier_column"?: string | null
   "identifier_policy"?: "configured" | "auto"
   "statistics"?: StatisticalSettings | null
-}
-
-export type RuleSetView = {
-  "id": string
-  "name": string
-  "revision": number
-  "parent_id": string | null
-  "configuration": RuleSet
-  "configuration_sha256": string
-  "actor": string
-  "created_at": string
-  "is_default": boolean
-}
-
-export type RunView = {
-  "id": string
-  "version_id": string
-  "processing_status": "running" | "completed" | "failed"
-  "validation_status": "passed" | "failed" | "not_available"
-  "configuration": RuleSet
-  "reference_date": string
-  "implementation_version": string
-  "settings_snapshot": Record<string, JsonValue>
-  "baseline_id": string | null
-  "actor": string
-  "created_at": string
-  "completed_at": string | null
-  "error_code": string | null
-  "result": CheckResponse | null
-  "rule_set_id"?: string | null
 }
 
 export type StatisticalSettings = {
@@ -340,16 +153,6 @@ export type UploadPolicy = {
   "extensions": (string)[]
   "max_upload_bytes": number
   "source_kind"?: "file_upload"
-}
-
-export type VersionView = {
-  "id": string
-  "dataset_id": string
-  "number": number
-  "parent_id": string | null
-  "file_id": string
-  "metadata": DatasetMetadata
-  "created_at": string
 }
 
 export const defaultUploadPolicy: UploadPolicy = {
