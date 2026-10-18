@@ -1,16 +1,26 @@
-# Workspace guide
+# Explore Your Data Quality Workspace
 
 [README](../README.md) · [Datasets and cell review](DATASETS.md) · [Quality rules](QUALITY_RULES.md)
 
+Navigate your datasets, interpret quality scores, and run validation after making changes.
+
+## Table of Contents
+
+- [Access and navigation](#access-and-navigation)
+- [Live and sample data](#live-and-sample-data)
+- [Read quality scores](#read-quality-scores)
+- [Profiles, issues, and history](#profiles-issues-and-history)
+- [Run validation](#run-validation)
+
 ## Access and navigation
 
-Open the workspace without signing in. Use **Overview** to inspect one dataset and **Datasets** to search the catalog. Open a dataset to select it, or share its `/?dataset=<uuid>` URL with someone using the same backend. Identify datasets by UUID because names and original filenames can repeat.
+Open [your local workspace](http://127.0.0.1:5173/datagaurd/) without signing in. Use **Overview** to inspect one dataset and **Datasets** to search the catalog. Open a dataset to select it, or share its `/datagaurd/?dataset=<uuid>` URL with someone using the same backend. Identify datasets by UUID because names and original filenames can repeat.
 
 Return to Overview to resume your most recent available dataset. The application remembers three recent visits and otherwise selects the first dataset. Include a dataset UUID in the URL to open a specific record; if the record no longer exists, choose another dataset from the catalog.
 
 ## Live and sample data
 
-Read the banner before working. Choose **Live data** to persist work through the backend, or explore synthetic **Sample data** in browser memory. You can download, edit rules, review cells, and validate samples; connect to the backend to upload files. Reloading or selecting Reconnect discards sample edits. If your live catalog is empty, upload a dataset or seed examples.
+Read the banner before working. Use `VITE_DATA_SOURCE=api` to connect to the backend and persist your work, or set `VITE_DATA_SOURCE=seeded` to explore synthetic samples in browser memory. Follow [Frontend Configuration and Hosting](CONFIGURATION.md) to set the data source; the banner identifies the selected mode. You can download, edit rules, review cells, and validate samples; connect to the backend to upload files. Reloading or selecting Reconnect discards sample edits. If your live catalog is empty, upload a dataset or seed examples.
 
 ## Read quality scores
 

@@ -1,6 +1,17 @@
-# Quality rules guide
+# Create and Apply Quality Rules
 
 [README](../README.md) · [Workspace](WORKSPACE.md) · [Backend rule reference](../../datagaurd.back-end/docs/RULES.md)
+
+Configure the validation rules your datasets need, then run validation to update their results.
+
+## Table of Contents
+
+- [Create and save a custom ruleset](#create-and-save-a-custom-ruleset)
+- [Supported rules](#supported-rules)
+- [Allowed-value syntax](#allowed-value-syntax)
+- [Regular expressions](#regular-expressions)
+- [Date constraints](#date-constraints)
+- [Score and warning interpretation](#score-and-warning-interpretation)
 
 ## Create and save a custom ruleset
 

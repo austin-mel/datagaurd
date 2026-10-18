@@ -70,6 +70,22 @@ test('falls back offline, migrates bookmarks and disables uploads', async ({ pag
   await expect(page.getByText('Connected to backend · Live data')).toBeVisible()
 })
 
+test('loads seeded examples when the workspace API is missing and reconnects', async ({ page }) => {
+  const consoleErrors: string[] = []
+  page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()) })
+  await page.route('**/api/v1/workspace', route => route.fulfill({ status: 404, contentType: 'text/html', body: '<html>Not Found</html>' }))
+  await page.goto('/datagaurd/')
+  await expect(page.getByText(/Sample data · Backend unavailable/)).toBeVisible()
+  expect(consoleErrors).toContain('Workspace API request failed (404): /api/v1/workspace')
+  await expect(page.getByRole('heading', { name: 'County facilities', exact: true })).toBeVisible()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  await page.getByRole('link', { name: 'Datasets', exact: true }).click()
+  await expect(page.getByRole('button', { name: /Open overview for/ })).toHaveCount(3)
+  await page.unroute('**/api/v1/workspace')
+  await page.getByRole('button', { name: 'Reconnect (reload samples)' }).click()
+  await expect(page.getByText('Connected to backend · Live data')).toBeVisible()
+})
+
 test('persists recent selection across navigation and reloads', async ({ page, api }) => {
   api.datasets.push(dataset({ id: 'second', name: 'Second dataset' }))
   await page.goto('/datasets')

@@ -1,6 +1,19 @@
-# Data dictionary
+# Workspace Types and API Projections
 
 [README](../README.md) · [Architecture](ARCHITECTURE.md) · [Backend data dictionary](../../datagaurd.back-end/docs/DATA_DICTIONARY.md)
+
+Use these types and field definitions when displaying datasets or sending workspace requests to the backend.
+
+## Table of Contents
+
+- [Conventions](#conventions)
+- [Workspace and data source](#workspace-and-data-source)
+- [Dataset](#dataset)
+  - [State values](#state-values)
+- [Quality and profiles](#quality-and-profiles)
+- [Rulesets and editor catalog](#rulesets-and-editor-catalog)
+- [Cell review](#cell-review)
+- [Upload and download](#upload-and-download)
 
 ## Conventions
 

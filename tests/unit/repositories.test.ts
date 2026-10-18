@@ -57,9 +57,13 @@ describe('HTTP repository', () => {
     const repo = createHttpDatasetRepository(undefined, vi.fn<typeof fetch>().mockResolvedValue(new Response('', { status })))
     await expect(repo.getWorkspace()).rejects.toBeInstanceOf(BackendUnavailableError)
   })
-  it.each([401, 403, 404, 409, 422, 500])('surfaces structured status %i without fallback', async status => {
+  it.each([401, 403, 409, 422, 500])('surfaces structured status %i without fallback', async status => {
     const repo = createHttpDatasetRepository(undefined, vi.fn<typeof fetch>().mockResolvedValue(Response.json({ error: { message: 'Request denied' } }, { status })))
     await expect(repo.getWorkspace()).rejects.toMatchObject({ message: 'Request denied', status })
+  })
+  it('preserves missing dataset errors', async () => {
+    const repo = createHttpDatasetRepository(undefined, vi.fn<typeof fetch>().mockResolvedValue(Response.json({ error: { message: 'Dataset not found' } }, { status: 404 })))
+    await expect(repo.getDataset(datasetId)).rejects.toMatchObject({ message: 'Dataset not found', status: 404 })
   })
   it('rejects invalid contracts as contract errors, not network failures', async () => {
     const repo = createHttpDatasetRepository(undefined, vi.fn<typeof fetch>().mockResolvedValue(Response.json({ datasets: [] })))
@@ -80,6 +84,24 @@ describe('HTTP repository', () => {
 })
 
 describe('workspace source selection', () => {
+  it.each(['empty', 'html', 'json'])('uses samples when the workspace endpoint returns a %s 404', async format => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const response = format === 'json'
+      ? Response.json({ detail: 'Not Found' }, { status: 404 })
+      : new Response(format === 'html' ? '<html>Not Found</html>' : '', { status: 404, headers: { 'Content-Type': 'text/html' } })
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response)
+    const fallback = repository({ source: { kind: 'seeded', reason: 'not-configured' } })
+    const repo = createDatasetRepository(createHttpDatasetRepository(undefined, fetcher), fallback)
+
+    expect(await repo.getWorkspace()).toEqual(workspace())
+    expect(repo.source).toEqual({ kind: 'seeded', reason: 'backend-unavailable' })
+    expect(consoleError).toHaveBeenCalledWith('Workspace API request failed (404): /api/v1/workspace')
+    await repo.getDataset(datasetId)
+    await repo.updateRuleset(datasetId, ruleset())
+    expect(fallback.getDataset).toHaveBeenCalledWith(datasetId)
+    expect(fallback.updateRuleset).toHaveBeenCalledWith(datasetId, ruleset())
+    expect(fetcher).toHaveBeenCalledTimes(1)
+  })
   it('treats an empty live workspace as authoritative and shares concurrent initialization', async () => {
     const primary = repository({ getWorkspace: vi.fn(async () => workspace([])) })
     const fallback = repository({ source: { kind: 'seeded', reason: 'not-configured' } })

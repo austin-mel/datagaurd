@@ -20,7 +20,9 @@ export function createHttpDatasetRepository(baseUrl = '/api/v1', fetcher: typeof
       if (!response.ok) {
         // Vite returns an empty 500 when its upstream connection is refused.
         const proxyUnavailable = response.status === 500 && !response.headers.get('Content-Type')?.includes('application/json')
-        if (proxyUnavailable || [502, 503, 504].includes(response.status)) throw new BackendUnavailableError('Backend unavailable. Please retry when the service is running.')
+        const workspaceUnavailable = route === '/workspace' && response.status === 404
+        if (workspaceUnavailable) console.error(`Workspace API request failed (404): ${base + route}`)
+        if (workspaceUnavailable || proxyUnavailable || [502, 503, 504].includes(response.status)) throw new BackendUnavailableError('Backend unavailable. Please retry when the service is running.')
         const payload: unknown = await response.json().catch(() => null)
         const message = typeof payload === 'object' && payload !== null && 'error' in payload
           && typeof payload.error === 'object' && payload.error !== null && 'message' in payload.error

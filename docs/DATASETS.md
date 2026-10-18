@@ -1,6 +1,16 @@
-# Datasets and cell review guide
+# Upload Datasets and Review Cells
 
 [README](../README.md) · [Workspace](WORKSPACE.md) · [Backend ingestion](../../datagaurd.back-end/docs/INGESTION.md)
+
+Upload your files, download dataset versions, and review or correct flagged cells.
+
+## Table of Contents
+
+- [Upload a dataset](#upload-a-dataset)
+- [Download a version](#download-a-version)
+- [Review a flagged cell](#review-a-flagged-cell)
+- [Ignore a finding](#ignore-a-finding)
+- [Conflicts and limitations](#conflicts-and-limitations)
 
 ## Upload a dataset
 
