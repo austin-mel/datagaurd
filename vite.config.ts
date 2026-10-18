@@ -18,7 +18,7 @@ export default defineConfig(() => {
 
   return {
     base: "/datagaurd/",
-    envDir: false,
+    envDir: './environment/',
     define: Object.fromEntries(
       Object.entries(env)
         .filter(([key, value]) => key.startsWith('VITE_') && value !== undefined)
