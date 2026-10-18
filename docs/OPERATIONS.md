@@ -107,20 +107,3 @@ Export the manifest with the frontend's `scripts/export-demo-manifest.mjs`, then
 | Running check remains after process interruption | Inspect run and service logs; there is no automatic startup requeue or public generic resume route |
 
 To resume an interrupted ordinary run, stop competing processing, back up storage, and call `Catalog.process_check(run_id)` with its recorded ID. The method resumes only a running attempt and checks the recorded implementation version. For an executed remediation, repeat execution to resume its check through the API. Preserve the attempt history and let validation determine the result.
-
-## Production readiness
-
-Complete the work below for your deployment before accepting shared or sensitive data:
-
-| Area | Required deployment work |
-| --- | --- |
-| Identity and access | Authenticate requests, authorize dataset/workspace access, enforce ownership, derive audit actor from verified identity |
-| Network | Terminate HTTPS, restrict exposure, configure exact origins, preserve API paths, align proxy body/time limits with application limits |
-| Persistence | Provision durable storage with hard-link support, access controls, capacity monitoring, tested backups, and restore procedures |
-| Concurrency | Coordinate migration/reconciliation, define process topology, add conditional ruleset writes and broader write idempotency |
-| Scale | Replace eager workspace loading with paginated summaries/details, cache immutable analysis, design asynchronous job execution |
-| Contract evolution | Define supported evidence schemas and strengthen explicit workspace response models |
-| Observability | Collect request/error logs, monitor storage health and failed/stuck runs, and set recovery objectives |
-| Data lifecycle | Define retention/export/deletion policies; no dataset-delete API or automated retention process currently exists |
-
-Size and operate your deployment around synchronous analysis and SQLite/local-file storage. Verify access controls, backup recovery, and concurrency behavior independently of frontend builds and process-health checks.
