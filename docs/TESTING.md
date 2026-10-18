@@ -1,8 +1,17 @@
-# Testing
+# Frontend Testing and API Integration
 
 [README](../README.md) · [Architecture](ARCHITECTURE.md) · [Backend testing](../../datagaurd.back-end/docs/TESTING.md)
 
 Run frontend commands from the frontend checkout after `pnpm install --frozen-lockfile`.
+
+## Table of Contents
+
+- [Build and type checks](#build-and-type-checks)
+- [Unit, component, and repository tests](#unit-component-and-repository-tests)
+- [Browser tests](#browser-tests)
+- [Live API parity](#live-api-parity)
+- [Continuous integration](#continuous-integration)
+- [Maintain fixtures and contracts](#maintain-fixtures-and-contracts)
 
 ## Build and type checks
 
@@ -47,7 +56,7 @@ pnpm test:e2e:ui
 pnpm exec playwright show-report output/playwright/report
 ```
 
-[playwright.config.ts](../playwright.config.ts) starts its own Vite server at `http://127.0.0.1:4173` with a strict port and no reuse of an existing server. Keep that port free. Its process environment forces `VITE_DATA_SOURCE=api` and `VITE_API_BASE_URL=/api/v1` regardless of local environment files.
+[playwright.config.ts](../playwright.config.ts) starts its own Vite server at `http://127.0.0.1:4173` with a strict port and no reuse of an existing server. Keep that port free. The Vite application still uses `/datagaurd/`; use that prefix when opening the test server manually or writing browser navigation paths. API fixtures continue to match `/api/v1` requests. Its process environment forces `VITE_DATA_SOURCE=api` and `VITE_API_BASE_URL=/api/v1` regardless of local environment files.
 
 | Project | Device profile |
 | --- | --- |
@@ -72,11 +81,24 @@ pnpm test:live
 Remove-Item Env:API_URL
 ```
 
-Run the [live configuration](../vitest.live.config.ts) explicitly to select `tests/live/`. The suite reads workspace projections and downloads, then compares demo row counts, columns, quality dimensions, issue/review/profile counts, metadata, and download row counts against samples. It makes no writes; normal tests and CI do not run it. If you have edited the demos, use fresh isolated storage because reseeding preserves existing versions.
+Run the [live configuration](../vitest.live.config.ts) explicitly to select `tests/live/`. The suite reads workspace projections and downloads, then compares demo row counts, columns, quality dimensions, issue/review/profile counts, metadata, and download row counts against samples. It makes no writes; the default unit and browser commands do not run it; add it explicitly to CI only when you provide an isolated seeded backend. If you have edited the demos, use fresh isolated storage because reseeding preserves existing versions.
 
 ## Continuous integration
 
-Use [tests.yml](../.github/workflows/tests.yml) to verify pushes and pull requests with Node 24 and pnpm 9.12.3. The workflow installs locked dependencies and browsers, builds, type-checks tests, enforces coverage, and runs browser tests. Download coverage and Playwright artifacts within their 14-day retention period.
+Configure your CI runner with a Node version supported by [package.json](../package.json) and pnpm 10. Add your workflow under `.github/workflows/` if you use GitHub Actions; this checkout does not include a workflow.
+
+Run these checks after installing dependencies:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm exec playwright install --with-deps chromium firefox webkit
+pnpm build
+pnpm type-check:tests
+pnpm test:coverage
+pnpm test:e2e
+```
+
+Set `CI=true` on your runner to enable the Playwright CI worker count, retries, and focused-test guard. Publish `coverage/` and `output/playwright/` as artifacts and choose the retention period in your CI configuration.
 
 Use `pnpm test:all` to run unit and browser suites together. Run builds, coverage checks, test type checks, live parity, and backend tests separately.
 
