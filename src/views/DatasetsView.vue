@@ -1,34 +1,20 @@
 <script setup lang="ts">
+import AppIcon from '@/components/shared/AppIcon.vue'
+import WorkspaceState from '@/components/shared/WorkspaceState.vue'
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { ConnectDatasetModal, DatasetTable, PageHeader, QualityRulesModal } from '@/components'
-import { useRulesetEditor } from '@/composables'
+import ConnectDatasetModal from '@/components/datasets/ConnectDatasetModal.vue'
+import DatasetTable from '@/components/datasets/DatasetTable.vue'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import QualityRulesModal from '@/components/rules/QualityRulesModal.vue'
+import { useRulesetEditor } from '@/composables/useRulesetEditor'
 import { useDatasetStore } from '@/stores'
-import type { DatasetUploadSelection } from '@/services/datasetUpload'
+import { useDatasetUpload } from '@/composables/useDatasetUpload'
 
 const search = ref('')
-const isConnectOpen = ref(false)
 const datasetStore = useDatasetStore()
-const { datasets, ruleCatalog, source, status, error, uploadPolicy } = storeToRefs(datasetStore)
-const uploading = ref(false)
-const uploadError = ref('')
-async function openUpload() {
-  uploadError.value = ''
-  isConnectOpen.value = true
-  if (source.value?.kind === 'api') {
-    try { await datasetStore.loadUploadPolicy() }
-    catch (cause) { uploadError.value = cause instanceof Error ? cause.message : 'Unable to load upload limits.' }
-  }
-}
-async function upload(selection: DatasetUploadSelection) {
-  uploading.value = true
-  uploadError.value = ''
-  try {
-    await datasetStore.upload(selection)
-    isConnectOpen.value = false
-  } catch (cause) { uploadError.value = cause instanceof Error ? cause.message : 'Upload failed.' }
-  finally { uploading.value = false }
-}
+const { datasets, ruleCatalog, source, status } = storeToRefs(datasetStore)
+const { isConnectOpen, uploadPolicy, uploading, uploadError, openUpload, upload } = useDatasetUpload()
 const { load } = datasetStore
 const selectedDatasetId = ref<string | null>(null)
 const selectedDataset = computed(() => datasets.value.find(dataset => dataset.id === selectedDatasetId.value))
@@ -51,7 +37,7 @@ void load()
   >
     <template #actions>
       <button type="button" class="ui-button ui-button-primary" :disabled="status !== 'ready'" aria-haspopup="dialog" aria-controls="connect-dataset-dialog" @click="openUpload">
-        <svg class="ui-icon size-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        <AppIcon name="add" class="size-4" />
         Connect a new data source
       </button>
     </template>
@@ -65,12 +51,9 @@ void load()
     </label>
   </div>
 
-  <p v-if="status === 'idle' || status === 'loading'" class="text-sm text-muted" role="status">Loading datasets…</p>
-  <div v-else-if="status === 'error'" class="ui-panel p-5" role="alert">
-    <p class="mb-3 text-sm text-coral-text">{{ error }}</p>
-    <button type="button" class="ui-button" @click="load">Try again</button>
-  </div>
-  <DatasetTable v-else :datasets="datasets" :search="search" @edit-quality-rules="openRules" />
+  <WorkspaceState>
+    <DatasetTable :datasets="datasets" :search="search" @edit-quality-rules="openRules" />
+  </WorkspaceState>
   <p role="status" class="mt-3 text-xs text-green-text">{{ saveMessage }}</p>
   <QualityRulesModal v-if="selectedDataset && ruleCatalog && source" v-model="isRulesOpen" :dataset="selectedDataset" :rule-catalog="ruleCatalog" :source-kind="source.kind" :saving="isSaving" :save-error="saveError" @save="saveRules" />
   <ConnectDatasetModal v-model="isConnectOpen" :policy="uploadPolicy ?? undefined" :upload-available="source?.kind === 'api' && !!uploadPolicy"

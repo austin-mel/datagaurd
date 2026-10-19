@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef, watch } from 'vue'
-import { ModalShell } from '../ModalShell'
+import ModalShell from '@/components/shared/ModalShell.vue'
 import { defaultUploadPolicy, type UploadPolicy } from '@/types/backend'
 import { validateUpload, type DatasetUploadSelection } from '@/services/datasetUpload'
 
