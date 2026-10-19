@@ -8,6 +8,7 @@ Manage your API service, schema migrations, demo datasets, backups, and recovery
 
 - [Storage layout](#storage-layout)
 - [Start and stop](#start-and-stop)
+- [Render demo deployment](#render-demo-deployment)
 - [Migrations](#migrations)
 - [Backup and restore](#backup-and-restore)
   - [Create a consistent backup](#create-a-consistent-backup)
@@ -40,6 +41,50 @@ uv run uvicorn src.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 Keep the terminal running while you use the API. Press Ctrl+C to stop the server.
+
+## Render demo deployment
+
+Render's Free Web Service can run the current SQLite backend for demos. Its filesystem is ephemeral: database changes and uploaded files are lost on redeploy, restart, or idle spin-down. Free services cannot attach a persistent disk. See [Render's free service limits](https://render.com/docs/free).
+
+Push the backend branch, including `.python-version`, `pyproject.toml`, and `uv.lock`, to GitHub. Configure the Render service with:
+
+| Setting | Value |
+| --- | --- |
+| Runtime / Language | Python 3 |
+| Branch | `apps.back-end` |
+| Root directory | Leave blank; this branch contains the backend at its repository root |
+| Instance type | Free |
+| Health check path | `/health` |
+
+The root `.python-version` selects Python 3.12. Remove a conflicting `PYTHON_VERSION` environment variable in Render because it takes precedence over the file. See [Python version selection](https://render.com/docs/python-version).
+
+Use this **build command**:
+
+```bash
+python -m pip install --upgrade uv && python -m uv sync --locked --no-dev
+```
+
+Use this **start command**:
+
+```bash
+.venv/bin/python -m uvicorn src.main:app --host 0.0.0.0 --port $PORT --workers 1
+```
+
+The build installs uv from PyPI and invokes it as a Python module, bypassing Render's `uv` command wrapper. Application dependencies remain pinned by `uv.lock`. The start command uses the environment created by the build and does not invoke uv. Keep `$PORT` as written so Render supplies its listening port.
+
+Set these values in Render's Environment section:
+
+| Variable | Value |
+| --- | --- |
+| `DATAGUARD_STORAGE_DIR` | `storage` |
+| `DATAGUARD_CORS_ORIGINS` | `["https://your-frontend-domain"]`, replacing the placeholder with the frontend's origin |
+| `DATAGUARD_ACTOR` | `local_operator` |
+
+Process environment variables take precedence over `environment/.back-end.env`; the local dotenv file does not need to be committed or uploaded. Leave `UV_PROJECT_ENVIRONMENT` unset so the build creates `.venv`, matching the start command. The service creates an empty SQLite database and applies migrations at startup.
+
+For an existing service, update the build/start commands in its Settings page. Check that Runtime is Python: [Render's runtime-change instructions](https://render.com/docs/native-runtimes#changing-a-services-runtime) describe Settings > Build > Source > Edit. Adding files to the repository does not change an existing service's runtime or Dashboard commands. After pushing the changes, choose **Manual Deploy > Clear build cache & deploy**. Confirm that the build selects Python 3.12 and that `/health` returns `{"status":"ok"}`.
+
+For `/home/render/envwrappers/uv: ... uv: command not found`, use the build/start commands above; this failure occurs in Render's tool bootstrap before application dependencies are installed. The subsequent build and health check must still succeed to confirm deployment.
 
 ## Migrations
 

@@ -186,6 +186,8 @@ Use the examples to explore intentional errors and statistical anomalies. You ca
 
 Follow [Operations](docs/OPERATIONS.md) for administration, migrations, and backups, and [Testing](docs/TESTING.md) for fixture commands.
 
+For a free demo deployment, follow the [Render configuration and troubleshooting steps](docs/OPERATIONS.md#render-demo-deployment), including the Python version, build/start commands, and temporary storage limits.
+
 ## Data and Privacy
 
 Explore the API with synthetic examples. Protect your configured storage directory: the backend saves uploaded source bytes, analysis evidence, reviews, and audit events there. Treat the configured actor as an audit label, not a verified identity.
