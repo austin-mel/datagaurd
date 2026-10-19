@@ -9,7 +9,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_prefix="DATAGUARD_", env_file=PROJECT_ROOT / "environment" / "back-end.env", extra="ignore"
+        env_prefix="DATAGUARD_", env_file=PROJECT_ROOT / "environment" / ".back-end.env", extra="ignore"
     )
 
     cors_origins: list[str] = ['http://127.0.0.1:5173', 'http://localhost:5173']

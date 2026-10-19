@@ -77,10 +77,10 @@ If you have not installed uv, run `python -m pip install uv`, then reopen your t
 2. Create the local environment file if it does not already exist:
 
    ```powershell
-   Copy-Item environment/.example.back-end.env environment/back-end.env
+   Copy-Item environment/.example.back-end.env environment/.back-end.env
    ```
 
-3. Set the storage location and permitted frontend origins in `environment/back-end.env`:
+3. Set the storage location and permitted frontend origins in `environment/.back-end.env`:
 
    ```dotenv
    DATAGUARD_STORAGE_DIR=storage

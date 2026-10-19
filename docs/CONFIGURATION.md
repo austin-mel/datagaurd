@@ -15,7 +15,7 @@ Configure your storage, upload limits, default rules, and analysis settings befo
 
 ## Loading and precedence
 
-Configure the backend in `environment/back-end.env` relative to the project root. [Settings](../src/settings.py) gives process environment variables precedence and uses defaults for omitted values. Prefix supported names with `DATAGUARD_`; Settings ignores unknown dotenv entries. Restart the server after changing configuration.
+Configure the backend in `environment/.back-end.env` relative to the project root. [Settings](../src/settings.py) gives process environment variables precedence and uses defaults for omitted values. Prefix supported names with `DATAGUARD_`; Settings ignores unknown dotenv entries. Restart the server after changing configuration.
 
 Use the default absolute paths beneath the project root, or supply your own paths. When you configure a relative value such as `DATAGUARD_STORAGE_DIR=storage`, run commands from the backend root so the process resolves it correctly. Prefer absolute paths when your service uses another working directory.
 
