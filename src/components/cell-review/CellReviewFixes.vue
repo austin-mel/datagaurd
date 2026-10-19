@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, useId, watch } from 'vue'
-import type { CellReviewGroup, CellReviewRequest, Dataset } from '@/types'
+import type { CellReviewGroup as ReviewGroup, CellReviewRequest, Dataset } from '@/types'
 import { formatNumber } from '@/utils'
 import { displayCellValue, summarizeCellReview } from '@/services/cellReview'
 import CellReviewDialog from './CellReviewDialog.vue'
+import CellReviewGroup from './CellReviewGroup.vue'
 
 const props = defineProps<{ dataset: Dataset; saving?: boolean; error?: string }>()
 const emit = defineEmits<{ save: [request: CellReviewRequest] }>()
@@ -23,7 +24,7 @@ const filtered = computed(() => {
 })
 const filteredTotals = computed(() => summarizeCellReview(filtered.value))
 const visible = computed(() => filtered.value.slice(page.value * pageSize, (page.value + 1) * pageSize))
-const selected = shallowRef<{ group: CellReviewGroup; row: number; mode: 'edit' | 'ignore' } | null>(null)
+const selected = shallowRef<{ group: ReviewGroup; row: number; mode: 'edit' | 'ignore' } | null>(null)
 const dialogOpen = ref(false)
 
 watch([search, kind, column], () => { page.value = 0; cellPages.value = {} })
@@ -31,13 +32,9 @@ watch(() => props.dataset, () => {
   search.value = ''; kind.value = 'all'; column.value = 'all'; page.value = 0
   cellPages.value = {}; dialogOpen.value = false; selected.value = null
 })
-function cellStart(group: CellReviewGroup) { return (cellPages.value[group.id] ?? 0) * pageSize }
-function openDialog(group: CellReviewGroup, row: number, mode: 'edit' | 'ignore') {
+function openDialog(group: ReviewGroup, row: number, mode: 'edit' | 'ignore') {
   selected.value = { group, row, mode }
   dialogOpen.value = true
-}
-function findingClass(group: CellReviewGroup) {
-  return group.kind === 'warning' ? 'bg-yellow-100 text-yellow-800' : 'bg-coral-soft text-coral-text'
 }
 </script>
 
@@ -66,28 +63,9 @@ function findingClass(group: CellReviewGroup) {
         <span role="status" aria-live="polite">{{ formatNumber(filtered.length) }} groups · {{ formatNumber(filteredTotals.cells) }} flagged cells</span>
       </div>
       <div class="px-5.5">
-        <details v-for="(group, index) in visible" :key="`${page}:${group.id}`" class="finding-group mb-3 overflow-hidden rounded-lg border border-line" :open="index === 0">
-          <summary class="group-summary">
-            <span class="min-w-0"><code class="block text-xs font-medium wrap-anywhere">{{ group.column }}</code><span class="mt-1.5 flex flex-wrap items-center gap-2"><span class="ui-badge" :class="findingClass(group)">{{ group.kind === 'warning' ? 'Anomaly warning' : 'Rule violation' }}</span><span class="text-[10px] text-muted">{{ group.rule }}</span></span></span>
-            <span class="min-w-0"><span class="value-caption">FLAGGED VALUE</span><code class="flagged-value" :class="findingClass(group)">{{ displayCellValue(group.currentValue) }}</code></span>
-            <span class="text-right"><strong class="block text-sm font-semibold tabular-nums">{{ formatNumber(group.cells.length) }} {{ group.cells.length === 1 ? 'cell' : 'cells' }}</strong><small class="text-[10px] text-muted">{{ formatNumber(group.cells.length) }} {{ group.cells.length === 1 ? 'row' : 'rows' }}</small></span>
-          </summary>
-          <p class="border-t border-line px-4 py-3 text-xs leading-6 text-muted">{{ group.reason }}</p>
-          <ul class="px-4">
-            <li v-for="cell in group.cells.slice(cellStart(group), cellStart(group) + pageSize)" :key="cell.rowNumber" class="cell-item">
-              <div><strong class="block text-xs font-medium">Row {{ formatNumber(cell.rowNumber) }}</strong><small class="mt-1 block text-[10px] text-muted wrap-anywhere">{{ cell.identifier ?? 'Unassigned ID' }}</small></div>
-              <div class="min-w-0"><span class="value-caption">CURRENT VALUE</span><code class="flagged-value bg-cobalt-soft text-cobalt">{{ displayCellValue(group.currentValue) }}</code></div>
-              <div class="flex flex-wrap gap-2">
-                <button type="button" class="ui-button ui-button-primary text-[10px]" aria-haspopup="dialog" :aria-label="`Edit row ${cell.rowNumber}, ${group.column}`" @click="openDialog(group, cell.rowNumber, 'edit')">Edit value</button>
-                <button type="button" class="ui-button border-coral-text bg-transparent text-[10px] text-coral-text hover:bg-coral-soft" aria-haspopup="dialog" :aria-label="`Ignore ${group.kind === 'warning' ? 'warning' : 'error'} for row ${cell.rowNumber}, ${group.column}`" @click="openDialog(group, cell.rowNumber, 'ignore')">Ignore {{ group.kind === 'warning' ? 'warning' : 'error' }}</button>
-              </div>
-            </li>
-          </ul>
-          <div v-if="group.cells.length > pageSize" class="ui-table-footer">
-            <span>Cells {{ formatNumber(cellStart(group) + 1) }}–{{ formatNumber(Math.min(cellStart(group) + pageSize, group.cells.length)) }} of {{ formatNumber(group.cells.length) }}</span>
-            <div class="flex gap-2"><button type="button" class="ui-button" :disabled="cellStart(group) === 0" @click="cellPages[group.id] = (cellPages[group.id] ?? 0) - 1">Previous cells</button><button type="button" class="ui-button" :disabled="cellStart(group) + pageSize >= group.cells.length" @click="cellPages[group.id] = (cellPages[group.id] ?? 0) + 1">Next cells</button></div>
-          </div>
-        </details>
+        <CellReviewGroup v-for="(group, index) in visible" :key="`${page}:${group.id}`"
+          v-model:page="cellPages[group.id]" :group="group" :open="index === 0"
+          @review="(row, mode) => openDialog(group, row, mode)" />
         <p v-if="!visible.length" class="py-8 text-center text-sm text-muted">{{ groups.length ? 'No findings match these filters.' : dataset.reviewChangedSinceRun ? 'No remaining findings from the last run. Run validation to check your changes.' : 'No flagged cells in this version.' }}</p>
       </div>
       <div class="ui-table-footer">
@@ -102,20 +80,4 @@ function findingClass(group: CellReviewGroup) {
 <style scoped>
 @reference '../../assets/main.css';
 .review-label { @apply text-muted; display: flex; flex-direction: column; gap: 6px; font-size: 11px; }
-.group-summary { display: grid; grid-template-columns: minmax(170px, 1.4fr) minmax(100px, 1fr) 80px 14px; gap: 16px; align-items: center; padding: 15px 17px; cursor: pointer; list-style: none; }
-.group-summary::-webkit-details-marker { display: none; }
-.group-summary::after { content: '›'; font-size: 22px; text-align: center; }
-.finding-group[open] > summary { @apply bg-ivory; }
-.finding-group[open] > summary::after { transform: rotate(90deg); }
-.value-caption { @apply text-muted; display: block; font-size: 9px; letter-spacing: .04em; margin-bottom: 5px; }
-.flagged-value { display: inline-block; padding: 5px 8px; border-radius: 5px; font-size: 12px; overflow-wrap: anywhere; white-space: pre-wrap; }
-.cell-item { @apply border-t border-line; display: grid; grid-template-columns: minmax(100px, 1fr) minmax(100px, 1fr) auto; gap: 12px; align-items: center; padding: 12px 0; }
-@media (max-width: 640px) {
-  .group-summary { grid-template-columns: minmax(0, 1fr) 70px 14px; gap: 10px; }
-  .group-summary > :nth-child(2) { grid-column: 1; grid-row: 2; }
-  .group-summary > :nth-child(3) { grid-column: 2; grid-row: 1; }
-  .group-summary::after { grid-column: 3; grid-row: 1; }
-  .cell-item { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .cell-item > :last-child { grid-column: 1 / -1; }
-}
 </style>

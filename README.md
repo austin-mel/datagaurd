@@ -68,10 +68,10 @@ If you have not installed pnpm, run `npm install -g pnpm@10`.
 Use the defaults to request `/api/v1` through Vite's `/api` proxy at `http://127.0.0.1:8000`. To override those defaults, create the local environment file if you do not already have one:
 
 ~~~powershell
-Copy-Item environment/.example.front-end.env environment/front-end.env
+Copy-Item environment/.example.front-end.env environment/.front-end.env
 ~~~
 
-Edit **environment/front-end.env**:
+Edit **environment/.front-end.env**:
 
 ~~~dotenv
 VITE_API_BASE_URL=/api/v1
@@ -148,7 +148,7 @@ datagaurd/
 | `src/stores/`, `src/composables/` | Workspace state, recent visits, and ruleset editing |
 | `src/services/` | Live/sample repositories, validation, and API response checks |
 | `src/types/`, `src/data/` | Domain types and deterministic sample datasets |
-| `src/assets/`, `public/` | Styles, icons, and static assets |
+| `src/assets/` | Shared styles, brand artwork, and the application icon |
 | `tests/unit/`, `tests/e2e/`, `tests/live/` | Unit/component, browser, and live API checks |
 | `scripts/` | Demo manifest export and TypeScript import registration |
 | `environment/` | Example and local frontend configuration |

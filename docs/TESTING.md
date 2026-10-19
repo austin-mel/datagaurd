@@ -43,6 +43,7 @@ Add unit tests under `tests/unit/**/*.test.ts`. [vitest.config.ts](../vitest.con
 | Sample repository | Immutable downloads, versions, corrections, ignores, pending validation |
 | Stores and composables | Hydration, response replacement, failed saves, reconciliation, recents |
 | Components | Dialogs, profiles, pagination, upload validation, editing, display states |
+| Workspace views | Selection and recents, failed edits, explicit validation, polling cleanup, downloads, upload policy, and retries through the real stores |
 
 Use the coverage report to inspect services, stores, composables, utilities, and Vue components, including files without tests. The configuration excludes barrel `index.ts` files and route-level views from the unit percentage; test view workflows with Playwright. Meet the V8 thresholds of **90% statements, 90% lines, 80% branches, and 85% functions**. Find text, HTML, and LCOV reports in `coverage/`.
 

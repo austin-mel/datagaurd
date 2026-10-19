@@ -7,7 +7,7 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
 
-const envFile = fileURLToPath(new URL('./environment/front-end.env', import.meta.url))
+const envFile = fileURLToPath(new URL('./environment/.front-end.env', import.meta.url))
 
 export default defineConfig(() => {
   // Shell variables take precedence; only VITE_ values are exposed to the browser.

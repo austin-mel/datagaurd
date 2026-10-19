@@ -38,7 +38,7 @@ flowchart LR
 
 ## Routes and navigation
 
-Use [router.module.ts](../src/router/router.module.ts) to configure these routes relative to the `/datagaurd/` base in [vite.config.ts](../vite.config.ts). Open `/datagaurd/datasets` for the `/datasets` route and `/datagaurd/?dataset=<uuid>` for a dataset link:
+Use [router/index.ts](../src/router/index.ts) to configure these routes relative to the `/datagaurd/` base in [vite.config.ts](../vite.config.ts). Open `/datagaurd/datasets` for the `/datasets` route and `/datagaurd/?dataset=<uuid>` for a dataset link:
 
 | Route | Behavior |
 | --- | --- |
@@ -101,13 +101,23 @@ Use this map to locate the implementation you need to change:
 | Path | Responsibility |
 | --- | --- |
 | [src/views/](../src/views/) | Overview and dataset catalog orchestration |
-| [src/components/](../src/components/) | Tables, profiles, quality cards, history, dialogs, and modal focus behavior |
+| [src/components/layout/](../src/components/layout/) | Sidebar, breadcrumb, and workspace source notice |
+| [src/components/shared/](../src/components/shared/) | Modal focus behavior, page headings, loading states, and shared icons |
+| [src/components/datasets/](../src/components/datasets/) | Searchable catalog, dataset rows, and upload dialog |
+| [src/components/overview/](../src/components/overview/) | Profiles, quality cards, history, recents, and validation status |
+| [src/components/rules/](../src/components/rules/) | Rules dialog, individual rule rows, and typed condition inputs |
+| [src/components/cell-review/](../src/components/cell-review/) | Finding groups, pagination, correction forms, and ignore forms |
 | [src/stores/datasets.ts](../src/stores/datasets.ts) | Workspace hydration, mutation responses, uploads, run reconciliation |
 | [src/stores/recentDatasets.ts](../src/stores/recentDatasets.ts) | Recent navigation persistence |
-| [src/composables/useRulesetEditor.ts](../src/composables/useRulesetEditor.ts) | Rules dialog state and save feedback |
+| [src/composables/](../src/composables/) | Dataset selection, downloads, uploads, rules editing, review actions, and validation polling |
 | [src/services/datasetRepositoryContract.ts](../src/services/datasetRepositoryContract.ts) | Shared repository interface and error types |
-| [src/services/seededDatasetRepository.ts](../src/services/seededDatasetRepository.ts) | In-memory versions, edits, downloads, and validation |
-| [src/services/datasetValidation.ts](../src/services/datasetValidation.ts) | Sample rule validation, profiles, and row-based metrics |
+| [src/services/seededDatasetRepository.ts](../src/services/seededDatasetRepository.ts) | In-memory version storage and repository orchestration |
+| [src/services/seededCellReview.ts](../src/services/seededCellReview.ts) | Immutable sample corrections, ignores, and review queue updates |
+| [src/services/seededValidation.ts](../src/services/seededValidation.ts) | Combine sample rule findings, statistics, and ignored findings |
+| [src/services/seededSession.ts](../src/services/seededSession.ts) | Shared sample session types, signatures, version names, and history entries |
+| [src/services/datasetValidation.ts](../src/services/datasetValidation.ts) | Row-based metrics and validation findings |
+| [src/services/rulesetValidation.ts](../src/services/rulesetValidation.ts) | Ruleset validation and prepared rule checks |
+| [src/services/datasetProfiling.ts](../src/services/datasetProfiling.ts), [datasetValues.ts](../src/services/datasetValues.ts) | Column profiles and shared missing, numeric, and date parsing |
 | [src/services/seededStatistics.ts](../src/services/seededStatistics.ts) | Sample statistical analysis |
 | [src/services/ruleExport.ts](../src/services/ruleExport.ts) | Convert sample rules for the backend seed manifest |
 | [src/services/ruleSyntax.ts](../src/services/ruleSyntax.ts) | Portable patterns and allowed-value parsing |
@@ -122,3 +132,5 @@ Use this map to locate the implementation you need to change:
 To add a rule type, update the editor catalog/types, frontend validation and syntax, backend rule models/conversion/validation, and contract/parity fixtures together. To add a new data source, implement the repository contract and retain single-source selection and response validation.
 
 Each workspace response includes all datasets, histories, and review groups. Browser-table pagination does not reduce that payload, and sample calculations run in the browser.
+
+Keep views focused on composing components. Place nested UI units beside their feature parent and import components directly from their `.vue` files. Use props and emitted updates at component boundaries; rule rows replace their draft values rather than mutating the source dataset. Keep reusable stateful workflows in composables and pure data transformations in services.
