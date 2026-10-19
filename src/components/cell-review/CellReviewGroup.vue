@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import type { CellReviewGroup } from '@/types'
 import { formatNumber } from '@/utils'
-import { displayCellValue } from '@/services/cellReview'
+import { displayCellValue } from '@/services'
 const props = defineProps<{ group: CellReviewGroup; open: boolean }>()
 const emit = defineEmits<{ review: [row: number, mode: 'edit' | 'ignore'] }>()
 const page = defineModel<number>('page', { default: 0 })

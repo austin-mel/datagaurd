@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import WorkspaceSidebar from '@/components/layout/WorkspaceSidebar.vue'
-import WorkspaceTopbar from '@/components/layout/WorkspaceTopbar.vue'
-import WorkspaceSourceBanner from '@/components/layout/WorkspaceSourceBanner.vue'
+import { WorkspaceSidebar, WorkspaceTopbar, WorkspaceSourceBanner } from '@/components/layout'
 </script>
 
 <template>

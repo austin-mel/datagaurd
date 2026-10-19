@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useId } from 'vue'
 import type { CellReviewGroup } from '@/types'
-import { displayCellValue } from '@/services/cellReview'
+import { displayCellValue } from '@/services'
 import { formatNumber } from '@/utils'
 const props = defineProps<{ group: CellReviewGroup; row: number; color: string }>()
 const scope = defineModel<'one' | 'all'>('scope', { required: true })

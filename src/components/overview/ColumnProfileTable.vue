@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import ColumnProfileSummary from './ColumnProfileSummary.vue'
 import { useId } from 'vue'
 import type { ColumnProfile } from '@/types'
-import { formatDate, formatNumber } from '@/utils'
+import { formatNumber } from '@/utils'
 defineProps<{ profiles: readonly ColumnProfile[] | null; version: string }>()
 const headingId = useId()
 const sqlTypes = {
@@ -39,17 +40,7 @@ const sqlTypes = {
             </td>
             <td class="text-center tabular-nums">{{ formatNumber(profile.uniqueCount) }}</td>
             <td class="text-[11px] text-muted">
-              <div class="w-full min-w-0 overflow-x-auto whitespace-nowrap pb-1" role="region" :aria-label="`Highlighted values for ${profile.name}`" tabindex="0">
-              <template v-if="profile.summary.kind === 'top-values'">
-                <template v-for="(value, index) in profile.summary.values" :key="value.value">
-                  <span v-if="index" class="mx-2">/</span><strong class="font-[550] text-ink">{{ value.value }}</strong> · {{ formatNumber(value.count) }}<template v-if="profile.summary.values.length === 1"> {{ value.count === 1 ? ' occurrence' : ' occurrences' }}</template>
-                </template>
-              </template>
-              <template v-else-if="profile.summary.kind === 'number-range'">
-                Min <strong class="font-[550] text-ink">{{ formatNumber(profile.summary.minimum) }}</strong><span class="mx-2">/</span>Max <strong class="font-[550] text-ink">{{ formatNumber(profile.summary.maximum) }}</strong>
-              </template>
-              <template v-else>{{ formatDate(profile.summary.minimum) }} – {{ formatDate(profile.summary.maximum) }}</template>
-              </div>
+              <ColumnProfileSummary :summary="profile.summary" :column="profile.name" />
             </td>
           </tr>
           <tr v-if="!profiles?.length"><td colspan="6" class="text-center text-muted">Column profile not available for this version.</td></tr>

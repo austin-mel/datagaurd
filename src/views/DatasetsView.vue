@@ -1,15 +1,11 @@
 <script setup lang="ts">
-import AppIcon from '@/components/shared/AppIcon.vue'
-import WorkspaceState from '@/components/shared/WorkspaceState.vue'
+import { AppIcon, WorkspaceState, PageHeader } from '@/components/shared'
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import ConnectDatasetModal from '@/components/datasets/ConnectDatasetModal.vue'
-import DatasetTable from '@/components/datasets/DatasetTable.vue'
-import PageHeader from '@/components/shared/PageHeader.vue'
-import QualityRulesModal from '@/components/rules/QualityRulesModal.vue'
-import { useRulesetEditor } from '@/composables/useRulesetEditor'
+import { ConnectDatasetModal, DatasetTable } from '@/components/datasets'
+import { QualityRulesModal } from '@/components/rules'
+import { useRulesetEditor, useDatasetUpload } from '@/composables'
 import { useDatasetStore } from '@/stores'
-import { useDatasetUpload } from '@/composables/useDatasetUpload'
 
 const search = ref('')
 const datasetStore = useDatasetStore()

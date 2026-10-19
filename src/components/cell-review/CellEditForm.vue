@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useId } from 'vue'
 import type { CellReviewGroup, Dataset } from '@/types'
-import { displayCellValue } from '@/services/cellReview'
+import { displayCellValue } from '@/services'
 import { formatNumber } from '@/utils'
 const props = defineProps<{ dataset: Dataset; group: CellReviewGroup; bulkUnavailable: boolean; color: string }>()
 const row = defineModel<number>('row', { required: true })

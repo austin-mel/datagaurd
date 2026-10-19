@@ -4,7 +4,7 @@ import CellIgnoreForm from './CellIgnoreForm.vue'
 import { computed, ref, watch } from 'vue'
 import type { CellReviewGroup, CellReviewRequest, Dataset } from '@/types'
 import { formatNumber } from '@/utils'
-import ModalShell from '@/components/shared/ModalShell.vue'
+import { ModalShell } from '@/components/shared'
 
 const props = defineProps<{ dataset: Dataset; group: CellReviewGroup; initialRow: number; mode: 'edit' | 'ignore'; saving?: boolean; error?: string }>()
 const emit = defineEmits<{ save: [request: CellReviewRequest] }>()

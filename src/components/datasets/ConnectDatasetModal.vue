@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef, watch } from 'vue'
-import ModalShell from '@/components/shared/ModalShell.vue'
-import { defaultUploadPolicy, type UploadPolicy } from '@/types/backend'
-import { validateUpload, type DatasetUploadSelection } from '@/services/datasetUpload'
+import { ModalShell } from '@/components/shared'
+import { defaultUploadPolicy, type UploadPolicy } from '@/types'
+import { validateUpload, type DatasetUploadSelection } from '@/services'
 
 const props = withDefaults(defineProps<{ policy?: UploadPolicy; uploadAvailable?: boolean; uploading?: boolean; uploadError?: string }>(), {
   policy: () => defaultUploadPolicy, uploadAvailable: false, uploading: false, uploadError: '',

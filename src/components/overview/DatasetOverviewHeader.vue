@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppIcon from '@/components/shared/AppIcon.vue'
+import { AppIcon } from '@/components/shared'
 import type { Dataset } from '@/types'
 import { formatNumber, formatValidatedAt } from '@/utils'
 defineProps<{ dataset: Dataset; downloading?: boolean; savingRules?: boolean }>()

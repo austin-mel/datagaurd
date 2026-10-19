@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import AppIcon from '@/components/shared/AppIcon.vue'
+import { AppIcon, DatasetSourceIcon } from '@/components/shared'
 import { useRouter } from 'vue-router'
 import type { Dataset } from '@/types'
 import { formatNumber, formatScore, formatValidatedAt } from '@/utils'
-import DatasetSourceIcon from '@/components/shared/DatasetSourceIcon.vue'
 defineProps<{ dataset: Dataset }>()
 const emit = defineEmits<{ editQualityRules: [datasetId: string] }>()
 const router = useRouter()

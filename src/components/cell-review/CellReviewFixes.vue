@@ -2,7 +2,7 @@
 import { computed, ref, shallowRef, useId, watch } from 'vue'
 import type { CellReviewGroup as ReviewGroup, CellReviewRequest, Dataset } from '@/types'
 import { formatNumber } from '@/utils'
-import { displayCellValue, summarizeCellReview } from '@/services/cellReview'
+import { displayCellValue, summarizeCellReview } from '@/services'
 import CellReviewDialog from './CellReviewDialog.vue'
 import CellReviewGroup from './CellReviewGroup.vue'
 

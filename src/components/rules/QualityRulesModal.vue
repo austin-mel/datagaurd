@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { AppIcon, ModalShell } from '@/components/shared'
+import RuleEditorRow from './RuleEditorRow.vue'
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
-import { ModalShell } from '../ModalShell'
 import type { Dataset, DatasetDataSource, DatasetRuleset, QualityRule, RuleEditorCatalog } from '@/types'
-import { cloneRuleset, createQualityRule, ruleDefaults } from '@/utils'
-import { assertValidRuleset, RulesetValidationError } from '@/services'
-import { isAutomaticIdentifierRule, resolveIdentifier } from '@/services/identifiers'
+import { cloneRuleset, createQualityRule } from '@/utils'
+import { assertValidRuleset, RulesetValidationError, isAutomaticIdentifierRule, resolveIdentifier } from '@/services'
 
 const props = defineProps<{ dataset: Dataset; ruleCatalog: RuleEditorCatalog; sourceKind: DatasetDataSource['kind']; saving?: boolean; saveError?: string }>()
 const isOpen = defineModel<boolean>({ required: true })
@@ -49,12 +49,6 @@ async function removeRule(id: string) {
   addButton.value?.focus()
 }
 
-function resetCondition(rule: QualityRule) {
-  if (!isCustom.value || props.saving || isIdentifierRule(rule)) return
-  Object.assign(rule, ruleDefaults(props.ruleCatalog, rule.type))
-  error.value = ''
-}
-
 function saveRules() {
   if (!isCustom.value || props.saving) return
   error.value = ''
@@ -77,7 +71,7 @@ function saveRules() {
     :dismissible="!saving"
   >
     <template #icon>
-      <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h11M10 12h11M10 18h11M3 5l1 1 2-2M3 11l1 1 2-2M3 17l1 1 2-2" /></svg>
+      <AppIcon name="rules" />
     </template>
 
     <div class="mb-4.75 flex flex-wrap items-center justify-between gap-3.75">
@@ -109,63 +103,10 @@ function saveRules() {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(rule, index) in draft.rules" :key="rule.id" class="border-b border-line last:border-0">
-              <td>
-                <input v-model="rule.enabled" type="checkbox" :disabled="isIdentifierRule(rule)" class="size-3.5 accent-cobalt" :aria-label="`Enable rule ${index + 1}: ${rule.column}`" />
-              </td>
-              <td>
-                <select v-model="rule.column" :disabled="isIdentifierRule(rule)" class="ui-control w-42.75 font-mono" :aria-label="`Column for rule ${index + 1}`">
-                  <option v-for="column in dataset.columns" :key="column" :value="column">{{ column }}</option>
-                </select>
-              </td>
-              <td>
-                <select v-model="rule.type" :disabled="isIdentifierRule(rule)" class="ui-control w-33.75" :aria-label="`Type for rule ${index + 1}`" @change="resetCondition(rule)">
-                  <option v-for="type in ruleCatalog.ruleTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
-                </select>
-              </td>
-              <td class="min-w-58.75">
-                <div v-if="rule.type === 'range'" class="flex gap-2">
-                  <label class="min-w-0 flex-1 text-[9px] text-muted">
-                    Minimum
-                    <input v-model="rule.minimum" type="number" step="any" class="ui-control mt-0.75" required :aria-label="`Minimum for rule ${index + 1}`" />
-                  </label>
-                  <label class="min-w-0 flex-1 text-[9px] text-muted">
-                    Maximum
-                    <input v-model="rule.maximum" type="number" step="any" class="ui-control mt-0.75" required :aria-label="`Maximum for rule ${index + 1}`" />
-                  </label>
-                </div>
-                <input v-else-if="rule.type === 'min'" v-model="rule.minimum" type="number" step="any" class="ui-control" required :aria-label="`Minimum for rule ${index + 1}`" />
-                <input v-else-if="rule.type === 'max'" v-model="rule.maximum" type="number" step="any" class="ui-control" required :aria-label="`Maximum for rule ${index + 1}`" />
-                <div v-else-if="rule.type === 'date'" class="space-y-2">
-                  <select v-model="rule.condition" class="ui-control" :aria-label="`Date condition for rule ${index + 1}`">
-                    <option v-for="condition in ruleCatalog.dateConditions" :key="condition" :value="condition">{{ condition }}</option>
-                  </select>
-                  <div class="flex gap-2">
-                    <label class="min-w-0 flex-1 text-[9px] text-muted">
-                      {{ rule.condition === 'Between two selected dates' ? 'Start date (inclusive)' : 'Selected date' }}
-                      <input v-model="rule.selectedDate" type="date" min="0001-01-01" :max="rule.condition === 'Between two selected dates' && rule.endDate ? rule.endDate : '9999-12-31'" required class="ui-control mt-0.75" :aria-label="`Selected date for rule ${index + 1}`" />
-                    </label>
-                    <label v-if="rule.condition === 'Between two selected dates'" class="min-w-0 flex-1 text-[9px] text-muted">
-                      End date (inclusive)
-                      <input v-model="rule.endDate" type="date" :min="rule.selectedDate || '0001-01-01'" max="9999-12-31" required class="ui-control mt-0.75" :aria-label="`End date for rule ${index + 1}`" />
-                    </label>
-                  </div>
-                </div>
-                <input
-                  v-else
-                  v-model="rule.condition"
-                  class="ui-control"
-                  :readonly="rule.type === 'required' || rule.type === 'unique' || rule.type === 'numeric'"
-                  required
-                  :aria-label="`Condition for rule ${index + 1}`"
-                />
-              </td>
-              <td>
-                <button type="button" :disabled="isIdentifierRule(rule)" class="cursor-pointer rounded p-1.25 text-muted enabled:hover:bg-coral-soft enabled:hover:text-coral-text disabled:cursor-not-allowed disabled:opacity-40" :aria-label="`Remove rule ${index + 1}: ${rule.column}`" @click="removeRule(rule.id)">
-                  <svg class="ui-icon size-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" /></svg>
-                </button>
-              </td>
-            </tr>
+            <RuleEditorRow v-for="(rule, index) in draft.rules" :key="rule.id"
+              v-model="draft.rules[index]!" :number="index + 1" :columns="dataset.columns"
+              :rule-catalog="ruleCatalog" :locked="isIdentifierRule(rule)"
+              @remove="removeRule(rule.id)" @reset-condition="error = ''" />
             <tr v-if="draft.rules.length === 0"><td colspan="5" class="text-center text-muted">No rules yet. Add a rule to start defining your checks.</td></tr>
           </tbody>
         </table>
@@ -178,7 +119,7 @@ function saveRules() {
       </div>
       <div v-else class="flex flex-wrap items-center justify-center gap-3.75 pt-4.25">
         <button ref="addButton" type="button" class="ui-button px-2.5 py-1.75 text-[11px]" :disabled="saving || dataset.columns.length === 0" @click="addRule">
-          <svg class="ui-icon size-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          <AppIcon name="add" class="size-4" />
           Add rule
         </button>
       </div>
@@ -204,7 +145,7 @@ function saveRules() {
 
 <style scoped>
 .rule-editor th { padding: 10px 8px; font-weight: 550; white-space: nowrap; }
-.rule-editor td { padding: 12px 8px; vertical-align: middle; }
-.rule-editor th:first-child, .rule-editor td:first-child { padding-left: 10px; width: 40px; }
-.rule-editor th:last-child, .rule-editor td:last-child { padding-right: 10px; width: 35px; }
+.rule-editor :deep(td) { padding: 12px 8px; vertical-align: middle; }
+.rule-editor th:first-child, .rule-editor :deep(td):first-child { padding-left: 10px; width: 40px; }
+.rule-editor th:last-child, .rule-editor :deep(td):last-child { padding-right: 10px; width: 35px; }
 </style>

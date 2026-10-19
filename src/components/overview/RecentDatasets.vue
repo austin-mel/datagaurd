@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { AppIcon, DatasetSourceIcon } from '@/components/shared'
 import { onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import { RouterLink } from 'vue-router'
-import { DatasetSourceIcon } from '../DatasetSourceIcon'
 import type { Dataset } from '@/types'
 import { formatOpenedAt } from '@/utils'
 
@@ -20,7 +20,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
       <h2 :id="headingId" class="text-[13px] font-[550]">Recently opened</h2>
       <RouterLink :to="{ name: 'datasets' }" class="ui-button px-2.5 py-1.75 text-[11px]">
         View all datasets
-        <svg class="ui-icon size-4" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+        <AppIcon name="chevron" class="size-4" />
       </RouterLink>
     </div>
     <div v-if="entries.length" class="grid grid-cols-3 gap-3.25 max-[760px]:grid-cols-1">
