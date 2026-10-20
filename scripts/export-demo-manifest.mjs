@@ -1,8 +1,6 @@
 import { writeFileSync, mkdirSync } from 'node:fs'
-import { createSeededDatasets } from '../src/data/datasets.ts'
-import { getSeededDatasetRows } from '../src/data/datasetRows.ts'
-import { rulesToBackend } from '../src/services/ruleExport.ts'
-import { seededDatasetIds } from '../src/data/datasetIds.ts'
+import { createSeededDatasets, getSeededDatasetRows, seededDatasetIds } from '../src/data/index.ts'
+import { rulesToBackend } from '../src/services/index.ts'
 
 // Export the frontend's actual rules and small fixture rows for the backend seed command.
 const datasets = createSeededDatasets().map(dataset => ({

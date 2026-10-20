@@ -17,7 +17,7 @@ export default defineConfig(() => {
   }
 
   return {
-    base: "/datagaurd/",
+    base: "/dataguard/",
     envDir: './environment/',
     define: Object.fromEntries(
       Object.entries(env)

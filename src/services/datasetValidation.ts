@@ -1,99 +1,12 @@
-import { supportedDateConditions } from '../types/ruleset'
+import type { Dataset, DatasetRow, DatasetRuleset, QualityRule, QualityDimension, ValidationIssue } from '@/types'
 import { groupCellFinding } from './cellReview'
-import { assertIdentifierRules, resolveIdentifier } from './identifiers'
-import { compilePortablePattern, parseAllowedValues } from './ruleSyntax'
-import type { DatasetRuleset, QualityRule, Dataset, DatasetRow, DatasetValue, QualityDimension, ValidationIssue, ColumnProfile } from '../types'
+import { resolveIdentifier } from './identifiers'
+import { assertValidRuleset, prepareRule } from './rulesetValidation'
+import { isMissing } from './datasetValues'
+import { profileDataset } from './datasetProfiling'
 
-export class RulesetValidationError extends Error {}
-export const qualityNote = 'Scores count each row once. Completeness: every cell present. Validity: no rule errors. Uniqueness: present, unique values in every enabled unique column. Overall is the mean of available scores.'
+const qualityNote = 'Scores count each row once. Completeness: every cell present. Validity: no rule errors. Uniqueness: present, unique values in every enabled unique column. Overall is the mean of available scores.'
 type ValidationResult = Pick<Dataset, 'validation' | 'quality' | 'qualityDimensions' | 'qualityNote' | 'status' | 'lastValidatedAt' | 'processingStatus' | 'rulesChangedSinceRun' | 'validationPending' | 'columnProfiles' | 'cellReview'>
-
-export function isMissing(value: DatasetValue | undefined): boolean {
-  return value === null || value === undefined || (typeof value === 'string' && !value.trim())
-}
-export function numericValue(value: DatasetValue): number {
-  if (typeof value === 'number') return value
-  if (typeof value !== 'string' || !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value.trim())) return NaN
-  return Number(value)
-}
-function dateValue(value: DatasetValue, formats: QualityRule['dateFormats'] = ['%Y-%m-%d']): number {
-  if (typeof value !== 'string') return NaN
-  for (const format of formats) {
-    const match = value.trim().match(format === '%Y-%m-%d' ? /^(\d{4})-(\d{2})-(\d{2})$/ : /^(\d{2})\/(\d{2})\/(\d{4})$/)
-    if (!match) continue
-    const [, a, b, c] = match
-    const iso = format === '%Y-%m-%d' ? value.trim() : format === '%m/%d/%Y' ? c + '-' + a + '-' + b : c + '-' + b + '-' + a
-    const day = new Date(iso + 'T00:00:00Z')
-    if (Number.isFinite(day.getTime()) && day.getUTCFullYear() >= 1 && day.toISOString().slice(0, 10) === iso) return day.getTime()
-  }
-  return NaN
-}
-function prepareRule(rule: QualityRule) {
-  const fail = (message: string): never => { throw new RulesetValidationError(rule.column + ': ' + message) }
-  const bound = (value: number | '', name: string): number => value === '' || !Number.isFinite(value) ? fail('enter a finite ' + name + '.') : value
-  switch (rule.type) {
-    case 'required': return (value: DatasetValue) => !isMissing(value)
-    case 'unique': return () => true
-    case 'numeric': return (value: DatasetValue) => Number.isFinite(numericValue(value))
-    case 'range':
-    case 'min':
-    case 'max': {
-      const minimum = rule.type === 'max' ? -Infinity : bound(rule.minimum, 'minimum')
-      const maximum = rule.type === 'min' ? Infinity : bound(rule.maximum, 'maximum')
-      if (minimum > maximum) fail('minimum must be less than or equal to maximum.')
-      return (value: DatasetValue) => Number.isFinite(numericValue(value)) && numericValue(value) >= minimum && numericValue(value) <= maximum
-    }
-    case 'allowed': {
-      const values = new Set(parseAllowedValues(rule.condition))
-      return (value: DatasetValue) => values.has(String(value))
-    }
-    case 'regex': {
-      const pattern = compilePortablePattern(rule.condition)
-      return (value: DatasetValue) => pattern.test(String(value))
-    }
-    case 'date': {
-      if (rule.dateFormats && (!rule.dateFormats.length || new Set(rule.dateFormats).size !== rule.dateFormats.length
-        || rule.dateFormats.some(format => !['%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y'].includes(format)))) fail('select unique, supported date formats.')
-      if (!supportedDateConditions.some(option => option === rule.condition)) fail('select a supported date condition.')
-      const selected = dateValue(rule.selectedDate ?? '')
-      const end = dateValue(rule.endDate ?? '')
-      if (!Number.isFinite(selected)) fail('select a valid calendar date.')
-      if (rule.condition === 'Between two selected dates') {
-        if (!Number.isFinite(end)) fail('select a valid end date.')
-        if (selected > end) fail('the start date must be on or before the end date.')
-      }
-      return (value: DatasetValue) => {
-        const day = dateValue(value, rule.dateFormats)
-        if (!Number.isFinite(day)) return false
-        switch (rule.condition) {
-          case 'On or before selected date': return day <= selected
-          case 'On or after selected date': return day >= selected
-          case 'Before selected date': return day < selected
-          case 'After selected date': return day > selected
-          case 'Between two selected dates': return day >= selected && day <= end
-          default: return false
-        }
-      }
-    }
-  }
-}
-export function assertValidRuleset(ruleset: DatasetRuleset, columns: readonly string[]) {
-  if (!ruleset.name.trim()) throw new RulesetValidationError('Enter a ruleset name.')
-  try { assertIdentifierRules(ruleset, columns) }
-  catch (cause) { throw new RulesetValidationError(cause instanceof Error ? cause.message : 'Invalid identifier checks.') }
-  const ids = new Set<string>()
-  const normalizedIds = new Set([ruleset.backendConfiguration?.structural_rule_id ?? 'DATASET_COLUMNS'])
-  for (const rule of ruleset.rules) {
-    if (!rule.id.trim() || ids.has(rule.id)) throw new RulesetValidationError('Every rule must have a unique ID.')
-    ids.add(rule.id)
-    const normalized = /^[A-Z][A-Z0-9_]+$/.test(rule.id) ? rule.id : 'UI_' + (ids.size - 1) + '_' + rule.id.replace(/[^A-Za-z0-9_]/g, '_').toUpperCase()
-    if (normalizedIds.has(normalized)) throw new RulesetValidationError('Rule IDs conflict after normalization.')
-    normalizedIds.add(normalized)
-    if (!columns.includes(rule.column)) throw new RulesetValidationError('Unknown column: ' + rule.column)
-    try { prepareRule(rule) }
-    catch (cause) { throw new RulesetValidationError(cause instanceof Error ? cause.message : 'Invalid rule.') }
-  }
-}
 
 export function validateDataset(input: Iterable<DatasetRow>, columns: readonly string[], ruleset: DatasetRuleset, validatedAt: Date,
   isIgnored: (rowIndex: number, rule: QualityRule) => boolean = () => false,
@@ -158,32 +71,5 @@ export function validateDataset(input: Iterable<DatasetRow>, columns: readonly s
     processingStatus: 'completed', rulesChangedSinceRun: false, validationPending: false,
     lastValidatedAt: validatedAt.toISOString(), columnProfiles: profileDataset(rows, columns, ruleset),
   }
-}
-
-export function profileDataset(rows: readonly DatasetRow[], columns: readonly string[], ruleset: DatasetRuleset): ColumnProfile[] {
-  return columns.map(name => {
-    const values = rows.map(row => row[name] ?? null).filter(value => !isMissing(value))
-    const frequencies = new Map<string, number>()
-    const observed = new Set<ColumnProfile['observedTypes'][number]>()
-    const numbers: number[] = [], dates: number[] = []
-    const formats = ruleset.rules.find(rule => rule.enabled && rule.column === name && rule.type === 'date')?.dateFormats
-    for (const value of values) {
-      const text = String(value)
-      frequencies.set(text, (frequencies.get(text) ?? 0) + 1)
-      const number = numericValue(value), date = dateValue(value, formats)
-      if (Number.isFinite(number)) { observed.add(Number.isInteger(number) ? 'integer' : 'number'); numbers.push(number) }
-      else if (Number.isFinite(date)) { observed.add('date'); dates.push(date) }
-      else observed.add('text')
-    }
-    const categories = [...frequencies].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)).slice(0, 5).map(([value, count]) => ({ value, count }))
-    numbers.sort((a, b) => a - b); dates.sort((a, b) => a - b)
-    const low = numbers[0], high = numbers.at(-1), first = dates[0], last = dates.at(-1)
-    const summary: ColumnProfile['summary'] = [...observed].every(type => type === 'integer' || type === 'number') && low !== undefined && high !== undefined
-      ? { kind: 'number-range', minimum: low, maximum: high }
-      : observed.size === 1 && first !== undefined && last !== undefined
-        ? { kind: 'date-range', minimum: new Date(first).toISOString().slice(0, 10), maximum: new Date(last).toISOString().slice(0, 10) }
-        : { kind: 'top-values', values: categories }
-    return { name, observedTypes: [...observed].sort(), missingCount: rows.length - values.length, warningCount: null, uniqueCount: frequencies.size, summary }
-  })
 }
 

@@ -1,10 +1,15 @@
 import { ref, shallowRef } from 'vue'
 import { defineStore } from 'pinia'
-import { datasetRepository, type DatasetRepository } from '@/services'
-import { hasPendingValidation } from '@/services/validationState'
-import type { CellReviewRequest, Dataset, DatasetDataSource, DatasetRuleset, RuleEditorCatalog } from '@/types'
-import type { UploadPolicy } from '@/types/backend'
-import type { DatasetUploadSelection } from '@/services/datasetUpload'
+import { datasetRepository, type DatasetRepository, clearValidationResults, hasPendingValidation } from '@/services'
+import type {
+  CellReviewRequest,
+  Dataset,
+  DatasetDataSource,
+  DatasetRuleset,
+  RuleEditorCatalog,
+  UploadPolicy,
+} from '@/types'
+import type { DatasetUploadSelection } from '@/services'
 
 export function createDatasetState(repository: DatasetRepository) {
   const records = shallowRef<Dataset[]>([])
@@ -32,33 +37,35 @@ export function createDatasetState(repository: DatasetRepository) {
     return pending
   }
 
+  function replaceDataset(datasetId: string, updated: Dataset) {
+    records.value = records.value.map(record => record.id === datasetId ? updated : record)
+  }
+
   async function saveRuleset(datasetId: string, ruleset: DatasetRuleset) {
     const updated = await repository.updateRuleset(datasetId, ruleset)
-    records.value = records.value.map(record => record.id === datasetId ? updated : record)
+    replaceDataset(datasetId, updated)
   }
 
   async function refreshDataset(datasetId: string) {
     const updated = await repository.getDataset(datasetId)
-    records.value = records.value.map(record => record.id === datasetId ? updated : record)
+    replaceDataset(datasetId, updated)
   }
 
   async function applyCellReview(datasetId: string, request: CellReviewRequest) {
     const updated = await repository.applyCellReview(datasetId, request)
-    records.value = records.value.map(record => record.id === datasetId ? updated : record)
+    replaceDataset(datasetId, updated)
   }
 
   async function revalidate(datasetId: string, version: string) {
     const previous = records.value.find(record => record.id === datasetId)
     if (!previous || !hasPendingValidation(previous)) return
     records.value = records.value.map(record => record.id === datasetId ? {
-      ...record, processingStatus: 'running', status: 'running', quality: null,
-      lastValidatedAt: null, validation: null, columnProfiles: null, cellReview: null,
-      qualityDimensions: record.qualityDimensions.map(dimension => ({ ...dimension, score: null, passed: null, total: null })),
+      ...clearValidationResults(record), processingStatus: 'running', status: 'running', cellReview: null,
       qualityNote: 'Validation is running. Results are not available yet.',
     } : record)
     try {
       const updated = await repository.revalidate(datasetId, version)
-      records.value = records.value.map(record => record.id === datasetId ? updated : record)
+      replaceDataset(datasetId, updated)
     } catch (cause) {
       // A transport failure can follow a committed run. Reconcile before claiming failure.
       try { await refreshDataset(datasetId) } catch {

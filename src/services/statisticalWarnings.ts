@@ -1,4 +1,4 @@
-import type { Finding } from '@/types/backend'
+import type { Finding } from '@/types'
 
 export function countStatisticalWarnings(column: string, findings: readonly Finding[]): number {
   const records = new Set<number>()

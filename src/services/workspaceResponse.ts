@@ -1,5 +1,4 @@
-import type { Dataset, DatasetWorkspace } from '@/types'
-import type { UploadPolicy } from '@/types/backend'
+import type { Dataset, DatasetWorkspace, UploadPolicy } from '@/types'
 
 // Validate transport data before it enters reactive UI state. Invalid contracts are
 // surfaced as errors, never disguised as an offline connection or filled with seeds.

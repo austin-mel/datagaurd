@@ -1,9 +1,9 @@
-import { ref, type ComputedRef } from 'vue'
+import { ref, type Ref } from 'vue'
 import type { Dataset, DatasetRuleset } from '@/types'
 import { useDatasetStore } from '@/stores'
 import { BackendUnavailableError, RulesetValidationError } from '@/services'
 
-export function useRulesetEditor(dataset: ComputedRef<Dataset | undefined>) {
+export function useRulesetEditor(dataset: Readonly<Ref<Dataset | undefined>>) {
   const { saveRuleset } = useDatasetStore()
   const isOpen = ref(false)
   const isSaving = ref(false)
