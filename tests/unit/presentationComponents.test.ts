@@ -2,15 +2,16 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import ColumnProfileTable from '@/components/ColumnProfileTable/ColumnProfileTable.vue'
-import DatasetQualityCards from '@/components/DatasetQualityCards/DatasetQualityCards.vue'
-import DatasetHistoryCard from '@/components/DatasetHistoryCard/DatasetHistoryCard.vue'
-import DatasetOverviewHeader from '@/components/DatasetOverviewHeader/DatasetOverviewHeader.vue'
-import ValidationIssuesTable from '@/components/ValidationIssuesTable/ValidationIssuesTable.vue'
-import RecentDatasets from '@/components/RecentDatasets/RecentDatasets.vue'
-import CellReviewFixes from '@/components/CellReviewFixes/CellReviewFixes.vue'
-import CellReviewDialog from '@/components/CellReviewFixes/CellReviewDialog.vue'
-import PageHeader from '@/components/PageHeader/PageHeader.vue'
+import {
+  ColumnProfileTable,
+  DatasetQualityCards,
+  DatasetHistoryCard,
+  DatasetOverviewHeader,
+  ValidationIssuesTable,
+  RecentDatasets,
+} from '@/components/overview'
+import { CellReviewFixes, CellReviewDialog } from '@/components/cell-review'
+import { PageHeader } from '@/components/shared'
 import { checkedAt, dataset, datasetId, group, ruleset } from '../fixtures/workspace'
 
 enableAutoUnmount(afterEach)
@@ -101,6 +102,9 @@ it('paginates groups and cells, filters review findings and resets on a new vers
   const button = (text: string) => wrapper.findAll('button').find(b => b.text() === text)!
   expect(wrapper.findAll('details')).toHaveLength(10)
   await button('Next cells').trigger('click')
+  expect(wrapper.findAll('details')[0]!.text()).toContain('Cells 11–12 of 12')
+  await button('Next 10 groups').trigger('click')
+  await button('Previous').trigger('click')
   expect(wrapper.findAll('details')[0]!.text()).toContain('Cells 11–12 of 12')
   await button('Previous cells').trigger('click')
   await button('Next 10 groups').trigger('click')

@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createHttpDatasetRepository, ApiError } from '@/services/httpDatasetRepository'
-import { createDatasetRepository } from '@/services/datasetRepository'
-import { BackendUnavailableError, type DatasetRepository } from '@/services/datasetRepositoryContract'
+import {
+  createHttpDatasetRepository,
+  ApiError,
+  createDatasetRepository,
+  BackendUnavailableError,
+  type DatasetRepository,
+} from '@/services'
 import { dataset, datasetId, ruleset, workspace } from '../fixtures/workspace'
 
 export function repository(overrides: Partial<DatasetRepository> = {}): DatasetRepository {

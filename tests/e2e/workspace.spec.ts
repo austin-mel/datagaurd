@@ -1,10 +1,10 @@
 import { test, expect, datasetId } from './fixtures'
 import { dataset } from '../fixtures/workspace'
-import { seededDatasetIds } from '../../src/data/datasetIds'
+import { seededDatasetIds } from '../../src/data'
 
 test('opens live data, searches by filename and navigates by identity', async ({ page, api }) => {
   api.datasets.push(dataset({ id: 'other-id', name: 'Another inventory', filename: 'other.xlsx' }))
-  await page.goto('/datasets')
+  await page.goto('datasets')
   await expect(page).toHaveTitle('Dataguard | Datasets')
   await expect(page.getByText('Connected to backend · Live data')).toBeVisible()
   await page.getByRole('searchbox', { name: 'Search datasets' }).fill(' INVENTORY.CSV ')
@@ -23,11 +23,11 @@ test('opens live data, searches by filename and navigates by identity', async ({
 
 test('keeps an empty backend authoritative and handles unknown dataset links', async ({ page, api }) => {
   api.datasets = []
-  await page.goto('/')
+  await page.goto('./')
   await expect(page.getByText('No datasets are available yet.')).toBeVisible()
   await expect(page.getByText(/Sample data/)).toHaveCount(0)
   api.datasets = [dataset()]
-  await page.goto('/?dataset=unknown')
+  await page.goto('?dataset=unknown')
   await expect(page.getByText('This dataset is no longer available. Choose another dataset to continue.')).toBeVisible()
   await page.getByRole('link', { name: 'View datasets' }).click()
   await expect(page.getByRole('button', { name: 'Open overview for Test inventory' })).toBeVisible()
@@ -35,7 +35,7 @@ test('keeps an empty backend authoritative and handles unknown dataset links', a
 
 test('surfaces authorization failures and recovers on retry', async ({ page, api }) => {
   api.workspaceStatus = 403
-  await page.goto('/')
+  await page.goto('./')
   await expect(page.getByRole('alert')).toContainText('Workspace access denied')
   await expect(page.getByText(/Sample data/)).toHaveCount(0)
   api.workspaceStatus = 200
@@ -45,14 +45,14 @@ test('surfaces authorization failures and recovers on retry', async ({ page, api
 
 test('shows malformed response errors instead of silently using samples', async ({ page, api }) => {
   api.malformed = true
-  await page.goto('/datasets')
+  await page.goto('datasets')
   await expect(page.getByRole('alert')).toContainText('invalid workspace')
   await expect(page.getByText(/Sample data/)).toHaveCount(0)
 })
 
-test('falls back offline, migrates bookmarks and disables uploads', async ({ page, api }) => {
+test('falls back offline, opens samples by ID and disables uploads', async ({ page, api }) => {
   api.workspaceStatus = 503
-  await page.goto('/?dataset=demo-facilities')
+  await page.goto(`?dataset=${seededDatasetIds.facilities}`)
   await expect(page).toHaveURL(new RegExp(`dataset=${seededDatasetIds.facilities}`))
   await expect(page.getByText(/Sample data · Backend unavailable/)).toBeVisible()
   await expect(page.getByRole('heading', { name: 'County facilities', exact: true })).toBeVisible()
@@ -74,7 +74,7 @@ test('loads seeded examples when the workspace API is missing and reconnects', a
   const consoleErrors: string[] = []
   page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()) })
   await page.route('**/api/v1/workspace', route => route.fulfill({ status: 404, contentType: 'text/html', body: '<html>Not Found</html>' }))
-  await page.goto('/datagaurd/')
+  await page.goto('/dataguard/')
   await expect(page.getByText(/Sample data · Backend unavailable/)).toBeVisible()
   expect(consoleErrors).toContain('Workspace API request failed (404): /api/v1/workspace')
   await expect(page.getByRole('heading', { name: 'County facilities', exact: true })).toBeVisible()
@@ -88,7 +88,7 @@ test('loads seeded examples when the workspace API is missing and reconnects', a
 
 test('persists recent selection across navigation and reloads', async ({ page, api }) => {
   api.datasets.push(dataset({ id: 'second', name: 'Second dataset' }))
-  await page.goto('/datasets')
+  await page.goto('datasets')
   await page.getByRole('button', { name: 'Open overview for Second dataset' }).click()
   await page.getByRole('link', { name: 'Datasets', exact: true }).click()
   await page.getByRole('link', { name: 'Overview', exact: true }).click()

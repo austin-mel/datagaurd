@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assertValidRuleset, isMissing, numericValue, profileDataset, validateDataset } from '@/services/datasetValidation'
+import { assertValidRuleset, isMissing, numericValue, profileDataset, validateDataset } from '@/services'
 import type { DatasetValue, QualityRule } from '@/types'
 import { checkedAt, rule, ruleset } from '../fixtures/workspace'
 

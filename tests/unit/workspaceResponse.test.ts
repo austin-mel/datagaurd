@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseDataset, parseUploadPolicy, parseWorkspace } from '@/services/workspaceResponse'
+import { parseDataset, parseUploadPolicy, parseWorkspace } from '@/services'
 import { dataset, workspace } from '../fixtures/workspace'
 
 describe('transport contracts', () => {

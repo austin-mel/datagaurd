@@ -11,7 +11,7 @@ export default defineConfig({
   outputDir: 'output/playwright/test-results',
   reporter: [['list'], ['html', { outputFolder: 'output/playwright/report', open: 'never' }]],
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: 'http://127.0.0.1:4173/dataguard/',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     serviceWorkers: 'block',
@@ -24,7 +24,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm exec vite --host 127.0.0.1 --port 4173 --strictPort --mode e2e',
-    url: 'http://127.0.0.1:4173',
+    url: 'http://127.0.0.1:4173/dataguard/',
     reuseExistingServer: false,
     env: { VITE_DATA_SOURCE: 'api', VITE_API_BASE_URL: '/api/v1' },
   },

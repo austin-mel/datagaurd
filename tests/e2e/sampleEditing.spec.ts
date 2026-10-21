@@ -1,9 +1,9 @@
 import { test, expect } from './fixtures'
-import { seededDatasetIds } from '../../src/data/datasetIds'
+import { seededDatasetIds } from '../../src/data'
 
 test('runs real sample edits, downloads the new CSV and resets edits on reload', async ({ page, api }) => {
   api.workspaceStatus = 503
-  await page.goto(`/?dataset=${seededDatasetIds.facilities}`)
+  await page.goto(`?dataset=${seededDatasetIds.facilities}`)
   await expect(page.getByRole('heading', { name: 'County facilities', exact: true })).toBeVisible()
   const edit = page.getByRole('button', { name: /^Edit row / }).first()
   await edit.click()
@@ -33,7 +33,7 @@ test('runs real sample edits, downloads the new CSV and resets edits on reload',
 
 test('creates custom sample rules and validates a new version', async ({ page, api }) => {
   api.workspaceStatus = 503
-  await page.goto(`/?dataset=${seededDatasetIds.customers}`)
+  await page.goto(`?dataset=${seededDatasetIds.customers}`)
   await page.getByRole('button', { name: 'Edit quality rules', exact: true }).first().click()
   const dialog = page.getByRole('dialog', { name: /Quality rules/ })
   await dialog.getByRole('button', { name: 'Create custom ruleset' }).click()

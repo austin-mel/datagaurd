@@ -1,4 +1,4 @@
-# DataGuard Frontend Architecture
+# Dataguard Frontend Architecture
 
 [README](../README.md) · [Data dictionary](DATA_DICTIONARY.md) · [Backend architecture](../../datagaurd.back-end/docs/ARCHITECTURE.md)
 
@@ -38,7 +38,7 @@ flowchart LR
 
 ## Routes and navigation
 
-Use [router/index.ts](../src/router/index.ts) to configure these routes relative to the `/datagaurd/` base in [vite.config.ts](../vite.config.ts). Open `/datagaurd/datasets` for the `/datasets` route and `/datagaurd/?dataset=<uuid>` for a dataset link:
+Use [router/router.ts](../src/router/router.ts) to configure these routes relative to the `/dataguard/` base in [vite.config.ts](../vite.config.ts). Open `/dataguard/datasets` for the `/datasets` route and `/dataguard/?dataset=<uuid>` for a dataset link:
 
 | Route | Behavior |
 | --- | --- |
@@ -133,4 +133,4 @@ To add a rule type, update the editor catalog/types, frontend validation and syn
 
 Each workspace response includes all datasets, histories, and review groups. Browser-table pagination does not reduce that payload, and sample calculations run in the browser.
 
-Keep views focused on composing components. Place nested UI units beside their feature parent and import components directly from their `.vue` files. Use props and emitted updates at component boundaries; rule rows replace their draft values rather than mutating the source dataset. Keep reusable stateful workflows in composables and pure data transformations in services.
+Keep views focused on composing components. Place nested UI units beside their feature parent. Every directory under `src` exposes an `index.ts` barrel; import across directories through these entry points (for example, `@/components/shared`, `@/composables`, or `@/services`). Use direct relative imports for modules within the same directory to avoid importing their own barrel and creating circular dependencies. Keep the global stylesheet import in `main.ts` explicit. Use props and emitted updates at component boundaries; rule rows replace their draft values rather than mutating the source dataset. Keep reusable stateful workflows in composables and pure data transformations in services.

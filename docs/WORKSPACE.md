@@ -14,7 +14,7 @@ Navigate your datasets, interpret quality scores, and run validation after makin
 
 ## Access and navigation
 
-Open [your local workspace](http://127.0.0.1:5173/datagaurd/) without signing in. Use **Overview** to inspect one dataset and **Datasets** to search the catalog. Open a dataset to select it, or share its `/datagaurd/?dataset=<uuid>` URL with someone using the same backend. Identify datasets by UUID because names and original filenames can repeat.
+Open [your local workspace](http://127.0.0.1:5173/dataguard/) without signing in. Use **Overview** to inspect one dataset and **Datasets** to search the catalog. Open a dataset to select it, or share its `/dataguard/?dataset=<uuid>` URL with someone using the same backend. Identify datasets by UUID because names and original filenames can repeat.
 
 Return to Overview to resume your most recent available dataset. The application remembers three recent visits and otherwise selects the first dataset. Include a dataset UUID in the URL to open a specific record; if the record no longer exists, choose another dataset from the catalog.
 

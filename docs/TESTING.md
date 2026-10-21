@@ -57,7 +57,7 @@ pnpm test:e2e:ui
 pnpm exec playwright show-report output/playwright/report
 ```
 
-[playwright.config.ts](../playwright.config.ts) starts its own Vite server at `http://127.0.0.1:4173` with a strict port and no reuse of an existing server. Keep that port free. The Vite application still uses `/datagaurd/`; use that prefix when opening the test server manually or writing browser navigation paths. API fixtures continue to match `/api/v1` requests. Its process environment forces `VITE_DATA_SOURCE=api` and `VITE_API_BASE_URL=/api/v1` regardless of local environment files.
+[playwright.config.ts](../playwright.config.ts) starts its own Vite server at `http://127.0.0.1:4173` with a strict port and no reuse of an existing server. Keep that port free. The Vite application still uses `/dataguard/`; use that prefix when opening the test server manually or writing browser navigation paths. API fixtures continue to match `/api/v1` requests. Its process environment forces `VITE_DATA_SOURCE=api` and `VITE_API_BASE_URL=/api/v1` regardless of local environment files.
 
 | Project | Device profile |
 | --- | --- |

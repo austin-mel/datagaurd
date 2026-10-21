@@ -1,6 +1,5 @@
 import { beforeAll, expect, it } from 'vitest'
-import { createHttpDatasetRepository } from '@/services/httpDatasetRepository'
-import { createSeededDatasetRepository } from '@/services/seededDatasetRepository'
+import { createHttpDatasetRepository, createSeededDatasetRepository } from '@/services'
 import type { DatasetWorkspace } from '@/types'
 
 // Explicit opt-in: requires a running backend with unmodified demo datasets.
