@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Dataset } from '@/types'
-import DatasetTableRow from './DatasetTableRow.vue'
+import { DatasetTableRow } from '@/components'
 
 const props = withDefaults(defineProps<{ datasets: readonly Dataset[]; search?: string }>(), { search: '' })
 const emit = defineEmits<{ editQualityRules: [datasetId: string] }>()

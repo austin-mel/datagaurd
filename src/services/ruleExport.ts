@@ -1,4 +1,4 @@
-import type { RuleSet, DatasetRuleset } from '../types'
+import type { RuleSet, DatasetRuleset } from '@/types'
 import { assertValidRuleset, RulesetValidationError } from './rulesetValidation'
 import { normalizeRuleId } from '@/utils'
 import { isAutomaticIdentifierRule } from './identifiers'

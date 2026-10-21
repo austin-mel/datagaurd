@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppIcon, DatasetSourceIcon } from '@/components/shared'
+import { SVGIcons } from '@/assets'
 import { onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Dataset } from '@/types'
@@ -20,7 +20,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
       <h2 :id="headingId" class="text-[13px] font-[550]">Recently opened</h2>
       <RouterLink :to="{ name: 'datasets' }" class="ui-button px-2.5 py-1.75 text-[11px]">
         View all datasets
-        <AppIcon name="chevron" class="size-4" />
+        <SVGIcons name="chevron" class="size-4" />
       </RouterLink>
     </div>
     <div v-if="entries.length" class="grid grid-cols-3 gap-3.25 max-[760px]:grid-cols-1">
@@ -34,7 +34,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
         @click="emit('open', entry.dataset.id)"
       >
         <span class="grid h-9.5 w-8.5 shrink-0 place-items-center rounded-[7px] border border-line bg-ivory text-muted" :class="{ 'bg-porcelain text-cobalt': entry.dataset.id === selectedId }">
-          <DatasetSourceIcon :source="entry.dataset.sourceIcon" class="size-4.5" />
+          <SVGIcons :name="entry.dataset.sourceIcon" class="size-4.5" />
         </span>
         <span class="min-w-0 flex-1">
           <strong class="block text-xs font-semibold wrap-anywhere">{{ entry.dataset.name }}</strong>

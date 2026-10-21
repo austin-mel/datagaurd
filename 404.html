@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opening Dataguard</title>
+    <script>
+      // GitHub Pages serves this file at the missing route's URL.
+      const base = '%BASE_URL%'
+      const route = location.pathname + location.search + location.hash
+      const destination = location.pathname === base + '404.html'
+        ? base
+        : base + '?__dataguard_route=' + encodeURIComponent(route)
+      location.replace(destination)
+    </script>
+  </head>
+  <body>
+    <p>Opening Dataguard… <a href="%BASE_URL%">Open the workspace</a>.</p>
+  </body>
+</html>

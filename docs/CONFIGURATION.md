@@ -45,6 +45,7 @@ The client has no login or token flow, and CORS does not authenticate requests. 
 | Symptom | Check and resolution |
 | --- | --- |
 | Environment edits do nothing | Use `environment/.front-end.env`; check process overrides; restart Vite or rebuild |
+| Direct page links or refresh return 404 on GitHub Pages | Build and deploy the complete `dist` directory, including `404.html`, under `/dataguard/`. The fallback restores the requested route before Vue Router starts |
 | Sample banner when you expect live data | Check `/health`, proxy target, network tab, and backend logs; reconnect reloads and loses sample edits |
 | Live banner with no datasets | Fresh storage is empty; upload a file or explicitly seed demos |
 | Connection error remains visible | 401/403/422, JSON 500, and malformed contracts intentionally do not trigger fallback. A workspace endpoint 404 on initial load selects samples; dataset 404 errors remain visible |

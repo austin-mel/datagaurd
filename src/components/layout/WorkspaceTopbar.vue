@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppIcon } from '@/components/shared'
+import { SVGIcons } from '@/assets'
 import { useRoute } from 'vue-router'
 const route = useRoute()
 </script>
@@ -8,7 +8,7 @@ const route = useRoute()
   <header class="topbar flex items-center border-b border-line">
     <div class="flex items-center gap-2.75 text-xs text-muted">
       <span>Workspace</span>
-      <AppIcon name="chevron" class="size-3" />
+      <SVGIcons name="chevron" class="size-3" />
       <span class="font-[550] text-ink" aria-current="page">{{ route.meta.title }}</span>
     </div>
   </header>

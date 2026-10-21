@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { SVGIcons } from '@/assets'
 import { RouterLink } from 'vue-router'
-import { WorkspaceState, PageHeader } from '@/components/shared'
-import { CellReviewFixes } from '@/components/cell-review'
 import {
+  WorkspaceState,
+  PageHeader,
+  CellReviewFixes,
   ColumnProfileTable,
   DatasetHistoryCard,
   DatasetOverviewHeader,
@@ -10,8 +12,8 @@ import {
   RecentDatasets,
   ValidationIssuesTable,
   DatasetValidationPanel,
-} from '@/components/overview'
-import { QualityRulesModal } from '@/components/rules'
+  QualityRulesModal,
+} from '@/components'
 import { useOverviewDataset, useDatasetDownload, useDatasetActions } from '@/composables'
 
 const { datasets, ruleCatalog, source, selectedDataset, recentDatasets, openDataset } = useOverviewDataset()
@@ -50,7 +52,7 @@ const { isRulesOpen, isSaving, saveError, saveMessage, openRules, saveRules, isR
     </template>
     <div v-else class="ui-panel p-5">
       <p class="mb-3 text-sm text-muted">{{ datasets.length ? 'This dataset is no longer available. Choose another dataset to continue.' : 'No datasets are available yet.' }}</p>
-      <RouterLink :to="{ name: 'datasets' }" class="ui-button">View datasets</RouterLink>
+      <RouterLink :to="{ name: 'datasets' }" class="ui-button">View datasets <SVGIcons name="arrowForward" class="size-4" /></RouterLink>
     </div>
   </WorkspaceState>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { SVGIcons } from '@/assets'
 import { computed, ref, useTemplateRef, watch } from 'vue'
-import { ModalShell } from '@/components/shared'
+import { ModalShell } from '@/components'
 import { defaultUploadPolicy, type UploadPolicy } from '@/types'
 import { validateUpload, type DatasetUploadSelection } from '@/services'
 
@@ -36,14 +37,14 @@ function submit() {
 <template>
   <ModalShell id="connect-dataset-dialog" v-model="isOpen" title="Connect a data source" eyebrow="ADD TO YOUR WORKSPACE"
     description="Upload a dataset file from your computer." size="compact" :dismissible="!uploading">
-    <template #icon><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6" /></svg></template>
+    <template #icon><SVGIcons name="uploadFile" /></template>
     <section class="flex flex-col items-center rounded-[10px] border border-dashed border-cobalt/40 bg-cobalt-soft/40 px-5 py-10 text-center"
       aria-label="Dataset file upload" @dragover.prevent @drop.prevent="!uploading && choose($event.dataTransfer?.files ?? null)">
       <h3 class="text-[15px] font-semibold">Drag and drop a dataset file here</h3>
       <p class="mt-2 text-xs text-muted">Or choose a file from your computer.</p>
       <input ref="fileInput" type="file" class="sr-only" :accept="accept" :disabled="uploading" aria-label="Dataset file"
         @change="choose(($event.target as HTMLInputElement).files)" />
-      <button type="button" class="ui-button mt-5" :disabled="uploading" @click="input?.click()">Browse files</button>
+      <button type="button" class="ui-button mt-5" :disabled="uploading" @click="input?.click()"><SVGIcons name="uploadFile" class="size-4" /> Browse files</button>
       <p class="mt-3 text-[11px] text-muted">{{ policy.extensions.join(', ') }} · Up to {{ Math.round(policy.max_upload_bytes / 1024 / 1024) }} MB</p>
     </section>
     <p class="mt-4 text-xs text-muted">{{ selected?.name ?? 'No file selected' }}</p>
@@ -55,8 +56,9 @@ function submit() {
     <template #footer="{ close }">
       <p class="text-[10px] text-muted">Your original source files will be preserved.</p>
       <div class="ml-auto flex gap-2.25">
-        <button type="button" class="ui-button" :disabled="uploading" @click="close">Cancel</button>
+        <button type="button" class="ui-button" :disabled="uploading" @click="close"><SVGIcons name="close" class="size-4" /> Cancel</button>
         <button type="button" class="ui-button ui-button-primary" :disabled="!selected || !!error || !uploadAvailable || uploading" @click="submit">
+          <SVGIcons name="uploadFile" class="size-4" />
           {{ uploading ? 'Uploading…' : 'Upload & validate' }}
         </button>
       </div>

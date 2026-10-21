@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { AppIcon, WorkspaceState, PageHeader } from '@/components/shared'
+import { SVGIcons } from '@/assets'
+import {
+  WorkspaceState,
+  PageHeader,
+  ConnectDatasetModal,
+  DatasetTable,
+  QualityRulesModal,
+} from '@/components'
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { ConnectDatasetModal, DatasetTable } from '@/components/datasets'
-import { QualityRulesModal } from '@/components/rules'
 import { useRulesetEditor, useDatasetUpload } from '@/composables'
 import { useDatasetStore } from '@/stores'
 
@@ -33,7 +38,7 @@ void load()
   >
     <template #actions>
       <button type="button" class="ui-button ui-button-primary" :disabled="status !== 'ready'" aria-haspopup="dialog" aria-controls="connect-dataset-dialog" @click="openUpload">
-        <AppIcon name="add" class="size-4" />
+        <SVGIcons name="add" class="size-4" />
         Connect a new data source
       </button>
     </template>
@@ -41,7 +46,7 @@ void load()
 
   <div class="mb-4.5 flex justify-end">
     <label class="flex w-56.25 items-center gap-2 rounded-[7px] border border-line bg-porcelain px-3 py-2.25 text-xs text-muted focus-within:outline-2 focus-within:outline-cobalt max-[760px]:w-full">
-      <svg class="ui-icon size-4" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg>
+      <SVGIcons name="search" class="size-4" />
       <span class="sr-only">Search datasets</span>
       <input v-model="search" type="search" placeholder="Search datasets…" class="w-full min-w-0 bg-transparent text-ink placeholder:text-muted focus-visible:outline-none" />
     </label>

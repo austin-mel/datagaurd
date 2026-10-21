@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { SVGIcons } from '@/assets'
 import type { QualityRule, RuleEditorCatalog, RuleType } from '@/types'
 import { ruleDefaults } from '@/utils'
-import RuleConditionFields from './RuleConditionFields.vue'
+import { RuleConditionFields } from '@/components'
 const props = defineProps<{ number: number; columns: readonly string[]; ruleCatalog: RuleEditorCatalog; locked: boolean }>()
 const rule = defineModel<QualityRule>({ required: true })
 const emit = defineEmits<{ remove: []; resetCondition: [] }>()
@@ -33,7 +34,7 @@ function changeType(type: RuleType) {
     </td>
     <td>
       <button type="button" :disabled="locked" class="cursor-pointer rounded p-1.25 text-muted enabled:hover:bg-coral-soft enabled:hover:text-coral-text disabled:cursor-not-allowed disabled:opacity-40" :aria-label="`Remove rule ${number}: ${rule.column}`" @click="emit('remove')">
-        <svg class="ui-icon size-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" /></svg>
+        <SVGIcons name="trash" class="size-3.5" />
       </button>
     </td>
   </tr>

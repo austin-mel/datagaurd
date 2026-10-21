@@ -1,6 +1,6 @@
 import { test as base, expect } from '@playwright/test'
 import { dataset, datasetId, workspace, checkedAt } from '../fixtures/workspace'
-import type { CellReviewRequest, Dataset, DatasetRuleset } from '../../src/types'
+import type { CellReviewRequest, Dataset, DatasetRuleset } from '@/types'
 
 type ApiState = {
   datasets: Dataset[]

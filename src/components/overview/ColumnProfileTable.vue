@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ColumnProfileSummary from './ColumnProfileSummary.vue'
+import { ColumnProfileSummary } from '@/components'
 import { useId } from 'vue'
 import type { ColumnProfile } from '@/types'
 import { formatNumber } from '@/utils'

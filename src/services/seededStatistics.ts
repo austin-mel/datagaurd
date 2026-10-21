@@ -1,4 +1,4 @@
-import type { ColumnProfile, DatasetRow, DatasetRuleset, Finding } from '../types'
+import type { ColumnProfile, DatasetRow, DatasetRuleset, Finding } from '@/types'
 import { isMissing, numericValue } from './datasetValues'
 import { profileDataset } from './datasetProfiling'
 import { exceedsPercentage, iqrFences } from './decimalStatistics'

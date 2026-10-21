@@ -1,5 +1,5 @@
-import type { CellReviewGroup, Dataset, DatasetRuleset, DatasetWorkspace, QualityRule } from '../../src/types'
-import { seededRuleCatalog } from '../../src/data'
+import type { CellReviewGroup, Dataset, DatasetRuleset, DatasetWorkspace, QualityRule } from '@/types'
+import { seededRuleCatalog } from '@/data'
 
 export const datasetId = '11111111-1111-4111-8111-111111111111'
 export const checkedAt = '2026-01-15T12:00:00.000Z'

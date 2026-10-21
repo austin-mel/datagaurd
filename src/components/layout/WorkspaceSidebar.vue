@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
-import { DataguardIcon, DataguardLogo } from '@/assets'
+import { DataguardIcon, DataguardLogo, SVGIcons } from '@/assets'
 </script>
 
 <template>
@@ -24,12 +24,7 @@ import { DataguardIcon, DataguardLogo } from '@/assets'
           class="nav-link text-nav-text hover:bg-porcelain/10 aria-[current=page]:bg-cobalt aria-[current=page]:text-porcelain"
           aria-label="Overview"
         >
-          <svg class="ui-icon size-4.5" viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-            <rect x="14" y="14" width="7" height="7" rx="1.5" />
-          </svg>
+          <SVGIcons name="overview" class="size-4.5" />
           <span>Overview</span>
         </RouterLink>
         <RouterLink
@@ -37,10 +32,7 @@ import { DataguardIcon, DataguardLogo } from '@/assets'
           class="nav-link text-nav-text hover:bg-porcelain/10 aria-[current=page]:bg-cobalt aria-[current=page]:text-porcelain"
           aria-label="Datasets"
         >
-          <svg class="ui-icon size-4.5" viewBox="0 0 24 24" aria-hidden="true">
-            <ellipse cx="12" cy="5" rx="8" ry="3" />
-            <path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" />
-          </svg>
+          <SVGIcons name="database" class="size-4.5" />
           <span>Datasets</span>
         </RouterLink>
       </div>
@@ -72,6 +64,6 @@ import { DataguardIcon, DataguardLogo } from '@/assets'
   .navigation { flex-direction: row; gap: 5px; }
   .nav-link { flex: 1; justify-content: center; gap: 7px; padding: 10px 8px; font-size: 11px; }
   .nav-link span { display: block; }
-  .nav-link .ui-icon { width: 15px; height: 15px; }
+  .nav-link .app-icon { width: 15px; height: 15px; }
 }
 </style>

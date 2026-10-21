@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import CellEditForm from './CellEditForm.vue'
-import CellIgnoreForm from './CellIgnoreForm.vue'
+import { SVGIcons } from '@/assets'
+import { CellEditForm, CellIgnoreForm, ModalShell } from '@/components'
 import { computed, ref, watch } from 'vue'
 import type { CellReviewGroup, CellReviewRequest, Dataset } from '@/types'
 import { formatNumber } from '@/utils'
-import { ModalShell } from '@/components/shared'
 
 const props = defineProps<{ dataset: Dataset; group: CellReviewGroup; initialRow: number; mode: 'edit' | 'ignore'; saving?: boolean; error?: string }>()
 const emit = defineEmits<{ save: [request: CellReviewRequest] }>()
@@ -52,12 +51,12 @@ function save(target: 'one' | 'all') {
     <template #footer>
       <p class="w-full text-[11px] text-muted">{{ mode === 'edit' ? 'The current version stays available. Run validation after saving to refresh the results.' : 'Run validation to refresh error counts and quality scores after ignoring findings.' }}</p>
       <div class="flex w-full flex-wrap justify-end gap-2">
-        <button type="button" class="ui-button" :disabled="saving" @click="isOpen = false">Cancel</button>
+        <button type="button" class="ui-button" :disabled="saving" @click="isOpen = false"><SVGIcons name="close" class="size-4" /> Cancel</button>
         <template v-if="mode === 'edit'">
-          <button type="button" class="ui-button ui-button-primary" :disabled="cannotSave" @click="save('one')">{{ saving ? 'Saving…' : action === 'remove' ? 'Delete row & save version' : 'Save cell to new version' }}</button>
-          <button v-if="count > 1" type="button" class="ui-button ui-button-primary" :disabled="cannotSave || bulkUnavailable" @click="save('all')">{{ bulkUnavailable ? 'Bulk replacement unavailable' : action === 'remove' ? `Delete all ${formatNumber(count)} matching rows` : `Save all ${formatNumber(count)} matching cells` }}</button>
+          <button type="button" class="ui-button ui-button-primary" :disabled="cannotSave" @click="save('one')"><SVGIcons :name="action === 'remove' ? 'trash' : 'check'" class="size-4" /> {{ saving ? 'Saving…' : action === 'remove' ? 'Delete row & save version' : 'Save cell to new version' }}</button>
+          <button v-if="count > 1" type="button" class="ui-button ui-button-primary" :disabled="cannotSave || bulkUnavailable" @click="save('all')"><SVGIcons :name="action === 'remove' ? 'trash' : 'check'" class="size-4" /> {{ bulkUnavailable ? 'Bulk replacement unavailable' : action === 'remove' ? `Delete all ${formatNumber(count)} matching rows` : `Save all ${formatNumber(count)} matching cells` }}</button>
         </template>
-        <button v-else type="button" class="ui-button ui-button-primary" :disabled="saving" @click="save(scope)">{{ saving ? 'Saving…' : 'Confirm ignore' }}</button>
+        <button v-else type="button" class="ui-button ui-button-primary" :disabled="saving" @click="save(scope)"><SVGIcons name="check" class="size-4" /> {{ saving ? 'Saving…' : 'Confirm ignore' }}</button>
       </div>
     </template>
   </ModalShell>

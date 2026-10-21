@@ -59,6 +59,8 @@ pnpm exec playwright show-report output/playwright/report
 
 [playwright.config.ts](../playwright.config.ts) starts its own Vite server at `http://127.0.0.1:4173` with a strict port and no reuse of an existing server. Keep that port free. The Vite application still uses `/dataguard/`; use that prefix when opening the test server manually or writing browser navigation paths. API fixtures continue to match `/api/v1` requests. Its process environment forces `VITE_DATA_SOURCE=api` and `VITE_API_BASE_URL=/api/v1` regardless of local environment files.
 
+[routing.spec.ts](../tests/e2e/routing.spec.ts) simulates GitHub Pages by returning the custom `404.html` with a 404 status for direct route requests. It checks recovery through the app root, exact query/hash preservation, refresh, and Back navigation; ordinary Vite navigation alone would hide this hosting failure.
+
 | Project | Device profile |
 | --- | --- |
 | chromium | Desktop Chrome |

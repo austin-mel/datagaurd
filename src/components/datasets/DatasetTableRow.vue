@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppIcon, DatasetSourceIcon } from '@/components/shared'
+import { SVGIcons } from '@/assets'
 import { useRouter } from 'vue-router'
 import type { Dataset } from '@/types'
 import { formatNumber, formatScore, formatValidatedAt } from '@/utils'
@@ -18,7 +18,7 @@ function openOverview(datasetId: string) {
         <span
           class="grid h-9.5 w-8.5 shrink-0 place-items-center rounded-[7px] border border-line bg-ivory text-muted"
         >
-          <DatasetSourceIcon :source="dataset.sourceIcon" class="size-4.5" />
+          <SVGIcons :name="dataset.sourceIcon" class="size-4.5" />
         </span>
         <div>
           <strong class="block font-[550]">{{ dataset.name }}</strong>
@@ -49,6 +49,7 @@ function openOverview(datasetId: string) {
           @click="openOverview(dataset.id)"
         >
           Open overview
+          <SVGIcons name="arrowForward" class="size-3.5" />
         </button>
         <button
           type="button"
@@ -58,7 +59,7 @@ function openOverview(datasetId: string) {
           :aria-label="`Edit quality rules for ${dataset.name}`"
           @click="emit('editQualityRules', dataset.id)"
         >
-          <AppIcon name="rules" class="size-3.25" />
+          <SVGIcons name="rules" class="size-3.25" />
           Edit quality rules
         </button>
       </div>

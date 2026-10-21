@@ -9,9 +9,10 @@ import {
   DatasetOverviewHeader,
   ValidationIssuesTable,
   RecentDatasets,
-} from '@/components/overview'
-import { CellReviewFixes, CellReviewDialog } from '@/components/cell-review'
-import { PageHeader } from '@/components/shared'
+  CellReviewFixes,
+  CellReviewDialog,
+  PageHeader,
+} from '@/components'
 import { checkedAt, dataset, datasetId, group, ruleset } from '../fixtures/workspace'
 
 enableAutoUnmount(afterEach)

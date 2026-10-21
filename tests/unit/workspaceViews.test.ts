@@ -3,7 +3,7 @@ import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import App from '@/App.vue'
+import App from '../../src/App.vue'
 import { OverviewView, DatasetsView } from '@/views'
 import { useDatasetStore } from '@/stores'
 import { defaultUploadPolicy } from '@/types'
@@ -22,8 +22,8 @@ const repository = vi.hoisted(() => ({
   getUploadPolicy: vi.fn<NonNullable<DatasetRepository['getUploadPolicy']>>(),
   upload: vi.fn<NonNullable<DatasetRepository['upload']>>(),
 }))
-vi.mock('@/services/datasetRepository', async importOriginal => ({
-  ...await importOriginal<typeof import('@/services/datasetRepository')>(), datasetRepository: repository,
+vi.mock('@/services', async importOriginal => ({
+  ...await importOriginal<typeof import('@/services')>(), datasetRepository: repository,
 }))
 
 enableAutoUnmount(afterEach)
@@ -66,7 +66,7 @@ it('shows loading and errors, retries, and preserves recent selection across vie
   expect(wrapper.text()).toContain('Loading datasets…')
   resolve(workspace([dataset(), dataset({ id: 'second', name: 'Second dataset' })]))
   await flushPromises()
-  expect(wrapper.text()).toContain('Connected to backend · Live data')
+  expect(wrapper.text()).toContain('Viewing live data · Connected to backend.')
   await router.push('/?dataset=second')
   await router.push('/datasets')
   await router.push('/')
@@ -98,7 +98,7 @@ it('renders empty workspaces and source notices', async () => {
   expect(button(wrapper, 'Reconnect (reload samples)')).toBeDefined()
   store.source = { kind: 'seeded', reason: 'not-configured' }
   await flushPromises()
-  expect(wrapper.text()).toContain('Demo mode.')
+  expect(wrapper.text()).toContain('Demo mode enabled.')
 })
 
 it('saves a rules draft and validates only on an explicit request', async () => {

@@ -1,4 +1,4 @@
-import type { Dataset } from '../types'
+import type { Dataset } from '@/types'
 
 export function hasPendingValidation(dataset: Dataset): boolean {
   return dataset.processingStatus !== 'running' && (dataset.processingStatus === 'failed'

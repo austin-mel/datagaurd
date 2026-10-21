@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { AppIcon, ModalShell } from '@/components/shared'
-import RuleEditorRow from './RuleEditorRow.vue'
+import { SVGIcons } from '@/assets'
+import { ModalShell, RuleEditorRow } from '@/components'
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
 import type { Dataset, DatasetDataSource, DatasetRuleset, QualityRule, RuleEditorCatalog } from '@/types'
 import { cloneRuleset, createQualityRule } from '@/utils'
-import { assertValidRuleset, RulesetValidationError, isAutomaticIdentifierRule, resolveIdentifier } from '@/services'
+import {
+  assertValidRuleset,
+  RulesetValidationError,
+  isAutomaticIdentifierRule,
+  resolveIdentifier,
+} from '@/services'
 
 const props = defineProps<{ dataset: Dataset; ruleCatalog: RuleEditorCatalog; sourceKind: DatasetDataSource['kind']; saving?: boolean; saveError?: string }>()
 const isOpen = defineModel<boolean>({ required: true })
@@ -71,7 +76,7 @@ function saveRules() {
     :dismissible="!saving"
   >
     <template #icon>
-      <AppIcon name="rules" />
+      <SVGIcons name="rules" />
     </template>
 
     <div class="mb-4.75 flex flex-wrap items-center justify-between gap-3.75">
@@ -114,12 +119,13 @@ function saveRules() {
       </fieldset>
       <div v-if="!isCustom" class="flex justify-center pt-4.25">
         <button type="button" class="ui-button ui-button-success" @click="createCustomRuleset">
+          <SVGIcons name="add" class="size-4" />
           Create custom ruleset
         </button>
       </div>
       <div v-else class="flex flex-wrap items-center justify-center gap-3.75 pt-4.25">
         <button ref="addButton" type="button" class="ui-button px-2.5 py-1.75 text-[11px]" :disabled="saving || dataset.columns.length === 0" @click="addRule">
-          <AppIcon name="add" class="size-4" />
+          <SVGIcons name="add" class="size-4" />
           Add rule
         </button>
       </div>
@@ -128,7 +134,7 @@ function saveRules() {
     </form>
 
     <p class="mt-5 flex items-start gap-2 rounded-[7px] bg-cobalt-soft px-3.5 py-3 text-[11px] leading-[1.7]">
-      <svg class="ui-icon mt-0.5 size-3.75 text-cobalt" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7h.01" /></svg>
+      <SVGIcons name="info" class="mt-0.5 size-3.75 text-cobalt" />
       <span v-if="isCustom">Saving applies these rules to <strong>{{ dataset.name }}</strong>. To refresh the validation issues table and update the quality scores click the "Run Dataset Validation" button.</span>
       <span v-else>Create a custom ruleset to change these default checks for <strong>{{ dataset.name }}</strong>.</span>
     </p>
@@ -136,8 +142,8 @@ function saveRules() {
     <template #footer="{ close }">
       <p class="text-[10px] text-muted">{{ sourceKind === 'seeded' ? 'Sample data: changes are kept for this page session.' : 'Changes are saved to the connected workspace.' }}</p>
       <div class="ml-auto flex gap-2.25">
-        <button type="button" class="ui-button" :disabled="saving" @click="close">Cancel</button>
-        <button type="submit" :form="formId" class="ui-button ui-button-primary" :disabled="!isCustom || saving">{{ saving ? 'Saving…' : 'Save rules' }}</button>
+        <button type="button" class="ui-button" :disabled="saving" @click="close"><SVGIcons name="close" class="size-4" /> Cancel</button>
+        <button type="submit" :form="formId" class="ui-button ui-button-primary" :disabled="!isCustom || saving"><SVGIcons name="check" class="size-4" /> {{ saving ? 'Saving…' : 'Save rules' }}</button>
       </div>
     </template>
   </ModalShell>

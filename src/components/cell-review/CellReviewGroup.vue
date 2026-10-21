@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { SVGIcons } from '@/assets'
 import { computed } from 'vue'
 import type { CellReviewGroup } from '@/types'
 import { formatNumber } from '@/utils'
@@ -24,14 +25,14 @@ const color = computed(() => props.group.kind === 'warning' ? 'bg-yellow-100 tex
         <div><strong class="block text-xs font-medium">Row {{ formatNumber(cell.rowNumber) }}</strong><small class="mt-1 block text-[10px] text-muted wrap-anywhere">{{ cell.identifier ?? 'Unassigned ID' }}</small></div>
         <div class="min-w-0"><span class="value-caption">CURRENT VALUE</span><code class="flagged-value bg-cobalt-soft text-cobalt">{{ displayCellValue(group.currentValue) }}</code></div>
         <div class="flex flex-wrap gap-2">
-          <button type="button" class="ui-button ui-button-primary text-[10px]" aria-haspopup="dialog" :aria-label="`Edit row ${cell.rowNumber}, ${group.column}`" @click="emit('review', cell.rowNumber, 'edit')">Edit value</button>
-          <button type="button" class="ui-button border-coral-text bg-transparent text-[10px] text-coral-text hover:bg-coral-soft" aria-haspopup="dialog" :aria-label="`Ignore ${group.kind === 'warning' ? 'warning' : 'error'} for row ${cell.rowNumber}, ${group.column}`" @click="emit('review', cell.rowNumber, 'ignore')">Ignore {{ group.kind === 'warning' ? 'warning' : 'error' }}</button>
+          <button type="button" class="ui-button ui-button-primary text-[10px]" aria-haspopup="dialog" :aria-label="`Edit row ${cell.rowNumber}, ${group.column}`" @click="emit('review', cell.rowNumber, 'edit')"><SVGIcons name="edit" class="size-4" /> Edit value</button>
+          <button type="button" class="ui-button border-coral-text bg-transparent text-[10px] text-coral-text hover:bg-coral-soft" aria-haspopup="dialog" :aria-label="`Ignore ${group.kind === 'warning' ? 'warning' : 'error'} for row ${cell.rowNumber}, ${group.column}`" @click="emit('review', cell.rowNumber, 'ignore')"><SVGIcons name="ignore" class="size-4" /> Ignore {{ group.kind === 'warning' ? 'warning' : 'error' }}</button>
         </div>
       </li>
     </ul>
     <div v-if="group.cells.length > pageSize" class="ui-table-footer">
       <span>Cells {{ formatNumber(start + 1) }}–{{ formatNumber(Math.min(start + pageSize, group.cells.length)) }} of {{ formatNumber(group.cells.length) }}</span>
-      <div class="flex gap-2"><button type="button" class="ui-button" :disabled="start === 0" @click="page--">Previous cells</button><button type="button" class="ui-button" :disabled="start + pageSize >= group.cells.length" @click="page++">Next cells</button></div>
+      <div class="flex gap-2"><button type="button" class="ui-button" :disabled="start === 0" @click="page--"><SVGIcons name="arrowBack" class="size-4" /> Previous cells</button><button type="button" class="ui-button" :disabled="start + pageSize >= group.cells.length" @click="page++">Next cells <SVGIcons name="arrowForward" class="size-4" /></button></div>
     </div>
   </details>
 </template>

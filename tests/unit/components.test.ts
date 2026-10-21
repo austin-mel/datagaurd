@@ -3,10 +3,13 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { nextTick } from 'vue'
-import { ModalShell } from '@/components/shared'
-import { ConnectDatasetModal, DatasetTable } from '@/components/datasets'
-import { QualityRulesModal } from '@/components/rules'
-import { CellReviewDialog } from '@/components/cell-review'
+import {
+  ModalShell,
+  ConnectDatasetModal,
+  DatasetTable,
+  QualityRulesModal,
+  CellReviewDialog,
+} from '@/components'
 import { seededRuleCatalog } from '@/data'
 import { dataset, datasetId, group, rule, ruleset } from '../fixtures/workspace'
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { SVGIcons } from '@/assets'
 import { computed } from 'vue'
 import type { Dataset } from '@/types'
 const props = defineProps<{ dataset: Dataset; pending: boolean; revalidating: boolean; saving: boolean; error: string }>()
@@ -8,10 +9,11 @@ const running = computed(() => props.revalidating || props.dataset.processingSta
 
 <template>
   <button type="button"
-    class="mb-3 flex min-h-19 w-full cursor-pointer items-center justify-center rounded-xl bg-emerald-700 px-6 py-5 text-xl font-semibold text-white shadow-sm hover:bg-emerald-800 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+    class="mb-3 flex min-h-19 w-full cursor-pointer items-center justify-center gap-3 rounded-xl bg-emerald-700 px-6 py-5 text-xl font-semibold text-white shadow-sm hover:bg-emerald-800 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
     :disabled="!pending || running || saving"
     :title="!pending ? 'The dataset and ruleset match the last validation run.' : undefined"
     :aria-busy="running" @click="emit('run')">
+    <SVGIcons name="science" class="size-6" />
     {{ running ? 'Running Dataset Validation…' : 'Run Dataset Validation' }}
   </button>
   <p v-if="dataset.rulesChangedSinceRun" class="mb-4 text-sm text-muted" role="status">Rules have changed since the displayed results. Re-run validation to apply them.</p>

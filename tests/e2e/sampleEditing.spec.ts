@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { seededDatasetIds } from '../../src/data'
+import { seededDatasetIds } from '@/data'
 
 test('runs real sample edits, downloads the new CSV and resets edits on reload', async ({ page, api }) => {
   api.workspaceStatus = 503

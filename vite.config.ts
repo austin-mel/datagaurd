@@ -18,6 +18,14 @@ export default defineConfig(() => {
 
   return {
     base: "/dataguard/",
+    build: {
+      rolldownOptions: {
+        input: {
+          main: fileURLToPath(new URL('./index.html', import.meta.url)),
+          fallback: fileURLToPath(new URL('./404.html', import.meta.url)),
+        },
+      },
+    },
     envDir: './environment/',
     define: Object.fromEntries(
       Object.entries(env)
@@ -38,9 +46,7 @@ export default defineConfig(() => {
       tailwindcss(),
     ],
     resolve: {
-      alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
-      },
+      alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
     },
   }
 })

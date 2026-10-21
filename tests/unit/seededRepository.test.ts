@@ -5,10 +5,9 @@ import { dataset, datasetId, rule, ruleset } from '../fixtures/workspace'
 
 // Keep repository tests small; validation/statistics remain real. Actual demo IDs
 // and generated rows are verified separately in datasetIdentity.test.ts.
-vi.mock('@/data/datasets', () => ({
+vi.mock('@/data', async importOriginal => ({
+  ...await importOriginal<typeof import('@/data')>(),
   createSeededDatasets: () => [dataset({ ruleset: ruleset([rule(), rule({ id: 'ID_UNIQUE', column: 'id', type: 'unique' })]) })],
-}))
-vi.mock('@/data/datasetRows', () => ({
   getSeededDatasetRows: () => [{ id: 'A', value: null }, { id: 'A', value: null }, { id: 'B', value: 10 }],
 }))
 

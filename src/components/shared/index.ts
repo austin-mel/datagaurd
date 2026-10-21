@@ -1,5 +1,3 @@
-export { default as AppIcon } from './AppIcon.vue'
-export { default as DatasetSourceIcon } from './DatasetSourceIcon.vue'
 export { default as ModalShell } from './ModalShell.vue'
 export { default as PageHeader } from './PageHeader.vue'
 export { default as WorkspaceState } from './WorkspaceState.vue'

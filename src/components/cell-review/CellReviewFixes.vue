@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { SVGIcons } from '@/assets'
 import { computed, ref, shallowRef, useId, watch } from 'vue'
 import type { CellReviewGroup as ReviewGroup, CellReviewRequest, Dataset } from '@/types'
 import { formatNumber } from '@/utils'
 import { displayCellValue, summarizeCellReview } from '@/services'
-import CellReviewDialog from './CellReviewDialog.vue'
-import CellReviewGroup from './CellReviewGroup.vue'
+import { CellReviewDialog, CellReviewGroup } from '@/components'
 
 const props = defineProps<{ dataset: Dataset; saving?: boolean; error?: string }>()
 const emit = defineEmits<{ save: [request: CellReviewRequest] }>()
@@ -70,7 +70,7 @@ function openDialog(group: ReviewGroup, row: number, mode: 'edit' | 'ignore') {
       </div>
       <div class="ui-table-footer">
         <span>{{ filtered.length ? `Groups ${formatNumber(page * pageSize + 1)}–${formatNumber(Math.min((page + 1) * pageSize, filtered.length))} of ${formatNumber(filtered.length)}` : '0 groups' }}</span>
-        <div class="flex gap-2"><button type="button" class="ui-button" :disabled="page === 0" @click="page--">Previous</button><button type="button" class="ui-button" :disabled="(page + 1) * pageSize >= filtered.length" @click="page++">Next 10 groups</button></div>
+        <div class="flex gap-2"><button type="button" class="ui-button" :disabled="page === 0" @click="page--"><SVGIcons name="arrowBack" class="size-4" /> Previous</button><button type="button" class="ui-button" :disabled="(page + 1) * pageSize >= filtered.length" @click="page++">Next 10 groups <SVGIcons name="arrowForward" class="size-4" /></button></div>
       </div>
     </template>
     <CellReviewDialog v-if="selected" v-model="dialogOpen" :dataset="dataset" :group="selected.group" :initial-row="selected.row" :mode="selected.mode" :saving="saving" :error="error" @save="emit('save', $event)" />

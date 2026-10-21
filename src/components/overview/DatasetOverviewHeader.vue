@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppIcon } from '@/components/shared'
+import { SVGIcons } from '@/assets'
 import type { Dataset } from '@/types'
 import { formatNumber, formatValidatedAt } from '@/utils'
 defineProps<{ dataset: Dataset; downloading?: boolean; savingRules?: boolean }>()
@@ -31,11 +31,11 @@ const statuses = {
     </div>
     <div class="flex flex-wrap items-center gap-2.25 max-[540px]:w-full">
       <button type="button" class="ui-button max-[540px]:flex-1 max-[540px]:px-2.5 max-[540px]:text-[11px]" :disabled="savingRules" aria-haspopup="dialog" aria-controls="quality-rules-dialog" @click="emit('edit-rules')">
-        <AppIcon name="rules" class="size-4" />
+        <SVGIcons name="rules" class="size-4" />
         Edit quality rules
       </button>
       <button type="button" class="ui-button ui-button-primary max-[540px]:flex-1 max-[540px]:px-2.5 max-[540px]:text-[11px]" :disabled="downloading" :aria-busy="downloading" @click="emit('download')">
-        <svg class="ui-icon size-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5" /></svg>
+        <SVGIcons name="download" class="size-4" />
         {{ downloading ? 'Downloading…' : `Download ${dataset.version}` }}
       </button>
     </div>

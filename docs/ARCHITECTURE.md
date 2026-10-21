@@ -49,6 +49,8 @@ Use [router/router.ts](../src/router/router.ts) to configure these routes relati
 
 Keep `/api/v1` at the API origin root; the frontend base path does not prefix API requests. Identify datasets by UUID because names and filenames can repeat. Dataset query parameters use the stored ID directly; sample names are not aliases. The router sets the page title to `Dataguard | Overview` or `Dataguard | Datasets`.
 
+GitHub Pages serves [404.html](../404.html) for direct requests to client routes such as `/dataguard/datasets`. Vite builds this fallback alongside `index.html` using the configured base path. It redirects to the app root with the original URL encoded in `__dataguard_route`; the router restores the path, query, and hash before creating browser history. Both steps replace the current history entry so refresh and Back keep the original navigation behavior. Deploy the complete `dist` directory, including `404.html`.
+
 Use the recent-dataset store to preserve navigation history. It stores at most three `{ datasetId, openedAt }` entries under `dataguard.recentDatasets.v1` and removes entries absent from the selected workspace. Stored IDs are used as-is. Malformed or unavailable local storage does not prevent navigation.
 
 ## Source selection and failures
@@ -102,7 +104,7 @@ Use this map to locate the implementation you need to change:
 | --- | --- |
 | [src/views/](../src/views/) | Overview and dataset catalog orchestration |
 | [src/components/layout/](../src/components/layout/) | Sidebar, breadcrumb, and workspace source notice |
-| [src/components/shared/](../src/components/shared/) | Modal focus behavior, page headings, loading states, and shared icons |
+| [src/components/shared/](../src/components/shared/) | Modal focus behavior, page headings, and loading states |
 | [src/components/datasets/](../src/components/datasets/) | Searchable catalog, dataset rows, and upload dialog |
 | [src/components/overview/](../src/components/overview/) | Profiles, quality cards, history, recents, and validation status |
 | [src/components/rules/](../src/components/rules/) | Rules dialog, individual rule rows, and typed condition inputs |
@@ -125,6 +127,7 @@ Use this map to locate the implementation you need to change:
 | [src/data/](../src/data/) | Deterministic sample rows, IDs, rules, and data factories |
 | [src/types/](../src/types/) | Dataset, workspace, ruleset, review, and backend types |
 | [src/assets/main.css](../src/assets/main.css) | Shared styles and Tailwind CSS `@theme` design tokens |
+| [src/assets/SVGIcons.vue](../src/assets/SVGIcons.vue) | Typed interface icon paths and decorative SVG rendering |
 | [scripts/export-demo-manifest.mjs](../scripts/export-demo-manifest.mjs) | Export backend seed contract |
 
 ## Extend the application
@@ -133,4 +136,6 @@ To add a rule type, update the editor catalog/types, frontend validation and syn
 
 Each workspace response includes all datasets, histories, and review groups. Browser-table pagination does not reduce that payload, and sample calculations run in the browser.
 
-Keep views focused on composing components. Place nested UI units beside their feature parent. Every directory under `src` exposes an `index.ts` barrel; import across directories through these entry points (for example, `@/components/shared`, `@/composables`, or `@/services`). Use direct relative imports for modules within the same directory to avoid importing their own barrel and creating circular dependencies. Keep the global stylesheet import in `main.ts` explicit. Use props and emitted updates at component boundaries; rule rows replace their draft values rather than mutating the source dataset. Keep reusable stateful workflows in composables and pure data transformations in services.
+Import `SVGIcons` from `@/assets` and select a typed name, such as `<SVGIcons name="uploadFile" class="size-4" />`. Add interface icons to its path registry instead of placing SVG markup in feature components. Icons inherit the surrounding text color and remain hidden from assistive technology; keep visible button text or an accessible label on the control. Branding uses the dedicated `dataguard-logo.svg` and `dataguard-icon.svg` assets; the latter also supplies the browser favicon.
+
+Keep views focused on composing components. Each component folder has an `index.ts` that exports its Vue components by name, for example `export { default as DatasetTable } from './DatasetTable.vue'`. The parent `src/components/index.ts` re-exports each folder with `export * from './Datasets'`, and consumers use `import { DatasetTable } from '@/components'`. Other source-directory barrels re-export their modules with `export * from './module'`; Vue and SVG assets use named default exports. TypeScript, Vite, and Vitest use the single `@` alias for `src`. Use direct relative imports between implementation modules within the same directory to avoid unnecessary circular dependencies. The root scripts directory has its own `index.ts` barrel, imported relatively by Node consumers. Keep the global stylesheet and root `App.vue` imports explicit. Use props and emitted updates at component boundaries; rule rows replace their draft values rather than mutating the source dataset. Keep reusable stateful workflows in composables and pure data transformations in services.

@@ -64,15 +64,10 @@
   .ui-data-table :is(th, td):last-child { @apply pr-5.5; }
   .ui-table-footer { @apply flex flex-wrap items-center justify-between gap-2.25 border-t border-line px-5.5 py-2.75 text-[10px] text-muted; }
 
-  .ui-icon {
+  .app-icon {
     width: 19px;
     height: 19px;
     flex-shrink: 0;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.7;
-    stroke-linecap: round;
-    stroke-linejoin: round;
   }
 
   .ui-button {
