@@ -27,11 +27,14 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22.12.0
+          node-version: 22.18.0
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_DATA_SOURCE: ${{ vars.VITE_DATA_SOURCE }}
 
       - uses: actions/configure-pages@v5
 
