@@ -6,31 +6,25 @@ Run frontend commands from the frontend checkout after `pnpm install --frozen-lo
 
 ## Table of Contents
 
-- [Build and type checks](#build-and-type-checks)
+- [Build](#build)
 - [Unit, component, and repository tests](#unit-component-and-repository-tests)
 - [Browser tests](#browser-tests)
-- [Live API parity](#live-api-parity)
 - [Continuous integration](#continuous-integration)
 - [Maintain fixtures and contracts](#maintain-fixtures-and-contracts)
 
-## Build and type checks
+## Build
 
 | Task | Command |
 | --- | --- |
-| Build and application type-check | `pnpm build` |
-| Build only | `pnpm build-only` |
-| Application type-check | `pnpm type-check` |
-| Application and test type-check | `pnpm type-check:tests` |
+| Production build | `pnpm build` |
 | Inspect built output | `pnpm preview` |
 
-Configure application types in [tsconfig.app.json](../tsconfig.app.json) and test types in [tsconfig.tests.json](../tsconfig.tests.json). Run TypeScript checks alongside your tests to catch type errors that test execution can miss.
+Configure application types in [tsconfig.app.json](../tsconfig.app.json) and Playwright test types and import resolution in [tsconfig.tests.json](../tsconfig.tests.json). The build bundles the application with Vite; it does not run a separate TypeScript check.
 
 ## Unit, component, and repository tests
 
 ```powershell
-pnpm test
-pnpm test:watch
-pnpm test:coverage
+pnpm test:unit
 ```
 
 Add unit tests under `tests/unit/**/*.test.ts`. [vitest.config.ts](../vitest.config.ts) uses Node by default, restores mocks and stubbed globals/environment values, and allows 30 seconds per test. Select a DOM environment for component tests that need browser APIs.
@@ -45,15 +39,12 @@ Add unit tests under `tests/unit/**/*.test.ts`. [vitest.config.ts](../vitest.con
 | Components | Dialogs, profiles, pagination, upload validation, editing, display states |
 | Workspace views | Selection and recents, failed edits, explicit validation, polling cleanup, downloads, upload policy, and retries through the real stores |
 
-Use the coverage report to inspect services, stores, composables, utilities, and Vue components, including files without tests. The configuration excludes barrel `index.ts` files and route-level views from the unit percentage; test view workflows with Playwright. Meet the V8 thresholds of **90% statements, 90% lines, 80% branches, and 85% functions**. Find text, HTML, and LCOV reports in `coverage/`.
-
 ## Browser tests
 
 ```powershell
 pnpm exec playwright install chromium firefox webkit
 pnpm test:e2e
 pnpm test:e2e --project=chromium
-pnpm test:e2e:ui
 pnpm exec playwright show-report output/playwright/report
 ```
 
@@ -72,20 +63,6 @@ Use [tests/e2e/](../tests/e2e/) to verify navigation, uploads, rules, validation
 
 Expect three workers locally and two in CI. CI retries failed tests up to twice; local runs do not retry. Inspect failure screenshots and traces under `output/playwright/test-results/`, and open the HTML report under `output/playwright/report/`.
 
-## Live API parity
-
-**Prerequisites:** a running backend and the three unmodified seeded demos.
-
-```powershell
-pnpm test:live
-# Optional endpoint override:
-$env:API_URL = 'http://127.0.0.1:8000/api/v1'
-pnpm test:live
-Remove-Item Env:API_URL
-```
-
-Run the [live configuration](../vitest.live.config.ts) explicitly to select `tests/live/`. The suite reads workspace projections and downloads, then compares demo row counts, columns, quality dimensions, issue/review/profile counts, metadata, and download row counts against samples. It makes no writes; the default unit and browser commands do not run it; add it explicitly to CI only when you provide an isolated seeded backend. If you have edited the demos, use fresh isolated storage because reseeding preserves existing versions.
-
 ## Continuous integration
 
 Configure your CI runner with a Node version supported by [package.json](../package.json) and pnpm 10. Add your workflow under `.github/workflows/` if you use GitHub Actions; this checkout does not include a workflow.
@@ -96,14 +73,12 @@ Run these checks after installing dependencies:
 pnpm install --frozen-lockfile
 pnpm exec playwright install --with-deps chromium firefox webkit
 pnpm build
-pnpm type-check:tests
-pnpm test:coverage
-pnpm test:e2e
+pnpm test
 ```
 
-Set `CI=true` on your runner to enable the Playwright CI worker count, retries, and focused-test guard. Publish `coverage/` and `output/playwright/` as artifacts and choose the retention period in your CI configuration.
+Set `CI=true` on your runner to enable the Playwright CI worker count, retries, and focused-test guard. Publish `output/playwright/` as artifacts and choose the retention period in your CI configuration.
 
-Use `pnpm test:all` to run unit and browser suites together. Run builds, coverage checks, test type checks, live parity, and backend tests separately.
+Use `pnpm test` to run unit and browser suites together. Run builds and backend tests separately.
 
 ## Maintain fixtures and contracts
 

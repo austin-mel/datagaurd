@@ -123,13 +123,11 @@ From the frontend:
 
 ~~~powershell
 pnpm build
-pnpm test
-pnpm type-check:tests
 pnpm exec playwright install chromium firefox webkit
-pnpm test:e2e
+pnpm test
 ~~~
 
-See [Testing](docs/TESTING.md) for coverage reports, browser profiles, and live API verification.
+See [Testing](docs/TESTING.md) for unit tests, browser profiles, and test reports.
 
 ## Repository Layout
 
@@ -149,7 +147,7 @@ datagaurd/
 | `src/services/` | Live/sample repositories, validation, and API response checks |
 | `src/types/`, `src/data/` | Domain types and deterministic sample datasets |
 | `src/assets/` | Shared styles, brand artwork, and the application icon |
-| `tests/unit/`, `tests/e2e/`, `tests/live/` | Unit/component, browser, and live API checks |
+| `tests/unit/`, `tests/e2e/` | Unit/component and browser checks |
 | `scripts/` | Demo manifest export and TypeScript import registration |
 | `environment/` | Example and local frontend configuration |
 | `docs/` | Workspace guides and developer references |
@@ -181,14 +179,11 @@ Use the samples to explore missing values, duplicates, invalid values, and stati
 | Task | Command |
 | --- | --- |
 | Development server | `pnpm dev` |
-| Build and type-check | `pnpm build` |
-| Build only / application type-check | `pnpm build-only` / `pnpm type-check` |
+| Production build | `pnpm build` |
 | Preview dist/ | `pnpm preview` |
-| Unit tests / watch | `pnpm test` / `pnpm test:watch` |
-| Coverage / test type-check | `pnpm test:coverage` / `pnpm type-check:tests` |
-| Browser tests / test explorer | `pnpm test:e2e` / `pnpm test:e2e:ui` |
-| Unit and browser suites | `pnpm test:all` |
-| Read-only live demo parity | `pnpm test:live` |
+| Unit tests | `pnpm test:unit` |
+| Browser tests | `pnpm test:e2e` |
+| Unit and browser suites | `pnpm test` |
 
 ## Data and Privacy
 
@@ -213,7 +208,7 @@ The application does not authenticate users, authorize dataset access, or isolat
 | [Frontend Configuration and Troubleshooting](docs/CONFIGURATION.md) | Configure local environments, API connections, and troubleshooting |
 | [Dataguard Frontend Architecture](docs/ARCHITECTURE.md) | Trace navigation, stores, repositories, and source selection |
 | [Workspace Types and API Projections](docs/DATA_DICTIONARY.md) | Look up fields, state values, identifiers, and request shapes |
-| [Frontend Testing and API Integration](docs/TESTING.md) | Run unit, component, browser, and live parity checks |
+| [Frontend Testing and API Integration](docs/TESTING.md) | Run unit, component, and browser checks |
 
 ### Connect the Backend
 

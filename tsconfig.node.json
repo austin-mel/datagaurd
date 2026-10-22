@@ -17,11 +17,10 @@
     // Include Node.js types and avoid accidentally including other `@types/*` packages.
     "types": ["node"],
 
-    // Disable emitting output during `vue-tsc --build`, which is used for type-checking only.
+    // Use this configuration for type-checking without generating JavaScript.
     "noEmit": true,
 
-    // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.
-    // Specified here to keep it out of the root directory.
+    // Keep incremental type-checking metadata out of the root directory.
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo"
   }
 }
