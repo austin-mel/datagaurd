@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
-import { seededDatasetIds } from '@/data/datasetIds'
-import { createSeededDatasetRepository } from '@/services/seededDatasetRepository'
+import { seededDatasetIds } from '@/data'
+import { createSeededDatasetRepository } from '@/services'
 
 it('uses stable UUID identities for all real demo datasets and downloads', async () => {
   const repository = createSeededDatasetRepository()

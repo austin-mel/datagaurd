@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
-import { rulesToBackend } from '@/services/ruleExport'
-import { createDefaultRules } from '@/data/qualityRules'
+import { rulesToBackend } from '@/services'
+import { createDefaultRules } from '@/data'
 import { rule, ruleset } from '../fixtures/workspace'
 
 it('exports every editor rule type for backend seeding', () => {

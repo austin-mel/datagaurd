@@ -1,4 +1,4 @@
-import { defaultUploadPolicy, type UploadPolicy } from '../types/backend'
+import { defaultUploadPolicy, type UploadPolicy } from '@/types'
 
 export interface DatasetUploadSelection {
   file: File

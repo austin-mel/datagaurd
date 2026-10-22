@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { compilePortablePattern, parseAllowedValues } from '@/services/ruleSyntax'
+import { compilePortablePattern, parseAllowedValues } from '@/services'
 
 describe('portable patterns', () => {
   it.each([

@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createDatasetState } from '@/stores/datasets'
-import { createRecentDatasetHistory, RECENT_DATASETS_KEY } from '@/stores/recentDatasets'
-import { seededDatasetIds } from '@/data/datasetIds'
-import type { DatasetRepository } from '@/services/datasetRepositoryContract'
+import { createDatasetState, createRecentDatasetHistory, RECENT_DATASETS_KEY } from '@/stores'
+import { seededDatasetIds } from '@/data'
+import type { DatasetRepository } from '@/services'
 import { dataset, datasetId, ruleset, workspace } from '../fixtures/workspace'
 
 function repo(overrides: Partial<DatasetRepository> = {}): DatasetRepository {

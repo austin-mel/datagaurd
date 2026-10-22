@@ -1,5 +1,11 @@
-import type { CellReviewRequest, Dataset, DatasetDataSource, DatasetRuleset, DatasetWorkspace } from '@/types'
-import type { UploadPolicy } from '@/types/backend'
+import type {
+  CellReviewRequest,
+  Dataset,
+  DatasetDataSource,
+  DatasetRuleset,
+  DatasetWorkspace,
+  UploadPolicy,
+} from '@/types'
 import type { DatasetUploadSelection } from './datasetUpload'
 
 export interface DatasetRepository {

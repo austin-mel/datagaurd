@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { test, expect, datasetId } from './fixtures'
 
 test('uploads a CSV and displays the returned dataset', async ({ page, api }) => {
-  await page.goto('/datasets')
+  await page.goto('datasets')
   const opener = page.getByRole('button', { name: 'Connect a new data source' })
   await opener.click()
   const dialog = page.getByRole('dialog', { name: 'Connect a data source' })
@@ -21,7 +21,7 @@ test('uploads a CSV and displays the returned dataset', async ({ page, api }) =>
 
 test('shows upload failures without losing the chosen file', async ({ page, api }) => {
   api.failWrites = true
-  await page.goto('/datasets')
+  await page.goto('datasets')
   await page.getByRole('button', { name: 'Connect a new data source' }).click()
   const dialog = page.getByRole('dialog', { name: 'Connect a data source' })
   await dialog.getByLabel('Dataset file', { exact: true }).setInputFiles({ name: 'upload.csv', mimeType: 'text/csv', buffer: Buffer.from('id\nA') })
@@ -34,7 +34,7 @@ test('shows upload failures without losing the chosen file', async ({ page, api 
 })
 
 test('downloads exact source bytes and reports download errors', async ({ page, api }) => {
-  await page.goto('/')
+  await page.goto('./')
   const pending = page.waitForEvent('download')
   await page.getByRole('button', { name: /Download/ }).click()
   const download = await pending
@@ -46,13 +46,14 @@ test('downloads exact source bytes and reports download errors', async ({ page, 
 })
 
 test('saves edited rules and requires explicit revalidation', async ({ page, api }) => {
-  await page.goto('/datasets')
+  await page.goto('datasets')
   await page.getByRole('button', { name: 'Edit quality rules for Test inventory' }).click()
   const dialog = page.getByRole('dialog', { name: 'Quality rules · Test inventory' })
   await dialog.getByRole('button', { name: 'Add rule' }).click()
   await dialog.getByLabel('Column for rule 2', { exact: true }).selectOption('value')
   await dialog.getByLabel('Type for rule 2', { exact: true }).selectOption('min')
   await dialog.getByLabel('Minimum for rule 2', { exact: true }).fill('5')
+  await expect(dialog.getByLabel('Minimum for rule 2', { exact: true })).toBeFocused()
   await dialog.getByRole('button', { name: 'Save rules', exact: true }).click()
   await expect(dialog).not.toBeVisible()
   expect(api.writes).toHaveLength(1)
@@ -67,7 +68,7 @@ test('saves edited rules and requires explicit revalidation', async ({ page, api
 
 test('retains a rules draft after a failed save and restores focus on Escape', async ({ page, api }) => {
   api.failWrites = true
-  await page.goto('/datasets')
+  await page.goto('datasets')
   const opener = page.getByRole('button', { name: 'Edit quality rules for Test inventory' })
   // Safari does not focus buttons on mouse clicks. Open from the keyboard to
   // exercise the modal's return-to-previous-focus contract in every browser.
@@ -86,7 +87,7 @@ test('retains a rules draft after a failed save and restores focus on Escape', a
 })
 
 test('corrects a cell into a new version then validates it', async ({ page, api }) => {
-  await page.goto('/')
+  await page.goto('./')
   await page.getByRole('button', { name: 'Edit row 2, value', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Edit flagged cell' })
   await expect(dialog.getByRole('button', { name: 'Save cell to new version' })).toBeDisabled()
@@ -103,7 +104,7 @@ test('corrects a cell into a new version then validates it', async ({ page, api 
 })
 
 test('ignores a finding with a reason without changing the version', async ({ page, api }) => {
-  await page.goto('/')
+  await page.goto('./')
   await page.getByRole('button', { name: 'Ignore error for row 2, value', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Ignore rule error' })
   await dialog.getByLabel('Reason for ignoring').fill('Verified against the original')
@@ -116,7 +117,7 @@ test('ignores a finding with a reason without changing the version', async ({ pa
 
 test('deletes a flagged row and preserves failed-edit drafts', async ({ page, api }) => {
   api.failWrites = true
-  await page.goto('/')
+  await page.goto('./')
   await page.getByRole('button', { name: 'Edit row 2, value', exact: true }).click()
   const dialog = page.getByRole('dialog', { name: 'Edit flagged cell' })
   await dialog.getByRole('radio', { name: /Remove entire row/ }).check()

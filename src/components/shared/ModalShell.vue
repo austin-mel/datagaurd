@@ -1,0 +1,103 @@
+<script setup lang="ts">
+import { SVGIcons } from '@/assets'
+import { onBeforeUnmount, useId, useTemplateRef, watch } from 'vue'
+
+const props = withDefaults(defineProps<{
+  id?: string
+  title: string
+  eyebrow?: string
+  description?: string
+  size?: 'compact' | 'wide'
+  dismissible?: boolean
+}>(), { dismissible: true })
+
+const isOpen = defineModel<boolean>({ required: true })
+const dialog = useTemplateRef<HTMLDialogElement>('dialog')
+const titleId = useId()
+const descriptionId = useId()
+let returnFocus: HTMLElement | null = null
+let pointerStartedOutside = false
+
+function close() {
+  if (props.dismissible) isOpen.value = false
+}
+
+function handleClose() {
+  // A queued close event must not close a dialog that was reopened meanwhile.
+  if (!dialog.value?.open) isOpen.value = false
+}
+
+function isOutside(event: PointerEvent | MouseEvent) {
+  const element = dialog.value
+  if (!element || event.target !== element) return false
+  const bounds = element.getBoundingClientRect()
+  return event.clientX < bounds.left || event.clientX > bounds.right
+    || event.clientY < bounds.top || event.clientY > bounds.bottom
+}
+
+function handleBackdropClick(event: MouseEvent) {
+  if (pointerStartedOutside && isOutside(event)) close()
+  pointerStartedOutside = false
+}
+
+watch([isOpen, dialog], ([open, element]) => {
+  if (!element) return
+  if (open && !element.open) {
+    returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    element.showModal()
+  } else if (!open && element.open) {
+    element.close()
+    if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true })
+    returnFocus = null
+  }
+}, { flush: 'post' })
+
+onBeforeUnmount(() => {
+  dialog.value?.close()
+  if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true })
+})
+</script>
+
+<template>
+  <Teleport to="body">
+    <dialog
+      :id="id"
+      ref="dialog"
+      class="app-modal m-auto w-[min(1040px,calc(100vw-40px))] max-h-[calc(100dvh-64px)] rounded-[15px] open:flex open:flex-col max-[540px]:w-[calc(100vw-20px)] max-[540px]:max-h-[calc(100dvh-32px)] max-[540px]:rounded-[11px] border border-line bg-porcelain p-0 text-ink shadow-2xl shadow-ink/25 backdrop:bg-ink/55"
+      :class="{ 'max-w-[640px]': size === 'compact' }"
+      :aria-labelledby="titleId"
+      :aria-describedby="description ? descriptionId : undefined"
+      @cancel.prevent="close"
+      @close="handleClose"
+      @pointerdown="pointerStartedOutside = isOutside($event)"
+      @click="handleBackdropClick"
+    >
+      <header class="flex shrink-0 items-start justify-between gap-5 border-b border-line px-6.25 pt-5.75 pb-5 max-[540px]:px-3.75 max-[540px]:py-4.25">
+        <div class="flex min-w-0 items-center gap-3.25">
+          <span v-if="$slots.icon" class="grid h-11 w-10.25 shrink-0 place-items-center rounded-[10px] bg-cobalt-soft text-cobalt">
+            <slot name="icon" />
+          </span>
+          <div>
+            <p v-if="eyebrow" class="mb-1 text-[9px] font-[650] tracking-[0.14em] text-muted">{{ eyebrow }}</p>
+            <h2 :id="titleId" class="text-[22px] font-semibold tracking-[-0.5px] max-[540px]:text-[19px]">{{ title }}</h2>
+            <p v-if="description" :id="descriptionId" class="mt-1 text-xs text-muted">{{ description }}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="grid size-7.5 shrink-0 cursor-pointer place-items-center rounded-md border border-line bg-porcelain hover:bg-ivory"
+          :aria-label="`Close ${title}`"
+          :disabled="!dismissible"
+          autofocus
+          @click="close"
+        >
+          <SVGIcons name="close" class="size-3.75" />
+        </button>
+      </header>
+      <div class="min-h-0 overflow-auto px-6.25 pt-5.25 pb-6 max-[540px]:px-3.75 max-[540px]:py-4.25"><slot /></div>
+      <footer v-if="$slots.footer" class="flex shrink-0 flex-wrap items-center justify-between gap-5 border-t border-line bg-ivory px-6.25 py-4.5 max-[540px]:gap-3 max-[540px]:p-3.75">
+        <slot name="footer" :close="close" />
+      </footer>
+    </dialog>
+  </Teleport>
+</template>

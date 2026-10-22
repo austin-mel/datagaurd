@@ -1,10 +1,14 @@
-import type { Dataset, DatasetWorkspace } from '@/types'
-import type { UploadPolicy } from '@/types/backend'
+import type { Dataset, DatasetWorkspace, UploadPolicy } from '@/types'
 import { BackendUnavailableError, type DatasetRepository } from './datasetRepositoryContract'
 import { parseDataset, parseWorkspace, parseUploadPolicy } from './workspaceResponse'
 
 export class ApiError extends Error {
-  constructor(message: string, readonly status: number) { super(message) }
+  readonly status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
 }
 
 export function createHttpDatasetRepository(baseUrl = '/api/v1', fetcher: typeof fetch = fetch): DatasetRepository {

@@ -7,7 +7,7 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
 
-const envFile = fileURLToPath(new URL('./environment/front-end.env', import.meta.url))
+const envFile = fileURLToPath(new URL('./environment/.front-end.env', import.meta.url))
 
 export default defineConfig(() => {
   // Shell variables take precedence; only VITE_ values are exposed to the browser.
@@ -18,6 +18,14 @@ export default defineConfig(() => {
 
   return {
     base: "/dataguard/",
+    build: {
+      rolldownOptions: {
+        input: {
+          main: fileURLToPath(new URL('./index.html', import.meta.url)),
+          fallback: fileURLToPath(new URL('./404.html', import.meta.url)),
+        },
+      },
+    },
     envDir: './environment/',
     define: Object.fromEntries(
       Object.entries(env)
@@ -38,9 +46,7 @@ export default defineConfig(() => {
       tailwindcss(),
     ],
     resolve: {
-      alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
-      },
+      alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
     },
   }
 })

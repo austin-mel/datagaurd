@@ -12,9 +12,9 @@ Configure your workspace data source, local API connection, and application path
 
 ## Environment files
 
-Configure local values in `environment/front-end.env`. [vite.config.ts](../vite.config.ts) reads this file with Node's dotenv parser and gives process environment variables precedence. The configuration also sets `envDir: './environment/'`, so Vite loads standard `.env`, `.env.local`, `.env.[mode]`, and `.env.[mode].local` files from that directory. Use `front-end.env` for the project's explicit overrides; its `VITE_` entries are injected through `define`, with shell values taking precedence.
+Configure local values in `environment/.front-end.env`. [vite.config.ts](../vite.config.ts) reads this file with Node's dotenv parser and gives process environment variables precedence. The configuration also sets `envDir: './environment/'`, so Vite loads standard `.env`, `.env.local`, `.env.[mode]`, and `.env.[mode].local` files from that directory. Use `.front-end.env` for the project's explicit overrides; its `VITE_` entries are injected through `define`, with shell values taking precedence.
 
-Keep your settings in **environment/front-end.env**, which the `environment/*.env` Git rule excludes from version control. Use this file for development and builds, or override values in your shell. The configuration injects only `VITE_` values into the browser bundle.
+Keep your settings in **environment/.front-end.env**, which the `environment/*.env` Git rule excludes from version control. Use this file for development and builds, or override values in your shell. The configuration injects only `VITE_` values into the browser bundle.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
@@ -44,7 +44,8 @@ The client has no login or token flow, and CORS does not authenticate requests. 
 
 | Symptom | Check and resolution |
 | --- | --- |
-| Environment edits do nothing | Use `environment/front-end.env`; check process overrides; restart Vite or rebuild |
+| Environment edits do nothing | Use `environment/.front-end.env`; check process overrides; restart Vite or rebuild |
+| Direct page links or refresh return 404 on GitHub Pages | Build and deploy the complete `dist` directory, including `404.html`, under `/dataguard/`. The fallback restores the requested route before Vue Router starts |
 | Sample banner when you expect live data | Check `/health`, proxy target, network tab, and backend logs; reconnect reloads and loses sample edits |
 | Live banner with no datasets | Fresh storage is empty; upload a file or explicitly seed demos |
 | Connection error remains visible | 401/403/422, JSON 500, and malformed contracts intentionally do not trigger fallback. A workspace endpoint 404 on initial load selects samples; dataset 404 errors remain visible |

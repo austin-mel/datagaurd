@@ -29,3 +29,7 @@ export function rulesetSignature(ruleset: DatasetRuleset): string {
     dateFormats: rule.type === 'date' ? rule.dateFormats ?? ['%Y-%m-%d'] : undefined,
   })).sort((a, b) => a.id.localeCompare(b.id)) })
 }
+
+export function normalizeRuleId(id: string, index: number) {
+  return /^[A-Z][A-Z0-9_]+$/.test(id) ? id : 'UI_' + index + '_' + id.replace(/[^A-Za-z0-9_]/g, '_').toUpperCase()
+}

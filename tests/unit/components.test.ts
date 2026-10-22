@@ -3,12 +3,14 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { nextTick } from 'vue'
-import ModalShell from '@/components/ModalShell/ModalShell.vue'
-import ConnectDatasetModal from '@/components/ConnectDatasetModal/ConnectDatasetModal.vue'
-import QualityRulesModal from '@/components/QualityRulesModal/QualityRulesModal.vue'
-import CellReviewDialog from '@/components/CellReviewFixes/CellReviewDialog.vue'
-import DatasetTable from '@/components/DatasetTable/DatasetTable.vue'
-import { seededRuleCatalog } from '@/data/qualityRules'
+import {
+  ModalShell,
+  ConnectDatasetModal,
+  DatasetTable,
+  QualityRulesModal,
+  CellReviewDialog,
+} from '@/components'
+import { seededRuleCatalog } from '@/data'
 import { dataset, datasetId, group, rule, ruleset } from '../fixtures/workspace'
 
 enableAutoUnmount(afterEach)
@@ -90,6 +92,27 @@ describe('rules editor', () => {
     await wrapper.get('form').trigger('submit')
     expect(wrapper.get('[role=alert]').text()).toContain('lookarounds')
     expect(wrapper.emitted('save')).toBeUndefined()
+  })
+  it('propagates numeric and date conditions through extracted rule rows', async () => {
+    const original = dataset()
+    const wrapper = mount(QualityRulesModal, { props: { modelValue: true, dataset: original, ruleCatalog: seededRuleCatalog, sourceKind: 'api' }, global })
+    await wrapper.get('select[aria-label="Type for rule 1"]').setValue('range')
+    await wrapper.get('input[aria-label="Minimum for rule 1"]').setValue('2.5')
+    await wrapper.get('input[aria-label="Maximum for rule 1"]').setValue('10')
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.emitted('save')?.[0]?.[0]).toMatchObject({ rules: [expect.objectContaining({ type: 'range', minimum: 2.5, maximum: 10 })] })
+    await wrapper.get('select[aria-label="Type for rule 1"]').setValue('date')
+    await wrapper.get('select[aria-label="Date condition for rule 1"]').setValue('Between two selected dates')
+    await wrapper.get('input[aria-label="Selected date for rule 1"]').setValue('2026-01-01')
+    await wrapper.get('input[aria-label="End date for rule 1"]').setValue('2026-12-31')
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.emitted('save')?.[1]?.[0]).toMatchObject({ rules: [expect.objectContaining({ type: 'date', selectedDate: '2026-01-01', endDate: '2026-12-31' })] })
+    expect(original.ruleset.rules[0]?.type).toBe('required')
+    await wrapper.get('button[aria-label="Remove rule 1: value"]').trigger('click')
+    expect(wrapper.text()).toContain('No rules yet.')
+    await wrapper.findAll('button').find(button => button.text() === 'Add rule')!.trigger('click')
+    expect(wrapper.findAll('tbody tr')).toHaveLength(1)
+    expect(wrapper.get('select[aria-label="Column for rule 1"]').element).toHaveProperty('value', 'id')
   })
 })
 

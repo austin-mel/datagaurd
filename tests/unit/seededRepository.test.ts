@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createSeededDatasetRepository } from '@/services/seededDatasetRepository'
-import type { DatasetRepository } from '@/services/datasetRepositoryContract'
+import { createSeededDatasetRepository } from '@/services'
+import type { DatasetRepository } from '@/services'
 import { dataset, datasetId, rule, ruleset } from '../fixtures/workspace'
 
 // Keep repository tests small; validation/statistics remain real. Actual demo IDs

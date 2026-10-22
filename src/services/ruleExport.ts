@@ -1,6 +1,6 @@
-import type { RuleSet } from '../types/backend'
-import type { DatasetRuleset } from '../types'
-import { assertValidRuleset, RulesetValidationError } from './datasetValidation'
+import type { RuleSet, DatasetRuleset } from '@/types'
+import { assertValidRuleset, RulesetValidationError } from './rulesetValidation'
+import { normalizeRuleId } from '@/utils'
 import { isAutomaticIdentifierRule } from './identifiers'
 import { parseAllowedValues } from './ruleSyntax'
 
@@ -9,7 +9,7 @@ export function rulesToBackend(ruleset: DatasetRuleset, columns: readonly string
   if (ruleset.kind !== 'custom') throw new RulesetValidationError('Create a custom ruleset before saving changes.')
   assertValidRuleset(ruleset, columns)
   const ids = new Map(ruleset.rules.map((rule, index) => [rule.id,
-    /^[A-Z][A-Z0-9_]+$/.test(rule.id) ? rule.id : 'UI_' + index + '_' + rule.id.replace(/[^A-Za-z0-9_]/g, '_').toUpperCase()]))
+    normalizeRuleId(rule.id, index)]))
   const structuralId = ruleset.backendConfiguration?.structural_rule_id ?? 'DATASET_COLUMNS'
   const used = new Set([structuralId, ...ids.values()])
   const result: RuleSet['rules'] = []

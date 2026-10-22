@@ -1,6 +1,6 @@
-import type { ColumnProfile, DatasetRow, DatasetRuleset } from '../types'
-import type { Finding } from '../types/backend'
-import { isMissing, numericValue, profileDataset } from './datasetValidation'
+import type { ColumnProfile, DatasetRow, DatasetRuleset, Finding } from '@/types'
+import { isMissing, numericValue } from './datasetValues'
+import { profileDataset } from './datasetProfiling'
 import { exceedsPercentage, iqrFences } from './decimalStatistics'
 
 export interface StatisticalBaseline {

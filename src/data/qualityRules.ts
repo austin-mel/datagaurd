@@ -1,5 +1,5 @@
 import type { QualityRule, RuleEditorCatalog, RuleType } from '@/types'
-import { supportedDateConditions } from '@/types/ruleset'
+import { supportedDateConditions } from '@/types'
 
 const ruleTypes = [
   { value: 'required', label: 'Required' },

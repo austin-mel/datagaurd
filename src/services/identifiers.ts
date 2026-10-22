@@ -1,4 +1,4 @@
-import type { DatasetRuleset, QualityRule } from '../types'
+import type { DatasetRuleset, QualityRule } from '@/types'
 
 export function resolveIdentifier(ruleset: DatasetRuleset, headers: readonly string[]): { column: string | null; reason: string | null } {
   const configuration = ruleset.backendConfiguration

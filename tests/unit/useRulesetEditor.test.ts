@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { beforeEach, expect, it, vi } from 'vitest'
-import { useRulesetEditor } from '@/composables/useRulesetEditor'
+import { useRulesetEditor } from '@/composables'
 import { BackendUnavailableError, RulesetValidationError } from '@/services'
 import { dataset, ruleset } from '../fixtures/workspace'
 

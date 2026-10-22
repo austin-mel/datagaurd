@@ -1,16 +1,33 @@
 import { describe, expect, it } from 'vitest'
-import { createDatasetCsv } from '@/services/datasetCsv'
-import { validateUpload } from '@/services/datasetUpload'
-import { displayCellValue, groupCellFinding, summarizeCellReview } from '@/services/cellReview'
-import { exceedsPercentage, iqrFences } from '@/services/decimalStatistics'
-import { analyzeSeededStatistics } from '@/services/seededStatistics'
-import { countStatisticalWarnings } from '@/services/statisticalWarnings'
-import { profileDataset } from '@/services/datasetValidation'
-import { hasPendingValidation } from '@/services/validationState'
-import { assertIdentifierRules, resolveIdentifier } from '@/services/identifiers'
-import { cloneRuleset, createQualityRule, ruleDefaults, rulesetSignature } from '@/utils/rulesets'
-import { formatDate, formatNumber, formatOpenedAt, formatPacificDate, formatPacificTime, formatScore, formatValidatedAt } from '@/utils/formatters'
-import { seededRuleCatalog } from '@/data/qualityRules'
+import {
+  createDatasetCsv,
+  validateUpload,
+  displayCellValue,
+  groupCellFinding,
+  summarizeCellReview,
+  exceedsPercentage,
+  iqrFences,
+  analyzeSeededStatistics,
+  countStatisticalWarnings,
+  profileDataset,
+  hasPendingValidation,
+  assertIdentifierRules,
+  resolveIdentifier,
+} from '@/services'
+import {
+  cloneRuleset,
+  createQualityRule,
+  ruleDefaults,
+  rulesetSignature,
+  formatDate,
+  formatNumber,
+  formatOpenedAt,
+  formatPacificDate,
+  formatPacificTime,
+  formatScore,
+  formatValidatedAt,
+} from '@/utils'
+import { seededRuleCatalog } from '@/data'
 import type { DatasetRow } from '@/types'
 import { dataset, group, rule, ruleset } from '../fixtures/workspace'
 

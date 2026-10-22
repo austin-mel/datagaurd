@@ -1,8 +1,9 @@
 {
   "extends": "./tsconfig.app.json",
-  "include": ["env.d.ts", "src/**/*.ts", "src/**/*.vue", "tests/**/*.ts"],
+  "include": ["env.d.ts", "src/**/*.ts", "src/**/*.vue", "tests/**/*.ts", "scripts/**/*.ts"],
   "exclude": [],
   "compilerOptions": {
+    "allowJs": true,
     "types": ["node", "vite/client"],
     "noEmit": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tests.tsbuildinfo"

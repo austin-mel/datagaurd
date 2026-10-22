@@ -1,4 +1,4 @@
-# DataGuard Workspace and Frontend Setup
+# Dataguard Workspace and Frontend Setup
 
 ## Table of Contents
 
@@ -20,7 +20,7 @@
 
 ## Data Quality Workspace
 
-Use DataGuard to assess and improve your tabular data. Upload CSV, TSV, Excel, or Parquet files; inspect profiles and row-based quality scores; customize validation rules; review flagged cells; and preserve source versions and validation history.
+Use Dataguard to assess and improve your tabular data. Upload CSV, TSV, Excel, or Parquet files; inspect profiles and row-based quality scores; customize validation rules; review flagged cells; and preserve source versions and validation history.
 
 Connect the Vue application to its FastAPI backend to save your work, or select the sample workspace to explore synthetic data. If the API is unavailable during initial loading, the application opens the sample workspace; authentication errors, invalid responses, and other application errors remain visible. Check the banner to identify your data source. You can open the workspace without signing in.
 
@@ -68,10 +68,10 @@ If you have not installed pnpm, run `npm install -g pnpm@10`.
 Use the defaults to request `/api/v1` through Vite's `/api` proxy at `http://127.0.0.1:8000`. To override those defaults, create the local environment file if you do not already have one:
 
 ~~~powershell
-Copy-Item environment/.example.front-end.env environment/front-end.env
+Copy-Item environment/.example.front-end.env environment/.front-end.env
 ~~~
 
-Edit **environment/front-end.env**:
+Edit **environment/.front-end.env**:
 
 ~~~dotenv
 VITE_API_BASE_URL=/api/v1
@@ -85,7 +85,7 @@ For a frontend-only demo, set `VITE_DATA_SOURCE=seeded`. Start the server:
 pnpm dev
 ~~~
 
-Open [DataGuard](http://127.0.0.1:5173/datagaurd/). Use the configured `/datagaurd/` base path when opening or sharing workspace links. Keep the terminal running; use Ctrl+C to stop it. Restart Vite after changing environment values.
+Open [Dataguard](http://127.0.0.1:5173/dataguard/). Use the configured `/dataguard/` base path when opening or sharing workspace links. Keep the terminal running; use Ctrl+C to stop it. Restart Vite after changing environment values.
 
 ### Start the Backend
 
@@ -148,7 +148,7 @@ datagaurd/
 | `src/stores/`, `src/composables/` | Workspace state, recent visits, and ruleset editing |
 | `src/services/` | Live/sample repositories, validation, and API response checks |
 | `src/types/`, `src/data/` | Domain types and deterministic sample datasets |
-| `src/assets/`, `public/` | Styles, icons, and static assets |
+| `src/assets/` | Shared styles, brand artwork, and the application icon |
 | `tests/unit/`, `tests/e2e/`, `tests/live/` | Unit/component, browser, and live API checks |
 | `scripts/` | Demo manifest export and TypeScript import registration |
 | `environment/` | Example and local frontend configuration |
@@ -211,7 +211,7 @@ The application does not authenticate users, authorize dataset access, or isolat
 | Reference | Use it to |
 | --- | --- |
 | [Frontend Configuration and Troubleshooting](docs/CONFIGURATION.md) | Configure local environments, API connections, and troubleshooting |
-| [DataGuard Frontend Architecture](docs/ARCHITECTURE.md) | Trace navigation, stores, repositories, and source selection |
+| [Dataguard Frontend Architecture](docs/ARCHITECTURE.md) | Trace navigation, stores, repositories, and source selection |
 | [Workspace Types and API Projections](docs/DATA_DICTIONARY.md) | Look up fields, state values, identifiers, and request shapes |
 | [Frontend Testing and API Integration](docs/TESTING.md) | Run unit, component, browser, and live parity checks |
 
@@ -220,5 +220,5 @@ The application does not authenticate users, authorize dataset access, or isolat
 | Reference | Use it to |
 | --- | --- |
 | [Backend Setup](../datagaurd.back-end/README.md) | Start the API and configure persistent storage |
-| [DataGuard API Reference](../datagaurd.back-end/docs/API.md) | Inspect workspace endpoints and lower-level data workflows |
-| [Run, Back Up, and Recover DataGuard](../datagaurd.back-end/docs/OPERATIONS.md) | Operate and protect your saved workspace |
+| [Dataguard API Reference](../datagaurd.back-end/docs/API.md) | Inspect workspace endpoints and lower-level data workflows |
+| [Run, Back Up, and Recover Dataguard](../datagaurd.back-end/docs/OPERATIONS.md) | Operate and protect your saved workspace |
