@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     )
 
     cors_origins: list[str] = ['http://127.0.0.1:5173', 'http://localhost:5173']
+    seed_default_dataset: bool = True
 
     max_upload_bytes: int = Field(default=100 * 1024 * 1024, gt=0)
     max_rows: int = Field(default=500_000, gt=0)

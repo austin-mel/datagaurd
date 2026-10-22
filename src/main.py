@@ -17,6 +17,7 @@ from src.rules import load_rules
 from src.schemas import ErrorDetail, ErrorResponse, HealthResponse
 from src.settings import Settings
 from src.services.catalog import Catalog
+from src.services.default_dataset import seed_default_dataset
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -28,6 +29,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         try:
             catalog.initialize()
+            if settings.seed_default_dataset:
+                seed_default_dataset(catalog)
             yield
         finally:
             catalog.database.close()

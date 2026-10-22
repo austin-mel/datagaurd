@@ -20,6 +20,8 @@ def isolated_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in os.environ:
         if name.upper().startswith("DATAGUARD_"):
             monkeypatch.delenv(name, raising=False)
+    # Most API tests exercise an empty catalog; startup seeding has its own tests.
+    monkeypatch.setenv("DATAGUARD_SEED_DEFAULT_DATASET", "false")
 
 
 @pytest.fixture

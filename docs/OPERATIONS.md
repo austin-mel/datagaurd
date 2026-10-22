@@ -80,7 +80,7 @@ Set these values in Render's Environment section:
 | `DATAGUARD_CORS_ORIGINS` | `["https://your-frontend-domain"]`, replacing the placeholder with the frontend's origin |
 | `DATAGUARD_ACTOR` | `local_operator` |
 
-Process environment variables take precedence over `environment/.back-end.env`; the local dotenv file does not need to be committed or uploaded. Leave `UV_PROJECT_ENVIRONMENT` unset so the build creates `.venv`, matching the start command. The service creates an empty SQLite database and applies migrations at startup.
+Process environment variables take precedence over `environment/.back-end.env`; the local dotenv file does not need to be committed or uploaded. Leave `UV_PROJECT_ENVIRONMENT` unset so the build creates `.venv`, matching the start command. The service initializes SQLite, applies migrations, and loads `src/data/facilities_dirty.csv` with its facilities rules at startup. The connected workspace therefore starts with a validated 150-row example, including after ephemeral storage is reset. Existing versions and edits are preserved. Set `DATAGUARD_SEED_DEFAULT_DATASET=false` to disable this behavior; disabling it does not delete an existing example.
 
 For an existing service, update the build/start commands in its Settings page. Check that Runtime is Python: [Render's runtime-change instructions](https://render.com/docs/native-runtimes#changing-a-services-runtime) describe Settings > Build > Source > Edit. Adding files to the repository does not change an existing service's runtime or Dashboard commands. After pushing the changes, choose **Manual Deploy > Clear build cache & deploy**. Confirm that the build selects Python 3.12 and that `/health` returns `{"status":"ok"}`.
 

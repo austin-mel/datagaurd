@@ -24,6 +24,7 @@ Use the default absolute paths beneath the project root, or supply your own path
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `DATAGUARD_STORAGE_DIR` | Project-root `storage/` | SQLite metadata and immutable files |
+| `DATAGUARD_SEED_DEFAULT_DATASET` | `true` | Add the bundled `facilities_dirty.csv` example at API startup if missing; set `false` for an empty workspace |
 | `DATAGUARD_RULES_PATH` | Project-root `config/generic.yaml` | Default YAML rules loaded at startup |
 | `DATAGUARD_ACTOR` | `local_operator` | Nonempty audit/check actor label |
 | `DATAGUARD_REFERENCE_DATE` | Unset | ISO date; when unset, resolve the server's local calendar date per check |

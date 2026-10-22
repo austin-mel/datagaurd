@@ -88,7 +88,7 @@ If you have not installed uv, run `python -m pip install uv`, then reopen your t
    DATAGUARD_ACTOR=local_operator
    ```
 
-4. Load the sample datasets if you want a populated development workspace:
+4. Optionally load additional sample datasets (startup already loads `facilities_dirty.csv`):
 
    ```powershell
    uv run python -m src.scripts.seed_demo
@@ -101,6 +101,8 @@ If you have not installed uv, run `python -m pip install uv`, then reopen your t
    ```
 
 When you start the backend, it initializes SQLite, applies migrations, registers default rules, and reconciles managed files. Use a new, empty storage directory for the current schema baseline if you previously ran an earlier development version; see [Operations](docs/OPERATIONS.md#migrations). Run the seed command to add examples without replacing existing demo datasets. Keep the server terminal running; use Ctrl+C to stop it.
+
+Startup also loads `src/data/facilities_dirty.csv` as a validated example with 150 rows and 7 columns. It appears in the connected workspace automatically, preserves existing versions and edits, and is restored if temporary hosting storage is reset. Set `DATAGUARD_SEED_DEFAULT_DATASET=false` to start without this example.
 
 Run these commands from the backend root. Relative storage paths resolve from your process working directory. Consult [Configuration](docs/CONFIGURATION.md) for every setting.
 
