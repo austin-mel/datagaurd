@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import { parseEnv } from 'node:util'
-
+import path from "node:path";
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
@@ -46,7 +46,19 @@ export default defineConfig(() => {
       tailwindcss(),
     ],
     resolve: {
-      alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+      alias: {
+        "@": path.resolve(__dirname, "src"),
+        "@/assets": path.resolve(__dirname, "src/assets"),
+        "@/components": path.resolve(__dirname, "src/components"),
+        "@/composables": path.resolve(__dirname, "src/composables"),
+        "@/data": path.resolve(__dirname, "src/data"),
+        "@/router": path.resolve(__dirname, "src/router"),
+        "@/services": path.resolve(__dirname, "src/services"),
+        "@/stores": path.resolve(__dirname, "src/stores"),
+        "@/types": path.resolve(__dirname, "src/types"),
+        "@/utils": path.resolve(__dirname, "src/utils"),
+        "@/views": path.resolve(__dirname, "src/views"),
+      },
     },
   }
 })
