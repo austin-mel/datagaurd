@@ -13,7 +13,7 @@ function openOverview(datasetId: string) {
 
 <template>
   <tr class="border-b border-line last:border-0 hover:bg-table-selected">
-    <th scope="row">
+    <th scope="row" class="py-3.5 pr-4 pl-5.5">
       <div class="flex items-center gap-2.75">
         <span
           class="grid h-9.5 w-8.5 shrink-0 place-items-center rounded-[7px] border border-line bg-ivory text-muted"
@@ -28,19 +28,19 @@ function openOverview(datasetId: string) {
         </div>
       </div>
     </th>
-    <td>
+    <td class="px-4 py-3.5 last:pr-5.5">
       <span
         class="inline-flex rounded-[5px] bg-cobalt-soft px-1.75 py-1 text-[10px] font-semibold text-cobalt"
       >
         {{ dataset.version }}
       </span>
     </td>
-    <td class="tabular-nums">{{ formatScore(dataset.quality) }}</td>
-    <td class="whitespace-nowrap text-muted">
+    <td class="px-4 py-3.5 tabular-nums">{{ formatScore(dataset.quality) }}</td>
+    <td class="px-4 py-3.5 whitespace-nowrap text-muted">
       <time v-if="dataset.lastValidatedAt" :datetime="dataset.lastValidatedAt">{{ formatValidatedAt(dataset.lastValidatedAt, false) }}</time>
       <span v-else>Not available · {{ dataset.processingStatus === 'not_started' ? 'Not started' : dataset.processingStatus }}</span>
     </td>
-    <td>
+    <td class="px-4 py-3.5 last:pr-5.5">
       <div class="flex items-center gap-6 whitespace-nowrap">
         <button
           type="button"

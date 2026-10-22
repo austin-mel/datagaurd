@@ -23,20 +23,20 @@ const filteredDatasets = computed(() => {
       aria-label="Dataset catalog, horizontally scrollable"
       tabindex="0"
     >
-      <table class="catalog-table w-full min-w-215 border-collapse text-left">
+      <table class="w-full min-w-215 border-collapse text-left">
         <thead class="border-b border-line bg-table-header text-[10px] whitespace-nowrap text-muted">
           <tr>
-            <th scope="col">Dataset / source</th>
-            <th scope="col">Current version</th>
-            <th scope="col">Quality</th>
-            <th scope="col">Last validated</th>
-            <th scope="col">Actions</th>
+            <th scope="col" class="px-4 py-2.5 font-[550] first:pl-5.5 last:pr-5.5">Dataset / source</th>
+            <th scope="col" class="px-4 py-2.5 font-[550] first:pl-5.5 last:pr-5.5">Current version</th>
+            <th scope="col" class="px-4 py-2.5 font-[550] first:pl-5.5 last:pr-5.5">Quality</th>
+            <th scope="col" class="px-4 py-2.5 font-[550] first:pl-5.5 last:pr-5.5">Last validated</th>
+            <th scope="col" class="px-4 py-2.5 font-[550] first:pl-5.5 last:pr-5.5">Actions</th>
           </tr>
         </thead>
         <tbody class="text-xs">
           <DatasetTableRow v-for="dataset in filteredDatasets" :key="dataset.id" :dataset="dataset" @edit-quality-rules="emit('editQualityRules', $event)" />
           <tr v-if="filteredDatasets.length === 0">
-            <td colspan="5" class="text-center text-muted">{{ datasets.length ? 'No datasets match your search.' : 'No datasets yet. Connect a data source to get started.' }}</td>
+            <td colspan="5" class="px-4 py-3.5 pr-5.5 text-center text-muted">{{ datasets.length ? 'No datasets match your search.' : 'No datasets yet. Connect a data source to get started.' }}</td>
           </tr>
         </tbody>
       </table>
@@ -49,25 +49,3 @@ const filteredDatasets = computed(() => {
     </footer>
   </section>
 </template>
-
-<style scoped>
-.catalog-table thead th {
-  padding: 10px 16px;
-  font-weight: 550;
-}
-
-.catalog-table :deep(tbody th),
-.catalog-table :deep(td) {
-  padding: 14px 16px;
-}
-
-.catalog-table :deep(th):first-child {
-  padding-left: 22px;
-}
-
-.catalog-table :deep(th):last-child,
-.catalog-table :deep(td):last-child {
-  padding-right: 22px;
-}
-
-</style>

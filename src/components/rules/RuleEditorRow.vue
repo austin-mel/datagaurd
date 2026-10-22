@@ -16,23 +16,23 @@ function changeType(type: RuleType) {
 
 <template>
   <tr class="border-b border-line last:border-0">
-    <td>
+    <td class="px-2 py-3 align-middle first:w-10 first:pl-2.5 last:w-8.75 last:pr-2.5">
       <input :checked="rule.enabled" @change="update({ enabled: ($event.target as HTMLInputElement).checked })" type="checkbox" :disabled="locked" class="size-3.5 accent-cobalt" :aria-label="`Enable rule ${number}: ${rule.column}`" />
     </td>
-    <td>
+    <td class="px-2 py-3 align-middle first:w-10 first:pl-2.5 last:w-8.75 last:pr-2.5">
       <select :value="rule.column" @change="update({ column: ($event.target as HTMLSelectElement).value })" :disabled="locked" class="ui-control w-42.75 font-mono" :aria-label="`Column for rule ${number}`">
         <option v-for="column in columns" :key="column" :value="column">{{ column }}</option>
       </select>
     </td>
-    <td>
+    <td class="px-2 py-3 align-middle first:w-10 first:pl-2.5 last:w-8.75 last:pr-2.5">
       <select :value="rule.type" :disabled="locked" class="ui-control w-33.75" :aria-label="`Type for rule ${number}`" @change="changeType(($event.target as HTMLSelectElement).value as RuleType)">
         <option v-for="type in ruleCatalog.ruleTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
       </select>
     </td>
-    <td class="min-w-58.75">
+    <td class="min-w-58.75 px-2 py-3 align-middle">
       <RuleConditionFields v-model="rule" :number="number" :rule-catalog="ruleCatalog" />
     </td>
-    <td>
+    <td class="px-2 py-3 align-middle first:w-10 first:pl-2.5 last:w-8.75 last:pr-2.5">
       <button type="button" :disabled="locked" class="cursor-pointer rounded p-1.25 text-muted enabled:hover:bg-coral-soft enabled:hover:text-coral-text disabled:cursor-not-allowed disabled:opacity-40" :aria-label="`Remove rule ${number}: ${rule.column}`" @click="emit('remove')">
         <SVGIcons name="trash" class="size-3.5" />
       </button>

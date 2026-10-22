@@ -54,9 +54,9 @@ function openDialog(group: ReviewGroup, row: number, mode: 'edit' | 'ignore') {
       <p v-if="dataset.rulesChangedSinceRun" class="px-5.5 pb-4 text-xs text-muted">Findings reflect the last validation run. Re-run validation to apply the saved rules.</p>
       <p v-if="dataset.reviewChangedSinceRun" class="px-5.5 pb-4 text-xs text-muted" role="status">Saved changes are pending validation. This table shows remaining findings from the last run; click Run Dataset Validation to refresh results.</p>
       <div class="grid gap-3 border-y border-line bg-ivory px-5.5 py-4 sm:grid-cols-[1.4fr_1fr_1fr]">
-        <label class="review-label">Find a value, column, or rule<input v-model="search" type="search" class="ui-control" placeholder="Search flagged values…" /></label>
-        <label class="review-label">Finding type<select v-model="kind" class="ui-control"><option value="all">All findings</option><option value="violation">Rule violations</option><option value="warning">Anomaly warnings</option></select></label>
-        <label class="review-label">Column<select v-model="column" class="ui-control"><option value="all">All columns</option><option v-for="name in columns" :key="name" :value="name">{{ name }}</option></select></label>
+        <label class="flex flex-col gap-1.5 text-[11px] text-muted">Find a value, column, or rule<input v-model="search" type="search" class="ui-control" placeholder="Search flagged values…" /></label>
+        <label class="flex flex-col gap-1.5 text-[11px] text-muted">Finding type<select v-model="kind" class="ui-control"><option value="all">All findings</option><option value="violation">Rule violations</option><option value="warning">Anomaly warnings</option></select></label>
+        <label class="flex flex-col gap-1.5 text-[11px] text-muted">Column<select v-model="column" class="ui-control"><option value="all">All columns</option><option v-for="name in columns" :key="name" :value="name">{{ name }}</option></select></label>
       </div>
       <div class="flex flex-wrap justify-between gap-2 px-5.5 py-3 text-[11px] text-muted">
         <span><strong class="font-medium text-ink">Grouped by column, finding, and exact current value</strong> · Most repeated first</span>
@@ -76,8 +76,3 @@ function openDialog(group: ReviewGroup, row: number, mode: 'edit' | 'ignore') {
     <CellReviewDialog v-if="selected" v-model="dialogOpen" :dataset="dataset" :group="selected.group" :initial-row="selected.row" :mode="selected.mode" :saving="saving" :error="error" @save="emit('save', $event)" />
   </section>
 </template>
-
-<style scoped>
-@reference '../../assets/main.css';
-.review-label { @apply text-muted; display: flex; flex-direction: column; gap: 6px; font-size: 11px; }
-</style>

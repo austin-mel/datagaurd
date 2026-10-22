@@ -5,7 +5,7 @@ const route = useRoute()
 </script>
 
 <template>
-  <header class="topbar flex items-center border-b border-line">
+  <header class="flex min-h-[73px] items-center border-b border-line px-8.5 py-4.25 max-[1250px]:px-6.25 max-[540px]:min-h-[54px] max-[540px]:px-4.5 max-[540px]:py-3">
     <div class="flex items-center gap-2.75 text-xs text-muted">
       <span>Workspace</span>
       <SVGIcons name="chevron" class="size-3" />
@@ -13,9 +13,3 @@ const route = useRoute()
     </div>
   </header>
 </template>
-
-<style scoped>
-.topbar { min-height: 73px; padding: 17px 34px; }
-@media (max-width: 1250px) { .topbar { padding-inline: 25px; } }
-@media (max-width: 540px) { .topbar { min-height: 54px; padding: 12px 18px; } }
-</style>

@@ -97,14 +97,14 @@ function saveRules() {
       <fieldset :disabled="!isCustom || saving" class="min-w-0">
         <legend class="sr-only">{{ isCustom ? 'Custom ruleset' : 'Default rules (read only)' }}</legend>
       <div class="overflow-x-auto" role="region" :aria-label="`${dataset.name} rule editor, horizontally scrollable`" tabindex="0">
-        <table class="rule-editor w-full min-w-195 border-collapse text-left text-[11px]">
+        <table class="w-full min-w-195 border-collapse text-left text-[11px]">
           <thead class="border-y border-line bg-table-header text-[10px] text-muted">
             <tr>
-              <th scope="col">On</th>
-              <th scope="col">Column</th>
-              <th scope="col">Rule type</th>
-              <th scope="col">Condition</th>
-              <th scope="col">Remove</th>
+              <th scope="col" class="px-2 py-2.5 font-[550] whitespace-nowrap first:w-10 first:pl-2.5 last:w-8.75 last:pr-2.5">On</th>
+              <th scope="col" class="px-2 py-2.5 font-[550] whitespace-nowrap first:w-10 first:pl-2.5 last:w-8.75 last:pr-2.5">Column</th>
+              <th scope="col" class="px-2 py-2.5 font-[550] whitespace-nowrap first:w-10 first:pl-2.5 last:w-8.75 last:pr-2.5">Rule type</th>
+              <th scope="col" class="px-2 py-2.5 font-[550] whitespace-nowrap first:w-10 first:pl-2.5 last:w-8.75 last:pr-2.5">Condition</th>
+              <th scope="col" class="px-2 py-2.5 font-[550] whitespace-nowrap first:w-10 first:pl-2.5 last:w-8.75 last:pr-2.5">Remove</th>
             </tr>
           </thead>
           <tbody>
@@ -112,7 +112,7 @@ function saveRules() {
               v-model="draft.rules[index]!" :number="index + 1" :columns="dataset.columns"
               :rule-catalog="ruleCatalog" :locked="isIdentifierRule(rule)"
               @remove="removeRule(rule.id)" @reset-condition="error = ''" />
-            <tr v-if="draft.rules.length === 0"><td colspan="5" class="text-center text-muted">No rules yet. Add a rule to start defining your checks.</td></tr>
+            <tr v-if="draft.rules.length === 0"><td colspan="5" class="w-8.75 px-2.5 py-3 text-center align-middle text-muted">No rules yet. Add a rule to start defining your checks.</td></tr>
           </tbody>
         </table>
       </div>
@@ -148,10 +148,3 @@ function saveRules() {
     </template>
   </ModalShell>
 </template>
-
-<style scoped>
-.rule-editor th { padding: 10px 8px; font-weight: 550; white-space: nowrap; }
-.rule-editor :deep(td) { padding: 12px 8px; vertical-align: middle; }
-.rule-editor th:first-child, .rule-editor :deep(td):first-child { padding-left: 10px; width: 40px; }
-.rule-editor th:last-child, .rule-editor :deep(td):last-child { padding-right: 10px; width: 35px; }
-</style>

@@ -4,66 +4,38 @@ import { DataguardIcon, DataguardLogo, SVGIcons } from '@/assets'
 </script>
 
 <template>
-  <aside class="sidebar bg-ink text-porcelain" aria-label="Workspace navigation">
+  <aside class="sticky top-0 flex h-screen flex-col gap-7.5 self-start bg-ink px-4.5 pt-7 pb-5 text-porcelain max-[1250px]:px-3.25 max-[1020px]:items-center max-[1020px]:px-2.75 max-[540px]:static max-[540px]:h-auto max-[540px]:items-stretch max-[540px]:gap-4.5 max-[540px]:px-4.5 max-[540px]:pt-4.25 max-[540px]:pb-3" aria-label="Workspace navigation">
     <RouterLink
       :to="{ name: 'overview' }"
-      class="brand flex items-center px-2.25"
+      class="flex items-center px-2.25 max-[1250px]:px-0.75 max-[1020px]:p-0"
       aria-label="Dataguard overview"
     >
-      <img :src="DataguardLogo" class="brand-logo" width="155" height="37" alt="Dataguard" />
-      <img :src="DataguardIcon" class="brand-icon" width="33" height="37" alt="Dataguard" />
+      <img :src="DataguardLogo" class="h-auto w-[155px] max-[1250px]:w-[145px] max-[1020px]:hidden max-[540px]:block max-[540px]:w-[150px]" width="155" height="37" alt="Dataguard" />
+      <img :src="DataguardIcon" class="hidden max-[1020px]:block max-[540px]:hidden" width="33" height="37" alt="Dataguard" />
     </RouterLink>
 
     <nav aria-label="Main">
-      <p class="nav-label mb-2.75 px-3.5 text-[10px] font-semibold tracking-[0.14em] text-nav-muted">
+      <p class="mb-2.75 max-[1020px]:hidden px-3.5 text-[10px] font-semibold tracking-[0.14em] text-nav-muted">
         WORKSPACE
       </p>
-      <div class="navigation flex flex-col gap-1.5">
+      <div class="flex flex-col gap-1.5 max-[540px]:flex-row max-[540px]:gap-1.25">
         <RouterLink
           :to="{ name: 'overview' }"
-          class="nav-link text-nav-text hover:bg-porcelain/10 aria-[current=page]:bg-cobalt aria-[current=page]:text-porcelain"
+          class="flex items-center gap-3 rounded-lg px-3.5 py-3 text-[13px] max-[1020px]:px-4 max-[1020px]:py-3.5 max-[540px]:flex-1 max-[540px]:justify-center max-[540px]:gap-1.75 max-[540px]:px-2 max-[540px]:py-2.5 max-[540px]:text-[11px] text-nav-text hover:bg-porcelain/10 aria-[current=page]:bg-cobalt aria-[current=page]:text-porcelain"
           aria-label="Overview"
         >
-          <SVGIcons name="overview" class="size-4.5" />
-          <span>Overview</span>
+          <SVGIcons name="overview" class="size-4.5 max-[540px]:size-3.75" />
+          <span class="max-[1020px]:hidden max-[540px]:block">Overview</span>
         </RouterLink>
         <RouterLink
           :to="{ name: 'datasets' }"
-          class="nav-link text-nav-text hover:bg-porcelain/10 aria-[current=page]:bg-cobalt aria-[current=page]:text-porcelain"
+          class="flex items-center gap-3 rounded-lg px-3.5 py-3 text-[13px] max-[1020px]:px-4 max-[1020px]:py-3.5 max-[540px]:flex-1 max-[540px]:justify-center max-[540px]:gap-1.75 max-[540px]:px-2 max-[540px]:py-2.5 max-[540px]:text-[11px] text-nav-text hover:bg-porcelain/10 aria-[current=page]:bg-cobalt aria-[current=page]:text-porcelain"
           aria-label="Datasets"
         >
-          <SVGIcons name="database" class="size-4.5" />
-          <span>Datasets</span>
+          <SVGIcons name="database" class="size-4.5 max-[540px]:size-3.75" />
+          <span class="max-[1020px]:hidden max-[540px]:block">Datasets</span>
         </RouterLink>
       </div>
     </nav>
   </aside>
 </template>
-
-<style scoped>
-.brand-logo { width: 155px; height: auto; }
-.brand-icon { display: none; }
-.sidebar { position: sticky; top: 0; align-self: start; display: flex; height: 100vh; flex-direction: column; gap: 30px; padding: 28px 18px 20px; }
-.nav-link { display: flex; align-items: center; gap: 12px; border-radius: 8px; padding: 12px 14px; font-size: 13px; }
-@media (max-width: 1250px) {
-  .sidebar { padding-inline: 13px; }
-  .brand { padding-inline: 3px; }
-  .brand-logo { width: 145px; }
-}
-@media (max-width: 1020px) {
-  .sidebar { align-items: center; padding-inline: 11px; }
-  .brand { padding: 0; }
-  .brand-logo, .nav-label, .nav-link span { display: none; }
-  .brand-icon { display: block; }
-  .nav-link { padding: 14px 16px; }
-}
-@media (max-width: 540px) {
-  .sidebar { position: static; height: auto; align-items: stretch; gap: 18px; padding: 17px 18px 12px; }
-  .brand-logo { display: block; width: 150px; }
-  .brand-icon { display: none; }
-  .navigation { flex-direction: row; gap: 5px; }
-  .nav-link { flex: 1; justify-content: center; gap: 7px; padding: 10px 8px; font-size: 11px; }
-  .nav-link span { display: block; }
-  .nav-link .app-icon { width: 15px; height: 15px; }
-}
-</style>
